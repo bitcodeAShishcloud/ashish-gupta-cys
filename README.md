@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Portfolio Banner](_https://img.shields.io/badge/Portfolio-Cybersecurity%20Student-00D4FF?style=for-the-badge&logo=shield&logoColor=white)
+![Portfolio Banner](https://img.shields.io/badge/Portfolio-Cybersecurity%20Student-00D4FF?style=for-the-badge&logo=shield&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Available%20for%20Opportunities-brightgreen?style=for-the-badge)
 ![GitHub](https://img.shields.io/badge/GitHub-Portfolio-181717?style=for-the-badge&logo=github&logoColor=white)
 

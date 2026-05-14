@@ -375,37 +375,18 @@ class ContactForm {
     }
 
     setupFormSubmission() {
-        this.form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+        this.form.addEventListener('submit', (e) => {
+            // Only prevent default if validation fails
             if (!this.validateForm()) {
+                e.preventDefault();
                 return;
             }
-
-            await this.submitForm();
-        });
-    }
-
-    async submitForm() {
-        this.setLoadingState(true);
-
-        try {
-            // Simulate form submission (replace with actual endpoint)
-            await this.simulateFormSubmission();
-            this.showSuccess();
-            this.form.reset();
-        } catch (error) {
-            this.showError('Failed to send message. Please try again or contact me directly.');
-            console.error('Form submission error:', error);
-        } finally {
-            this.setLoadingState(false);
-        }
-    }
-
-    async simulateFormSubmission() {
-        // Simulate network delay
-        return new Promise((resolve) => {
-            setTimeout(resolve, 2000);
+            
+            // Show loading state but allow form to submit to FormSubmit.co
+            this.setLoadingState(true);
+            
+            // Form will submit normally to FormSubmit.co
+            // FormSubmit.co will handle the redirect
         });
     }
 
