@@ -267,6 +267,9 @@ class ContactForm {
         this.submitButton = null;
         this.loadingElement = null;
         this.submitText = null;
+        this.rateLimitKey = 'contactFormLastSubmit';
+        this.rateLimitDuration = 5 * 60 * 1000; // 5 minutes in milliseconds
+        this.rateLimitTimer = null;
         
         if (this.form) {
             this.submitButton = this.form.querySelector('.form-submit');
@@ -279,6 +282,7 @@ class ContactForm {
     init() {
         this.setupFormValidation();
         this.setupFormSubmission();
+        this.checkRateLimit(); // Check on page load
     }
 
     setupFormValidation() {
@@ -375,19 +379,152 @@ class ContactForm {
     }
 
     setupFormSubmission() {
-        this.form.addEventListener('submit', (e) => {
-            // Only prevent default if validation fails
-            if (!this.validateForm()) {
-                e.preventDefault();
+        this.form.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Always prevent default to handle with AJAX
+            
+            // Check rate limit first
+            if (this.isRateLimited()) {
+                this.showRateLimitMessage();
                 return;
             }
             
-            // Show loading state but allow form to submit to FormSubmit.co
+            // Check honeypot (if filled, it's a bot)
+            const honeypot = this.form.querySelector('[name="honeypot"]');
+            if (honeypot && honeypot.value !== '') {
+                // Silent fail for bots
+                console.warn('Honeypot triggered - potential bot detected');
+                return;
+            }
+            
+            // Check $_gotcha (if filled, it's a bot)
+            const gotcha = this.form.querySelector('[name="$_gotcha"]');
+            if (gotcha && gotcha.value !== '') {
+                // Silent fail for bots
+                console.warn('$_gotcha triggered - potential bot detected');
+                return;
+            }
+            
+            // Validate form
+            if (!this.validateForm()) {
+                return;
+            }
+            
+            // Show loading state
             this.setLoadingState(true);
             
-            // Form will submit normally to FormSubmit.co
-            // FormSubmit.co will handle the redirect
+            try {
+                // Get form data
+                const formData = new FormData(this.form);
+                
+                // Submit to StaticForms
+                const response = await fetch('https://api.staticforms.xyz/submit', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Set rate limit timestamp
+                    this.setRateLimit();
+                    
+                    // Show success modal
+                    showSuccessModal();
+                    
+                    // Reset form
+                    this.form.reset();
+                    
+                    // Start rate limit timer
+                    this.startRateLimitTimer();
+                } else {
+                    // Show error
+                    this.showError('Failed to send message. Please try again or email me directly.');
+                }
+            } catch (error) {
+                console.error('Form submission error:', error);
+                this.showError('Network error. Please check your connection and try again.');
+            } finally {
+                this.setLoadingState(false);
+            }
         });
+    }
+
+    // Rate limiting methods
+    isRateLimited() {
+        const lastSubmit = localStorage.getItem(this.rateLimitKey);
+        if (!lastSubmit) return false;
+        
+        const timeSinceLastSubmit = Date.now() - parseInt(lastSubmit);
+        return timeSinceLastSubmit < this.rateLimitDuration;
+    }
+
+    setRateLimit() {
+        localStorage.setItem(this.rateLimitKey, Date.now().toString());
+    }
+
+    getRemainingTime() {
+        const lastSubmit = localStorage.getItem(this.rateLimitKey);
+        if (!lastSubmit) return 0;
+        
+        const timeSinceLastSubmit = Date.now() - parseInt(lastSubmit);
+        const remainingTime = this.rateLimitDuration - timeSinceLastSubmit;
+        return Math.max(0, remainingTime);
+    }
+
+    checkRateLimit() {
+        if (this.isRateLimited()) {
+            this.startRateLimitTimer();
+        }
+    }
+
+    startRateLimitTimer() {
+        const rateLimitMessage = document.getElementById('rateLimitMessage');
+        const rateLimitTimer = document.getElementById('rateLimitTimer');
+        
+        if (!rateLimitMessage || !rateLimitTimer) return;
+        
+        // Show rate limit message
+        rateLimitMessage.style.display = 'flex';
+        this.submitButton.disabled = true;
+        
+        // Clear existing timer
+        if (this.rateLimitTimer) {
+            clearInterval(this.rateLimitTimer);
+        }
+        
+        // Update timer every second
+        this.rateLimitTimer = setInterval(() => {
+            const remaining = this.getRemainingTime();
+            
+            if (remaining <= 0) {
+                // Rate limit expired
+                clearInterval(this.rateLimitTimer);
+                rateLimitMessage.style.display = 'none';
+                this.submitButton.disabled = false;
+                return;
+            }
+            
+            // Format time as MM:SS
+            const minutes = Math.floor(remaining / 60000);
+            const seconds = Math.floor((remaining % 60000) / 1000);
+            rateLimitTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }, 1000);
+        
+        // Initial update
+        const remaining = this.getRemainingTime();
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        rateLimitTimer.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    showRateLimitMessage() {
+        const rateLimitMessage = document.getElementById('rateLimitMessage');
+        if (rateLimitMessage) {
+            rateLimitMessage.style.display = 'flex';
+            
+            // Scroll to message
+            rateLimitMessage.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
     }
 
     setLoadingState(isLoading) {
@@ -712,6 +849,149 @@ class ServiceWorkerManager {
     }
 }
 
+// Gallery functionality
+class Gallery {
+    constructor() {
+        this.cloudName = 'ds1gqtuf2';
+        this.galleryGrid = document.getElementById('galleryGrid');
+        this.lightbox = null;
+        
+        // Hardcoded image list - UPDATE THIS ARRAY when you upload new images
+        // Get public_id from admin page after uploading
+        this.images = [
+            // Example: { public_id: 'sample', format: 'jpg' }
+            // Add your uploaded images here
+        ];
+        
+        this.init();
+    }
+
+    init() {
+        if (this.galleryGrid) {
+            this.createLightbox();
+            this.loadImages();
+        }
+    }
+
+    createLightbox() {
+        this.lightbox = document.createElement('div');
+        this.lightbox.className = 'lightbox';
+        this.lightbox.innerHTML = `
+            <button class="lightbox-close" aria-label="Close lightbox">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="lightbox-content">
+                <img src="" alt="Gallery image">
+            </div>
+        `;
+        document.body.appendChild(this.lightbox);
+
+        // Close lightbox on click
+        this.lightbox.addEventListener('click', (e) => {
+            if (e.target === this.lightbox || e.target.closest('.lightbox-close')) {
+                this.closeLightbox();
+            }
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && this.lightbox.classList.contains('active')) {
+                this.closeLightbox();
+            }
+        });
+    }
+
+    async loadImages() {
+        // Check if we have hardcoded images
+        if (this.images.length > 0) {
+            // Reverse to show latest first
+            const reversedImages = [...this.images].reverse();
+            this.displayImages(reversedImages);
+            return;
+        }
+        
+        // If no hardcoded images, try fetching from Cloudinary
+        try {
+            const url = `https://res.cloudinary.com/${this.cloudName}/image/list/ashish.json?cb=${Date.now()}`;
+            const response = await fetch(url);
+            
+            if (response.ok) {
+                const data = await response.json();
+                let resources = data.resources || [];
+                
+                if (resources.length > 0) {
+                    // Sort by created_at date to show latest first
+                    resources.sort((a, b) => {
+                        const dateA = new Date(a.created_at || 0);
+                        const dateB = new Date(b.created_at || 0);
+                        return dateB - dateA; // Descending order (newest first)
+                    });
+                    
+                    this.displayImages(resources);
+                    return;
+                }
+            }
+        } catch (error) {
+            // Silently fail and show empty state
+        }
+        
+        // Show empty state
+        this.showEmptyState();
+    }
+
+    displayImages(images) {
+        this.galleryGrid.innerHTML = '';
+
+        images.forEach((image) => {
+            const publicId = image.public_id;
+            const format = image.format;
+            
+            // Optimized Cloudinary URLs
+            const thumbUrl = `https://res.cloudinary.com/${this.cloudName}/image/upload/w_261,h_348,c_fill,f_auto,q_auto/${publicId}.${format}`;
+            const fullUrl = `https://res.cloudinary.com/${this.cloudName}/image/upload/f_auto,q_auto/${publicId}.${format}`;
+
+            const galleryItem = document.createElement('div');
+            galleryItem.className = 'gallery-item';
+            galleryItem.innerHTML = `
+                <img src="${thumbUrl}" alt="Gallery image" loading="lazy">
+            `;
+
+            galleryItem.addEventListener('click', () => {
+                this.openLightbox(fullUrl);
+            });
+
+            this.galleryGrid.appendChild(galleryItem);
+        });
+    }
+
+    openLightbox(imageUrl) {
+        const img = this.lightbox.querySelector('img');
+        img.src = imageUrl;
+        this.lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    closeLightbox() {
+        this.lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    showEmptyState() {
+        this.galleryGrid.innerHTML = `
+            <div class="gallery-loading">
+                <i class="fas fa-images"></i>
+                <p>No images found in gallery</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    Upload images from the <a href="admin.html" style="color: var(--primary-color); text-decoration: underline;">admin page</a>
+                </p>
+                <p style="font-size: 0.85rem; margin-top: 0.5rem; color: var(--text-secondary);">
+                    After uploading, add image details to the gallery array in script.js
+                </p>
+            </div>
+        `;
+    }
+}
+
 // Main application initialization
 class PortfolioApp {
     constructor() {
@@ -742,6 +1022,7 @@ class PortfolioApp {
             new AccessibilityEnhancer();
             new PerformanceMonitor();
             new ServiceWorkerManager();
+            new Gallery();
 
             console.log('✅ Portfolio website initialized successfully!');
             console.log('🚀 Optimized for performance and accessibility');
@@ -754,3 +1035,42 @@ class PortfolioApp {
 
 // Initialize the application
 new PortfolioApp();
+
+// Success Modal Functions
+function showSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Close on escape key
+        document.addEventListener('keydown', handleEscapeKey);
+        
+        // Close on overlay click
+        modal.addEventListener('click', handleOverlayClick);
+    }
+}
+
+function closeSuccessModal() {
+    const modal = document.getElementById('successModal');
+    if (modal) {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        
+        // Remove event listeners
+        document.removeEventListener('keydown', handleEscapeKey);
+        modal.removeEventListener('click', handleOverlayClick);
+    }
+}
+
+function handleEscapeKey(e) {
+    if (e.key === 'Escape') {
+        closeSuccessModal();
+    }
+}
+
+function handleOverlayClick(e) {
+    if (e.target.id === 'successModal') {
+        closeSuccessModal();
+    }
+}

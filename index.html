@@ -24,6 +24,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Cloudinary Core -->
+    <script src="https://cdn.jsdelivr.net/npm/cloudinary-core@latest/cloudinary-core-shrinkwrap.min.js"></script>
 </head>
 <body>
     <!-- Navigation -->
@@ -50,6 +53,9 @@
                 </li>
                 <li class="nav-item">
                     <a href="#projects" class="nav-link" aria-label="Go to projects section">Projects</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#gallery" class="nav-link" aria-label="Go to gallery section">Gallery</a>
                 </li>
                 <li class="nav-item">
                     <a href="#contact" class="nav-link" aria-label="Go to contact section">Contact</a>
@@ -84,7 +90,7 @@
                     <a href="mailto:agupta38160@gmail.com" class="social-link" title="Email">
                         <i class="fas fa-envelope"></i>
                     </a>
-                    <a href="https://linkedin.com/in/ashish-gupta-037973259/" target="_blank" class="social-link" title="LinkedIn">
+                    <a href="https://www.linkedin.com/in/ashish-gupta-037973259/" target="_blank" class="social-link" title="LinkedIn">
                         <i class="fab fa-linkedin-in"></i>
                     </a>
                     <a href="https://github.com/bitcodeAShishcloud" target="_blank" class="social-link" title="GitHub">
@@ -311,71 +317,156 @@
                 <p class="section-subtitle">Showcasing my development and security projects</p>
             </div>
             <div class="projects-grid">
+                <!-- Banking and Prodigy moved to the end of the projects list -->
+
+                <!-- CodSoft Repository Tasks removed per request -->
+                
                 <div class="project-card">
-                    <div class="project-header">
-                        <div class="project-icon">
-                            <i class="fas fa-university"></i>
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-icon">
+                                <i class="fas fa-newspaper"></i>
+                            </div>
+                            <div class="project-links">
+                                <a href="https://github.com/bitcodeAShishcloud/News-Aggregator" target="_blank" class="project-link">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                                <a href="https://news-aggregator.rf.gd" target="_blank" class="project-link" title="Live demo">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
                         </div>
-                        <div class="project-links">
-                            <a href="https://github.com/bitcodeAShishcloud/banking-shopping-system" target="_blank" class="project-link">
-                                <i class="fab fa-github"></i>
-                            </a>
+                        <h3>News Aggregator</h3>
+                        <p class="project-quote">A full-stack news aggregator that pulls latest technology articles via NewsAPI, stores them to MySQL and presents a clean feed with user accounts.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">PHP</span>
+                            <span class="tech-tag">MySQL</span>
+                            <span class="tech-tag">JavaScript</span>
                         </div>
-                    </div>
-                    <h3>Banking Shopping System</h3>
-                    <p>A comprehensive banking and shopping desktop application built with Python, featuring secure transaction processing, user authentication, and inventory management.</p>
-                    <div class="project-tech">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Desktop App</span>
-                        <span class="tech-tag">Security</span>
                     </div>
                 </div>
 
                 <div class="project-card">
-                    <div class="project-header">
-                        <div class="project-icon">
-                            <i class="fas fa-shield-alt"></i>
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-icon">
+                                <i class="fas fa-laptop-code"></i>
+                            </div>
+                            <div class="project-links">
+                                <a href="https://github.com/bitcodeAShishcloud/live-code" target="_blank" class="project-link">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                                <a href="https://live-code-nine.vercel.app/" target="_blank" class="project-link" title="Live demo">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
                         </div>
-                        <div class="project-links">
-                            <a href="https://github.com/bitcodeAShishcloud/Prodigy_InfoTech_Cyber_task" target="_blank" class="project-link">
-                                <i class="fab fa-github"></i>
-                            </a>
+                        <h3>Live Compiler Pro</h3>
+                        <p class="project-quote">Powerful live code editor with real-time collaboration, chat, and WebRTC-based code sharing—perfect for pair programming and demos.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">JavaScript</span>
+                            <span class="tech-tag">Node.js</span>
+                            <span class="tech-tag">Socket.io</span>
                         </div>
-                    </div>
-                    <h3>Prodigy InfoTech Cyber Tasks</h3>
-                    <p>Collection of cybersecurity tasks completed during internship at Prodigy InfoTech, including security analysis, vulnerability assessment, and threat detection projects.</p>
-                    <div class="project-tech">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Cyber Security</span>
-                        <span class="tech-tag">Internship</span>
                     </div>
                 </div>
 
                 <div class="project-card">
-                    <div class="project-header">
-                        <div class="project-icon">
-                            <i class="fas fa-code"></i>
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-icon">
+                                <i class="fas fa-file-upload"></i>
+                            </div>
+                            <div class="project-links">
+                                <a href="https://github.com/bitcodeAShishcloud/Files-Shorter" target="_blank" class="project-link">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                                <a href="https://bitcodeashishcloud.github.io/Files-Shorter/" target="_blank" class="project-link" title="Live demo">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
                         </div>
-                        <div class="project-links">
-                            <a href="https://github.com/bitcodeAShishcloud/CodSoft_repo_tasks" target="_blank" class="project-link">
-                                <i class="fab fa-github"></i>
-                            </a>
+                        <h3>Files Shorter</h3>
+                        <p class="project-quote">Client-side secure file uploader that organizes uploads into Google Drive folders by subject—easy to use, no server required.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Google Drive</span>
+                            <span class="tech-tag">JavaScript</span>
+                            <span class="tech-tag">HTML</span>
                         </div>
-                    </div>
-                    <h3>CodSoft Repository Tasks</h3>
-                    <p>Task bundle completed during Python internship at CodSoft, demonstrating programming proficiency and problem-solving skills across various Python applications.</p>
-                    <div class="project-tech">
-                        <span class="tech-tag">Python</span>
-                        <span class="tech-tag">Development</span>
-                        <span class="tech-tag">Internship</span>
                     </div>
                 </div>
+
+                <div class="project-card">
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-icon">
+                                <i class="fas fa-shield-virus"></i>
+                            </div>
+                            <div class="project-links">
+                                <a href="https://github.com/bitcodeAShishcloud/security-showcase" target="_blank" class="project-link">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                                <a href="https://bitcodeashishcloud.github.io/security-showcase/" target="_blank" class="project-link" title="Live demo">
+                                    <i class="fas fa-external-link-alt"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <h3>Security Showcase</h3>
+                        <p class="project-quote">A security-first frontend demo showing DOM-based XSS prevention techniques, safe DOM rendering, sanitization layers, and CSP enforcement.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">XSS Prevention</span>
+                            <span class="tech-tag">JavaScript</span>
+                            <span class="tech-tag">Frontend Security</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Re-insert Banking and Prodigy after the other projects -->
+                <div class="project-card">
+                    <div class="project-content">
+                        <div class="project-header">
+                            <div class="project-icon">
+                                <i class="fas fa-university"></i>
+                            </div>
+                            <div class="project-links">
+                                <a href="https://github.com/bitcodeAShishcloud/banking-shopping-system/" target="_blank" class="project-link">
+                                    <i class="fab fa-github"></i>
+                                </a>
+                            </div>
+                        </div>
+                        <h3>Banking Shopping System</h3>
+                        <p class="project-quote">A comprehensive banking and shopping desktop application built with Python, featuring secure transaction processing, user authentication, and inventory management.</p>
+                        <div class="project-tech">
+                            <span class="tech-tag">Python</span>
+                            <span class="tech-tag">Desktop App</span>
+                            <span class="tech-tag">Security</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Prodigy InfoTech project removed per user request -->
             </div>
             <div class="projects-cta">
                 <p>More projects coming soon as I continue my cyber security journey...</p>
                 <a href="https://github.com/bitcodeAShishcloud" target="_blank" class="btn btn-outline">
                     <i class="fab fa-github"></i> View All Projects
                 </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Gallery</h2>
+                <p class="section-subtitle">Moments captured through my journey</p>
+            </div>
+            <div class="gallery-grid" id="galleryGrid">
+                <div class="gallery-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading images...</p>
+                </div>
             </div>
         </div>
     </section>
@@ -436,7 +527,7 @@
                         </div>
                         <div class="contact-details">
                             <h4>LinkedIn</h4>
-                            <a href="https://linkedin.com/in/ashish-gupta-037973259/" target="_blank" rel="noopener noreferrer">Connect with me</a>
+                            <a href="https://www.linkedin.com/in/ashish-gupta-037973259/" target="_blank" rel="noopener noreferrer">Connect with me</a>
                         </div>
                     </div>
                     <div class="contact-item">
@@ -450,12 +541,18 @@
                     </div>
                 </div>
                 
-                <form action="https://formsubmit.co/agupta38160@gmail.com" method="POST" class="contact-form" id="contactForm">
+                <form action="https://api.staticforms.xyz/submit" method="POST" class="contact-form" id="contactForm">
                     <h3>Send me a message</h3>
                     
-                    <!-- FormSubmit Configuration -->
-                    <input type="hidden" name="_captcha" value="false">
-                    <input type="text" name="_honey" style="display: none;">
+                    <!-- StaticForms Configuration -->
+                    <input type="hidden" name="accessKey" value="sf_bfbfdcfe8c05d0e081af04a2">
+                    <input type="hidden" name="redirectTo" value="">
+                    
+                    <!-- Bot protection with $_gotcha (StaticForms standard) -->
+                    <input type="text" name="$_gotcha" style="display: none;" tabindex="-1" autocomplete="off" aria-hidden="true">
+                    
+                    <!-- Honeypot for spam protection (additional layer) -->
+                    <input type="text" name="honeypot" class="honeypot-field" tabindex="-1" autocomplete="off" aria-hidden="true">
                     
                     <div class="form-group">
                         <label for="name">Name *</label>
@@ -469,14 +566,7 @@
                     </div>
                     <div class="form-group">
                         <label for="subject">Subject *</label>
-                        <select id="subject" name="_subject" required aria-describedby="subjectError">
-                            <option value="">Select a subject</option>
-                            <option value="Collaboration Opportunity">Collaboration Opportunity</option>
-                            <option value="Internship Inquiry">Internship Inquiry</option>
-                            <option value="Project Discussion">Project Discussion</option>
-                            <option value="Professional Networking">Professional Networking</option>
-                            <option value="Other">Other</option>
-                        </select>
+                        <input type="text" id="subject" name="subject" placeholder="e.g., Collaboration Opportunity" required aria-describedby="subjectError">
                         <div class="error" id="subjectError"></div>
                     </div>
                     <div class="form-group">
@@ -488,11 +578,31 @@
                         <span class="submit-text">Send Message</span>
                         <span class="loading" style="display: none;"></span>
                     </button>
-                    <div class="success" id="successMessage" style="display: none;">Message sent successfully! I'll get back to you soon.</div>
+                    <div class="rate-limit-message" id="rateLimitMessage" style="display: none;">
+                        <i class="fas fa-clock"></i>
+                        <span>Please wait <strong id="rateLimitTimer">5:00</strong> before sending another message.</span>
+                    </div>
                 </form>
             </div>
         </div>
     </section>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+        <div class="modal-content">
+            <div class="modal-icon-wrapper">
+                <div class="modal-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+            </div>
+            <h2 class="modal-title">Message Sent Successfully!</h2>
+            <p class="modal-text">Thank you for reaching out! I've received your message and will get back to you as soon as possible.</p>
+            <p class="modal-subtext">Usually within 24-48 hours</p>
+            <button class="modal-btn" onclick="closeSuccessModal()">
+                <span>Close</span>
+            </button>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">
@@ -506,7 +616,7 @@
                     <a href="mailto:agupta38160@gmail.com" class="footer-link">
                         <i class="fas fa-envelope"></i>
                     </a>
-                    <a href="https://linkedin.com/in/ashish-gupta-037973259/" target="_blank" class="footer-link">
+                    <a href="https://www.linkedin.com/in/ashish-gupta-037973259/" target="_blank" class="footer-link">
                         <i class="fab fa-linkedin-in"></i>
                     </a>
                     <a href="https://github.com/bitcodeAShishcloud" target="_blank" class="footer-link">
