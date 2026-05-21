@@ -1468,64 +1468,73 @@ section {
 
 /* Footer */
 .footer {
-    background: #1d2536; /* Deep blue for a professional look */
-    color: #f9fafb;      /* White text for contrast */
-    padding: 3rem 0 1rem;
+    background: #070b13; /* Ultra dark cyber-gray background */
+    color: var(--text-primary);
+    padding: 4rem 0 2rem;
+    border-top: 1px solid rgba(0, 240, 255, 0.15); /* Neon top boundary */
+    box-shadow: 0 -10px 40px rgba(0, 240, 255, 0.04);
 }
 
 .footer-content {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    margin-bottom: 2rem;
+    gap: 2.5rem;
+    margin-bottom: 3rem;
 }
 
 .footer-info h3 {
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: 1.6rem;
+    font-weight: 700;
     margin-bottom: 1rem;
-    color: #fff;
+    color: var(--primary-color); /* Neon cyan */
+    font-family: var(--font-heading);
+    letter-spacing: 1px;
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.3);
 }
 
 .footer-info p {
-    color: #cbd5e1; /* Softer white for secondary text */
-    line-height: 1.6;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    font-size: 0.95rem;
 }
 
 .footer-links {
     display: flex;
-    gap: 1rem;
+    gap: 1.25rem;
+    align-items: center;
 }
 
 .footer-link {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: rgba(37, 99, 235, 0.12); /* Subtle blue background */
-    color: #f9fafb;
+    background: rgba(0, 240, 255, 0.05); /* Cyber translucent cyan */
+    border: 1px solid rgba(0, 240, 255, 0.25);
+    color: var(--primary-color);
     text-decoration: none;
-    transition: all 0.3s ease;
-    font-size: 1.2rem;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.25rem;
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.05);
 }
 
 .footer-link:hover {
-    background: var(--primary-color);
-    color: #fff;
-    transform: translateY(-2px) scale(1.08);
-    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.18);
+    background: var(--primary-color); /* Solid Neon Cyan */
+    color: #070b13; /* Contrast dark background */
+    border-color: var(--primary-color);
+    transform: translateY(-4px) scale(1.1);
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.4);
 }
 
 .footer-bottom {
     text-align: center;
     padding-top: 2rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    color: #cbd5e1;
-    font-size: 0.95rem;
-    letter-spacing: 0.02em;
+    border-top: 1px solid rgba(0, 240, 255, 0.1);
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-family: var(--font-body);
 }
 
 /* Scroll to Top Button */
