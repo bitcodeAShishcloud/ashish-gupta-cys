@@ -61,7 +61,7 @@ body {
 
 /* Navigation */
 .navbar {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(10, 10, 10, 0.95);
     backdrop-filter: blur(10px);
     position: fixed;
     top: 0;
@@ -71,12 +71,6 @@ body {
     box-shadow: var(--shadow-light);
     border-bottom: 1px solid var(--border-color);
     transition: all 0.3s ease;
-}
-
-@media (prefers-color-scheme: dark) {
-    .navbar {
-        background: rgba(31, 41, 55, 0.95);
-    }
 }
 
 .nav-container {
@@ -1709,7 +1703,7 @@ section {
         top: 0;
         flex-direction: column;
         justify-content: center;
-        background-color: rgba(255, 255, 255, 0.95);
+        background-color: rgba(10, 10, 10, 0.95);
         backdrop-filter: blur(15px);
         width: 100%;
         height: 100vh;
@@ -1718,12 +1712,6 @@ section {
         box-shadow: none;
         padding: 0;
         z-index: 1000;
-    }
-    
-    @media (prefers-color-scheme: dark) {
-        .nav-menu {
-            background-color: rgba(17, 24, 39, 0.95);
-        }
     }
 
     .nav-menu.active {
