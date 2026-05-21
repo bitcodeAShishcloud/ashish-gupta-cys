@@ -715,33 +715,6 @@ class AccessibilityEnhancer {
     }
 
     setupKeyboardNavigation() {
-        // Skip to main content link
-        const skipLink = document.createElement('a');
-        skipLink.href = '#main';
-        skipLink.textContent = 'Skip to main content';
-        skipLink.className = 'skip-link';
-        skipLink.style.cssText = `
-            position: absolute;
-            top: -40px;
-            left: 6px;
-            background: var(--primary-color);
-            color: white;
-            padding: 8px;
-            text-decoration: none;
-            border-radius: 4px;
-            z-index: 10000;
-        `;
-        
-        skipLink.addEventListener('focus', () => {
-            skipLink.style.top = '6px';
-        });
-        
-        skipLink.addEventListener('blur', () => {
-            skipLink.style.top = '-40px';
-        });
-        
-        document.body.insertBefore(skipLink, document.body.firstChild);
-
         // Add main landmark if not present
         const mainContent = document.querySelector('main') || document.querySelector('.hero');
         if (mainContent && !mainContent.id) {
@@ -1074,3 +1047,56 @@ function handleOverlayClick(e) {
         closeSuccessModal();
     }
 }
+
+// Projects Carousel Logic
+class ProjectsCarousel {
+    constructor() {
+        this.grid = document.querySelector('.projects-grid');
+        this.cards = document.querySelectorAll('.project-card');
+        if (!this.grid || this.cards.length === 0) return;
+        
+        this.init();
+    }
+    
+    init() {
+        this.updateCards();
+        this.grid.addEventListener('scroll', Utils.throttle(() => this.updateCards(), 50));
+        window.addEventListener('resize', Utils.debounce(() => this.updateCards(), 100));
+        
+        // Initial setup delay
+        setTimeout(() => {
+            // Scroll to the second item by default if possible
+            if (this.cards.length > 1) {
+                const scrollLeft = this.cards[1].offsetLeft - this.grid.clientWidth / 2 + this.cards[1].clientWidth / 2;
+                this.grid.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+            }
+            this.updateCards();
+        }, 100);
+    }
+    
+    updateCards() {
+        if (!this.grid) return;
+        const gridRect = this.grid.getBoundingClientRect();
+        const gridCenter = gridRect.left + gridRect.width / 2;
+        
+        this.cards.forEach(card => {
+            const cardRect = card.getBoundingClientRect();
+            const cardCenter = cardRect.left + cardRect.width / 2;
+            const distance = Math.abs(gridCenter - cardCenter);
+            
+            card.classList.remove('active', 'adjacent');
+            
+            const cardWidth = cardRect.width;
+            
+            if (distance < cardWidth * 0.6) {
+                card.classList.add('active');
+            } else if (distance < cardWidth * 1.6) {
+                card.classList.add('adjacent');
+            }
+        });
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    new ProjectsCarousel();
+});

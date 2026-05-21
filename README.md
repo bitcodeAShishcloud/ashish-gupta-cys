@@ -8,7 +8,7 @@
 
 **🎓 B.Tech CSE (Cyber Security) | NIET Greater Noida | 2nd Year**
 
-[🌐 Live Portfolio](https://bitcodeashishcloud.github.io/Ashish-Gupta-Cyber-Security-Portfolio/) • [📧 Contact](mailto:agupta38160@gmail.com) • [💼 LinkedIn](https://www.linkedin.com/in/ashish-gupta-037973259/) • [📄 Resume](https://drive.google.com/file/d/1rwPbTUc2Tie5C5xsDDjVMbdTAoc8LKtQ/view)
+[🌐 Live Portfolio](https://bitcodeashishcloud.github.io/Ashish-Gupta-Cyber-Security-Portfolio/) • [📧 Contact](mailto:agupta38160@gmail.com) • [💼 LinkedIn](https://www.linkedin.com/in/ashish-gupta-037973259/) • [📄 Resume](https://docs.google.com/document/d/1CyutTZwx5yiNymublFrvZl83Phl_J_4V5uztn3OJZJ0/edit?usp=sharing)
 
 </div>
 
@@ -271,6 +271,51 @@ npx http-server
 
 # Or using Live Server in VS Code
 ```
+
+## 🔐 Admin Server & Authentication (Cloudinary)
+
+This project includes a small Node/Express admin server for secure Cloudinary operations (server-side uploads, listing, delete, and signing). It uses a simple Bearer token for authentication — set a strong `ADMIN_TOKEN` in your environment.
+
+1. Copy `.env.example` to `.env` and fill in your Cloudinary credentials and `ADMIN_TOKEN`.
+
+2. Install and run the admin server:
+
+```bash
+npm install
+npm run dev   # or `npm start`
+```
+
+3. Example API usage (replace <TOKEN> with your `ADMIN_TOKEN`):
+
+- List images (by tag):
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" "http://localhost:3000/api/list?tag=gallery"
+```
+
+- Upload (server-side):
+
+```bash
+curl -X POST -H "Authorization: Bearer <TOKEN>" -F "file=@./myphoto.jpg" -F "folder=gallery" http://localhost:3000/api/upload
+```
+
+- Delete by `public_id`:
+
+```bash
+curl -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer <TOKEN>" -d '{"public_id":"myfolder/myimage"}' http://localhost:3000/api/delete
+```
+
+- Get signature for client-side signed uploads:
+
+```bash
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:3000/api/sign
+```
+
+Security notes:
+- Keep `CLOUDINARY_API_SECRET` and `ADMIN_TOKEN` private and never commit them.
+- For production, run the admin server behind HTTPS and restrict access (IP allowlist, VPN, or stronger auth like OAuth/JWT).
+- This server is a minimal example — consider adding rate limits, logging, and stricter input validation for production.
+
 
 ### Testing
 - Manual testing across devices
