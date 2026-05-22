@@ -713,17 +713,20 @@ section {
 .project-card {
     background: var(--bg-primary);
     border-radius: 20px;
-    padding: 1.4rem;
+    padding: 1.5rem;
     box-shadow: var(--shadow-light);
     border: 1px solid var(--border-color);
     transition: transform 0.4s ease, opacity 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
     overflow: hidden;
-    min-width: 320px;
+    width: 320px;
+    height: 380px;
     flex: 0 0 auto;
     scroll-snap-align: center;
     opacity: 0.5;
     transform: scale(0.85);
     cursor: pointer;
+    display: flex;
+    flex-direction: column;
 }
 
 .project-card.active {
@@ -764,7 +767,10 @@ section {
 }
 
 .project-content {
-    padding: 2rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .project-header {
@@ -809,10 +815,19 @@ section {
 
 /* Responsive: Keep horizontal scroll but adjust card width for mobile */
 @media (max-width: 768px) {
+    .projects-grid {
+        margin-left: -20px;
+        margin-right: -20px;
+        width: calc(100% + 40px);
+        padding: 3rem 15vw;
+        gap: 12px;
+    }
+
     .project-card {
-        min-width: 280px;
-        width: 85vw;
-        padding: 1.25rem;
+        min-width: 230px;
+        width: 70vw;
+        height: 380px;
+        padding: 1rem;
     }
 
     .project-quote {
@@ -884,6 +899,7 @@ section {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    margin-top: auto;
 }
 
 .tech-tag {
@@ -1786,8 +1802,7 @@ section {
         font-size: 2rem;
     }
     
-    .skills-grid,
-    .projects-grid {
+    .skills-grid {
         grid-template-columns: 1fr;
     }
     
@@ -1803,6 +1818,13 @@ section {
 @media (max-width: 480px) {
     .container {
         padding: 0 15px;
+    }
+    
+    .projects-grid {
+        margin-left: -15px;
+        margin-right: -15px;
+        width: calc(100% + 30px);
+        padding: 3rem 15vw;
     }
     
     .hero {
@@ -1828,9 +1850,12 @@ section {
     }
     
     .card,
-    .skill-item,
-    .project-card {
+    .skill-item {
         padding: 1.5rem;
+    }
+    
+    .project-card {
+        padding: 1rem;
     }
     
     .education-card {

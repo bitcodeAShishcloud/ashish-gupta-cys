@@ -1,5 +1,5 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'portfolio-v4';
+const CACHE_NAME = 'portfolio-v6';
 const urlsToCache = [
     '/',
     '/index.html',
