@@ -3,190 +3,6 @@
 
 const BLOG_POSTS = [
     {
-        id: "understanding-xss-prevention",
-        title: "Understanding and Preventing Cross-Site Scripting (XSS)",
-        excerpt: "A practical guide to identifying, exploiting, and defending against DOM-based XSS vulnerabilities in modern web applications.",
-        category: "Web Security",
-        tags: ["XSS", "Frontend Security", "JavaScript"],
-        date: "2026-05-20",
-        readTime: "6 min read",
-        author: "Ashish Gupta",
-        content: `
-            <p>Cross-Site Scripting (XSS) remains one of the most common web application vulnerabilities. It allows attackers to inject malicious scripts into web pages viewed by other users, potentially stealing cookies, session tokens, or other sensitive information.</p>
-
-            <h2>What is XSS?</h2>
-            <p>XSS occurs when an application includes untrusted data in a web page without proper validation or escaping. There are three main types:</p>
-            <ul>
-                <li><strong>Stored XSS</strong> — The malicious script is permanently stored on the target server (e.g., in a database).</li>
-                <li><strong>Reflected XSS</strong> — The script is reflected off a web server in error messages, search results, or any response that includes input from a user.</li>
-                <li><strong>DOM-based XSS</strong> — The vulnerability exists entirely in client-side code. The attack payload is executed by modifying the DOM in the victim's browser.</li>
-            </ul>
-
-            <h2>A Simple Example</h2>
-            <p>Consider a search page that displays the user's query:</p>
-            <pre><code>// Vulnerable code — DO NOT USE
-document.getElementById('results').innerHTML = 
-    'You searched for: ' + userInput;</code></pre>
-            <p>If <code>userInput</code> contains <code>&lt;img src=x onerror=alert('XSS')&gt;</code>, the browser will execute the attacker's script.</p>
-
-            <h2>Prevention Techniques</h2>
-            <h3>1. Escape Output</h3>
-            <p>Always escape user input before rendering it in HTML. Use <code>textContent</code> instead of <code>innerHTML</code> when inserting plain text:</p>
-            <pre><code>// Safe approach
-document.getElementById('results').textContent = 
-    'You searched for: ' + userInput;</code></pre>
-
-            <h3>2. Content Security Policy (CSP)</h3>
-            <p>A CSP header restricts the sources from which scripts can be loaded. This prevents inline scripts from executing even if an attacker injects them:</p>
-            <pre><code>Content-Security-Policy: default-src 'self'; script-src 'self'</code></pre>
-
-            <h3>3. Input Validation</h3>
-            <p>Validate and sanitize all user inputs on both client and server side. Use allowlists for expected formats (e.g., email, numbers) rather than blocklists.</p>
-
-            <h3>4. Use a Sanitization Library</h3>
-            <p>When you must render user-provided HTML, use libraries like <strong>DOMPurify</strong> to strip dangerous elements and attributes:</p>
-            <pre><code>import DOMPurify from 'dompurify';
-const clean = DOMPurify.sanitize(dirtyHTML);
-element.innerHTML = clean;</code></pre>
-
-            <h2>Key Takeaways</h2>
-            <ul>
-                <li>Never trust user input — always validate and sanitize.</li>
-                <li>Prefer <code>textContent</code> over <code>innerHTML</code>.</li>
-                <li>Implement Content Security Policy headers.</li>
-                <li>Use established sanitization libraries when rendering HTML.</li>
-                <li>Regularly test your application with tools like Burp Suite or OWASP ZAP.</li>
-            </ul>
-        `
-    },
-    {
-        id: "network-traffic-analysis-wireshark",
-        title: "A Student's Guide to Network Traffic Analysis with Wireshark",
-        excerpt: "Learn how to capture, filter, and analyze network packets using Wireshark — the essential skill for any aspiring cybersecurity professional.",
-        category: "Network Security",
-        tags: ["Wireshark", "Packet Analysis", "Networking"],
-        date: "2026-05-15",
-        readTime: "8 min read",
-        author: "Ashish Gupta",
-        content: `
-            <p>Wireshark is the world's most popular network protocol analyzer. Whether you're troubleshooting a network issue or investigating a security incident, understanding how to read packet captures is a fundamental skill in cybersecurity.</p>
-
-            <h2>Getting Started</h2>
-            <p>Download Wireshark from <strong>wireshark.org</strong> and install it on your machine. On Linux, you can install it with:</p>
-            <pre><code>sudo apt update
-sudo apt install wireshark</code></pre>
-            <p>When you launch Wireshark, you'll see a list of network interfaces. Select the one you want to monitor (e.g., <code>eth0</code> or <code>wlan0</code>) and click the shark fin icon to start capturing.</p>
-
-            <h2>Understanding the Interface</h2>
-            <p>Wireshark's main window is divided into three panes:</p>
-            <ul>
-                <li><strong>Packet List</strong> — A summary of each captured packet (time, source, destination, protocol, info).</li>
-                <li><strong>Packet Details</strong> — A tree-view breakdown of the selected packet's protocol layers.</li>
-                <li><strong>Packet Bytes</strong> — The raw hexadecimal and ASCII data of the selected packet.</li>
-            </ul>
-
-            <h2>Essential Display Filters</h2>
-            <p>Display filters let you narrow down the packets you see. Here are some commonly used ones:</p>
-            <pre><code># Show only HTTP traffic
-http
-
-# Filter by IP address
-ip.addr == 192.168.1.100
-
-# Show only DNS queries
-dns
-
-# Filter by TCP port
-tcp.port == 443
-
-# Show only packets with a specific flag
-tcp.flags.syn == 1 && tcp.flags.ack == 0</code></pre>
-
-            <h2>Practical Exercise: Analyzing an HTTP Session</h2>
-            <ol>
-                <li>Start a capture on your active interface.</li>
-                <li>Open a browser and visit an HTTP website (not HTTPS, so you can see the traffic in plain text).</li>
-                <li>Stop the capture.</li>
-                <li>Apply the filter <code>http</code>.</li>
-                <li>Right-click on a GET request and select <strong>Follow → TCP Stream</strong>.</li>
-                <li>You'll see the full HTTP request and response, including headers and body content.</li>
-            </ol>
-
-            <h2>Saving and Sharing Captures</h2>
-            <p>You can save your capture as a <code>.pcap</code> or <code>.pcapng</code> file for later analysis or to share with your team. Go to <strong>File → Save As</strong> and choose your format.</p>
-
-            <h2>Tips for Beginners</h2>
-            <ul>
-                <li>Always capture on your own network or with explicit permission.</li>
-                <li>Use capture filters to reduce file size when monitoring high-traffic networks.</li>
-                <li>Learn the OSI model — it makes understanding packet layers much easier.</li>
-                <li>Practice with sample captures from <strong>wiki.wireshark.org/SampleCaptures</strong>.</li>
-            </ul>
-        `
-    },
-    {
-        id: "building-cybersecurity-home-lab",
-        title: "Building a Virtual Cyber Range: Home Lab Guide",
-        excerpt: "Set up your own cybersecurity home lab with VirtualBox, Kali Linux, and vulnerable target machines for safe, legal hands-on practice.",
-        category: "Home Lab",
-        tags: ["VirtualBox", "Kali Linux", "Lab Setup", "Practice"],
-        date: "2026-05-10",
-        readTime: "7 min read",
-        author: "Ashish Gupta",
-        content: `
-            <p>One of the best ways to learn cybersecurity is by building your own home lab. A virtual cyber range gives you a safe, isolated environment to practice offensive and defensive techniques without risking real systems or breaking any laws.</p>
-
-            <h2>What You'll Need</h2>
-            <ul>
-                <li><strong>Hardware</strong> — A computer with at least 8 GB RAM and 100 GB free disk space. 16 GB RAM is recommended.</li>
-                <li><strong>Hypervisor</strong> — VirtualBox (free) or VMware Workstation Player (free for personal use).</li>
-                <li><strong>Attacker VM</strong> — Kali Linux or Parrot Security OS.</li>
-                <li><strong>Target VMs</strong> — Intentionally vulnerable machines like Metasploitable 2, DVWA, or OWASP WebGoat.</li>
-            </ul>
-
-            <h2>Step 1: Install VirtualBox</h2>
-            <p>Download VirtualBox from <strong>virtualbox.org</strong> and install it. Also install the Extension Pack for USB support and other features.</p>
-
-            <h2>Step 2: Set Up Kali Linux</h2>
-            <p>Download the pre-built Kali Linux VirtualBox image from <strong>kali.org</strong>. Import the <code>.ova</code> file into VirtualBox:</p>
-            <pre><code>File → Import Appliance → Select the .ova file → Import</code></pre>
-            <p>Default credentials are <code>kali / kali</code>. Change the password immediately after first login.</p>
-
-            <h2>Step 3: Set Up a Target Machine</h2>
-            <p>Download Metasploitable 2 — a deliberately vulnerable Linux VM. Extract the archive and create a new VM in VirtualBox pointing to the extracted <code>.vmdk</code> disk file.</p>
-
-            <h2>Step 4: Network Configuration</h2>
-            <p>This is the most important step. You want your VMs to communicate with each other but <strong>not</strong> with the outside world:</p>
-            <ol>
-                <li>In VirtualBox, go to <strong>File → Host Network Manager</strong> and create a new host-only network (e.g., <code>vboxnet0</code>).</li>
-                <li>Set both VMs' network adapters to <strong>Host-only Adapter</strong> using <code>vboxnet0</code>.</li>
-                <li>Boot both VMs and verify they can ping each other.</li>
-            </ol>
-            <pre><code># On Kali, find your IP
-ip addr show
-
-# Ping the target
-ping 192.168.56.101</code></pre>
-
-            <h2>Step 5: Start Practicing</h2>
-            <p>With your lab running, try these beginner exercises:</p>
-            <ul>
-                <li><strong>Nmap scanning</strong> — Discover open ports and services on the target.</li>
-                <li><strong>Metasploit</strong> — Use the framework to exploit known vulnerabilities on Metasploitable.</li>
-                <li><strong>Web app testing</strong> — Set up DVWA on the target and practice SQL injection, XSS, and file upload attacks.</li>
-                <li><strong>Wireshark</strong> — Capture and analyze the traffic between your attacker and target.</li>
-            </ul>
-
-            <h2>Safety Reminders</h2>
-            <ul>
-                <li>Never connect vulnerable VMs to your real network or the internet.</li>
-                <li>Always use host-only or internal networking for your lab.</li>
-                <li>Take VM snapshots before making changes so you can revert easily.</li>
-                <li>Only practice on systems you own or have explicit permission to test.</li>
-            </ul>
-        `
-    },
-    {
         id: "building-news-aggregator",
         title: "How I Built a Full-Stack News Aggregator with PHP and MySQL",
         excerpt: "A walkthrough of my News Aggregator project — pulling articles from NewsAPI, storing them in MySQL, and serving a clean feed with user accounts.",
@@ -480,6 +296,190 @@ def verify_password(input_pw, stored_hash):
             <p>This was my first significant Python project. It taught me about modular code design, secure data handling, and the importance of thinking about edge cases and error handling from the beginning — not as an afterthought.</p>
 
             <p>View the source on <a href="https://github.com/bitcodeAShishcloud/banking-shopping-system/" target="_blank" style="color: var(--accent);">GitHub</a>.</p>
+        `
+    },
+    {
+        id: "understanding-xss-prevention",
+        title: "Understanding and Preventing Cross-Site Scripting (XSS)",
+        excerpt: "A practical guide to identifying, exploiting, and defending against DOM-based XSS vulnerabilities in modern web applications.",
+        category: "Web Security",
+        tags: ["XSS", "Frontend Security", "JavaScript"],
+        date: "2026-05-20",
+        readTime: "6 min read",
+        author: "Ashish Gupta",
+        content: `
+            <p>Cross-Site Scripting (XSS) remains one of the most common web application vulnerabilities. It allows attackers to inject malicious scripts into web pages viewed by other users, potentially stealing cookies, session tokens, or other sensitive information.</p>
+
+            <h2>What is XSS?</h2>
+            <p>XSS occurs when an application includes untrusted data in a web page without proper validation or escaping. There are three main types:</p>
+            <ul>
+                <li><strong>Stored XSS</strong> — The malicious script is permanently stored on the target server (e.g., in a database).</li>
+                <li><strong>Reflected XSS</strong> — The script is reflected off a web server in error messages, search results, or any response that includes input from a user.</li>
+                <li><strong>DOM-based XSS</strong> — The vulnerability exists entirely in client-side code. The attack payload is executed by modifying the DOM in the victim's browser.</li>
+            </ul>
+
+            <h2>A Simple Example</h2>
+            <p>Consider a search page that displays the user's query:</p>
+            <pre><code>// Vulnerable code — DO NOT USE
+document.getElementById('results').innerHTML = 
+    'You searched for: ' + userInput;</code></pre>
+            <p>If <code>userInput</code> contains <code>&lt;img src=x onerror=alert('XSS')&gt;</code>, the browser will execute the attacker's script.</p>
+
+            <h2>Prevention Techniques</h2>
+            <h3>1. Escape Output</h3>
+            <p>Always escape user input before rendering it in HTML. Use <code>textContent</code> instead of <code>innerHTML</code> when inserting plain text:</p>
+            <pre><code>// Safe approach
+document.getElementById('results').textContent = 
+    'You searched for: ' + userInput;</code></pre>
+
+            <h3>2. Content Security Policy (CSP)</h3>
+            <p>A CSP header restricts the sources from which scripts can be loaded. This prevents inline scripts from executing even if an attacker injects them:</p>
+            <pre><code>Content-Security-Policy: default-src 'self'; script-src 'self'</code></pre>
+
+            <h3>3. Input Validation</h3>
+            <p>Validate and sanitize all user inputs on both client and server side. Use allowlists for expected formats (e.g., email, numbers) rather than blocklists.</p>
+
+            <h3>4. Use a Sanitization Library</h3>
+            <p>When you must render user-provided HTML, use libraries like <strong>DOMPurify</strong> to strip dangerous elements and attributes:</p>
+            <pre><code>import DOMPurify from 'dompurify';
+const clean = DOMPurify.sanitize(dirtyHTML);
+element.innerHTML = clean;</code></pre>
+
+            <h2>Key Takeaways</h2>
+            <ul>
+                <li>Never trust user input — always validate and sanitize.</li>
+                <li>Prefer <code>textContent</code> over <code>innerHTML</code>.</li>
+                <li>Implement Content Security Policy headers.</li>
+                <li>Use established sanitization libraries when rendering HTML.</li>
+                <li>Regularly test your application with tools like Burp Suite or OWASP ZAP.</li>
+            </ul>
+        `
+    },
+    {
+        id: "network-traffic-analysis-wireshark",
+        title: "A Student's Guide to Network Traffic Analysis with Wireshark",
+        excerpt: "Learn how to capture, filter, and analyze network packets using Wireshark — the essential skill for any aspiring cybersecurity professional.",
+        category: "Network Security",
+        tags: ["Wireshark", "Packet Analysis", "Networking"],
+        date: "2026-05-15",
+        readTime: "8 min read",
+        author: "Ashish Gupta",
+        content: `
+            <p>Wireshark is the world's most popular network protocol analyzer. Whether you're troubleshooting a network issue or investigating a security incident, understanding how to read packet captures is a fundamental skill in cybersecurity.</p>
+
+            <h2>Getting Started</h2>
+            <p>Download Wireshark from <strong>wireshark.org</strong> and install it on your machine. On Linux, you can install it with:</p>
+            <pre><code>sudo apt update
+sudo apt install wireshark</code></pre>
+            <p>When you launch Wireshark, you'll see a list of network interfaces. Select the one you want to monitor (e.g., <code>eth0</code> or <code>wlan0</code>) and click the shark fin icon to start capturing.</p>
+
+            <h2>Understanding the Interface</h2>
+            <p>Wireshark's main window is divided into three panes:</p>
+            <ul>
+                <li><strong>Packet List</strong> — A summary of each captured packet (time, source, destination, protocol, info).</li>
+                <li><strong>Packet Details</strong> — A tree-view breakdown of the selected packet's protocol layers.</li>
+                <li><strong>Packet Bytes</strong> — The raw hexadecimal and ASCII data of the selected packet.</li>
+            </ul>
+
+            <h2>Essential Display Filters</h2>
+            <p>Display filters let you narrow down the packets you see. Here are some commonly used ones:</p>
+            <pre><code># Show only HTTP traffic
+http
+
+# Filter by IP address
+ip.addr == 192.168.1.100
+
+# Show only DNS queries
+dns
+
+# Filter by TCP port
+tcp.port == 443
+
+# Show only packets with a specific flag
+tcp.flags.syn == 1 && tcp.flags.ack == 0</code></pre>
+
+            <h2>Practical Exercise: Analyzing an HTTP Session</h2>
+            <ol>
+                <li>Start a capture on your active interface.</li>
+                <li>Open a browser and visit an HTTP website (not HTTPS, so you can see the traffic in plain text).</li>
+                <li>Stop the capture.</li>
+                <li>Apply the filter <code>http</code>.</li>
+                <li>Right-click on a GET request and select <strong>Follow → TCP Stream</strong>.</li>
+                <li>You'll see the full HTTP request and response, including headers and body content.</li>
+            </ol>
+
+            <h2>Saving and Sharing Captures</h2>
+            <p>You can save your capture as a <code>.pcap</code> or <code>.pcapng</code> file for later analysis or to share with your team. Go to <strong>File → Save As</strong> and choose your format.</p>
+
+            <h2>Tips for Beginners</h2>
+            <ul>
+                <li>Always capture on your own network or with explicit permission.</li>
+                <li>Use capture filters to reduce file size when monitoring high-traffic networks.</li>
+                <li>Learn the OSI model — it makes understanding packet layers much easier.</li>
+                <li>Practice with sample captures from <strong>wiki.wireshark.org/SampleCaptures</strong>.</li>
+            </ul>
+        `
+    },
+    {
+        id: "building-cybersecurity-home-lab",
+        title: "Building a Virtual Cyber Range: Home Lab Guide",
+        excerpt: "Set up your own cybersecurity home lab with VirtualBox, Kali Linux, and vulnerable target machines for safe, legal hands-on practice.",
+        category: "Home Lab",
+        tags: ["VirtualBox", "Kali Linux", "Lab Setup", "Practice"],
+        date: "2026-05-10",
+        readTime: "7 min read",
+        author: "Ashish Gupta",
+        content: `
+            <p>One of the best ways to learn cybersecurity is by building your own home lab. A virtual cyber range gives you a safe, isolated environment to practice offensive and defensive techniques without risking real systems or breaking any laws.</p>
+
+            <h2>What You'll Need</h2>
+            <ul>
+                <li><strong>Hardware</strong> — A computer with at least 8 GB RAM and 100 GB free disk space. 16 GB RAM is recommended.</li>
+                <li><strong>Hypervisor</strong> — VirtualBox (free) or VMware Workstation Player (free for personal use).</li>
+                <li><strong>Attacker VM</strong> — Kali Linux or Parrot Security OS.</li>
+                <li><strong>Target VMs</strong> — Intentionally vulnerable machines like Metasploitable 2, DVWA, or OWASP WebGoat.</li>
+            </ul>
+
+            <h2>Step 1: Install VirtualBox</h2>
+            <p>Download VirtualBox from <strong>virtualbox.org</strong> and install it. Also install the Extension Pack for USB support and other features.</p>
+
+            <h2>Step 2: Set Up Kali Linux</h2>
+            <p>Download the pre-built Kali Linux VirtualBox image from <strong>kali.org</strong>. Import the <code>.ova</code> file into VirtualBox:</p>
+            <pre><code>File → Import Appliance → Select the .ova file → Import</code></pre>
+            <p>Default credentials are <code>kali / kali</code>. Change the password immediately after first login.</p>
+
+            <h2>Step 3: Set Up a Target Machine</h2>
+            <p>Download Metasploitable 2 — a deliberately vulnerable Linux VM. Extract the archive and create a new VM in VirtualBox pointing to the extracted <code>.vmdk</code> disk file.</p>
+
+            <h2>Step 4: Network Configuration</h2>
+            <p>This is the most important step. You want your VMs to communicate with each other but <strong>not</strong> with the outside world:</p>
+            <ol>
+                <li>In VirtualBox, go to <strong>File → Host Network Manager</strong> and create a new host-only network (e.g., <code>vboxnet0</code>).</li>
+                <li>Set both VMs' network adapters to <strong>Host-only Adapter</strong> using <code>vboxnet0</code>.</li>
+                <li>Boot both VMs and verify they can ping each other.</li>
+            </ol>
+            <pre><code># On Kali, find your IP
+ip addr show
+
+# Ping the target
+ping 192.168.56.101</code></pre>
+
+            <h2>Step 5: Start Practicing</h2>
+            <p>With your lab running, try these beginner exercises:</p>
+            <ul>
+                <li><strong>Nmap scanning</strong> — Discover open ports and services on the target.</li>
+                <li><strong>Metasploit</strong> — Use the framework to exploit known vulnerabilities on Metasploitable.</li>
+                <li><strong>Web app testing</strong> — Set up DVWA on the target and practice SQL injection, XSS, and file upload attacks.</li>
+                <li><strong>Wireshark</strong> — Capture and analyze the traffic between your attacker and target.</li>
+            </ul>
+
+            <h2>Safety Reminders</h2>
+            <ul>
+                <li>Never connect vulnerable VMs to your real network or the internet.</li>
+                <li>Always use host-only or internal networking for your lab.</li>
+                <li>Take VM snapshots before making changes so you can revert easily.</li>
+                <li>Only practice on systems you own or have explicit permission to test.</li>
+            </ul>
         `
     }
 ];
