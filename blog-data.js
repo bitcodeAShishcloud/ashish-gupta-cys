@@ -11,7 +11,7 @@ const BLOG_POSTS = [
         date: "2026-05-08",
         readTime: "6 min read",
         author: "Ashish Gupta",
-        image: "blog-images/news-aggregator.png",
+        image: "blog-images/news-aggregator.webp",
         content: `
             <p>One of the projects I'm most proud of is my <strong>News Aggregator</strong> — a full-stack web application that fetches the latest technology news from NewsAPI, stores articles in a MySQL database, and presents them in a clean, browsable feed with user authentication.</p>
 
@@ -67,7 +67,7 @@ foreach ($data['articles'] as $article) {
         date: "2026-05-05",
         readTime: "7 min read",
         author: "Ashish Gupta",
-        image: "blog-images/live-compiler-pro.png",
+        image: "blog-images/live-compiler-pro.webp",
         content: `
             <p><strong>Live Compiler Pro</strong> is a real-time collaborative code editor that lets multiple people write, edit, and run code together — perfect for pair programming sessions, live demos, and teaching.</p>
 
@@ -123,7 +123,7 @@ io.on('connection', (socket) => {
         date: "2026-05-01",
         readTime: "5 min read",
         author: "Ashish Gupta",
-        image: "blog-images/files-shorter.png",
+        image: "blog-images/files-shorter.webp",
         content: `
             <p><strong>Files Shorter</strong> is a lightweight, client-side web application that lets users upload files directly to Google Drive, automatically organizing them into folders by subject or category. No backend server required.</p>
 
@@ -184,7 +184,7 @@ io.on('connection', (socket) => {
         date: "2026-04-25",
         readTime: "6 min read",
         author: "Ashish Gupta",
-        image: "blog-images/security-showcase.png",
+        image: "blog-images/security-showcase.webp",
         content: `
             <p>My <strong>Security Showcase</strong> project is a frontend-only demonstration of common DOM-based Cross-Site Scripting (XSS) attacks and the layered defenses that prevent them. It's designed as an educational tool for students learning web security.</p>
 
