@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - Ashish Gupta</title>
+    <meta name="description" content="Cybersecurity insights, tutorials, and guides by Ashish Gupta.">
+    <meta name="author" content="Ashish Gupta">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* ─── Reset ─── */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+
+        /* ─── Variables ─── */
+        :root {
+            --bg: #0a0a0a;
+            --bg-card: rgba(17, 24, 39, 0.65);
+            --text: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --accent: #00f0ff;
+            --accent-glow: rgba(0, 240, 255, 0.15);
+            --border: rgba(255,255,255,0.08);
+            --radius: 16px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+
+        body {
+            font-family: var(--font);
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ─── Reading Progress Bar ─── */
+        .reading-progress {
+            position: fixed; top: 0; left: 0;
+            height: 3px; background: var(--accent);
+            z-index: 9999; transition: width 0.1s linear;
+            box-shadow: 0 0 8px var(--accent);
+            display: none; /* shown only in reader view */
+        }
+
+        /* ─── Navbar ─── */
+        .blog-nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(10,10,10,0.85);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+        }
+        .blog-nav-inner {
+            max-width: 1100px; margin: 0 auto;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .blog-nav-logo {
+            font-size: 1.25rem; font-weight: 700; color: var(--accent);
+            text-decoration: none;
+        }
+        .blog-nav-links { display: flex; gap: 1.5rem; align-items: center; }
+        .blog-nav-links a {
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 0.95rem; font-weight: 500;
+            transition: color 0.2s;
+        }
+        .blog-nav-links a:hover { color: var(--text); }
+
+        /* ─── Hero ─── */
+        .blog-hero {
+            max-width: 1100px; margin: 0 auto;
+            padding: 4rem 2rem 2rem;
+        }
+        .blog-hero h1 {
+            font-size: clamp(2rem, 4vw, 3rem);
+            font-weight: 700; letter-spacing: -0.5px;
+            margin-bottom: 0.75rem;
+        }
+        .blog-hero p {
+            color: var(--text-secondary); font-size: 1.1rem;
+            max-width: 600px;
+        }
+
+        /* ─── Search & Filters ─── */
+        .blog-controls {
+            max-width: 1100px; margin: 0 auto;
+            padding: 1.5rem 2rem 0;
+            display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;
+        }
+        .search-box {
+            flex: 1; min-width: 220px; position: relative;
+        }
+        .search-box input {
+            width: 100%; padding: 0.75rem 1rem 0.75rem 2.75rem;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 10px; color: var(--text); font-size: 0.95rem;
+            outline: none; transition: border-color 0.2s;
+        }
+        .search-box input::placeholder { color: var(--text-secondary); }
+        .search-box input:focus { border-color: var(--accent); }
+        .search-box i {
+            position: absolute; left: 1rem; top: 50%;
+            transform: translateY(-50%); color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .filter-tags { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .filter-tag {
+            padding: 0.5rem 1.1rem; border-radius: 20px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-secondary); font-size: 0.85rem;
+            cursor: pointer; transition: all 0.2s; font-weight: 500;
+        }
+        .filter-tag:hover, .filter-tag.active {
+            background: var(--accent-glow); color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        /* ─── Blog Cards Grid ─── */
+        .blog-grid {
+            max-width: 1100px; margin: 0 auto;
+            padding: 2rem; display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.75rem;
+        }
+
+        .blog-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+            cursor: pointer;
+        }
+        .blog-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0,240,255,0.25);
+            box-shadow: 0 8px 30px rgba(0,240,255,0.08);
+        }
+
+        .card-image {
+            width: 100%; aspect-ratio: 16 / 9;
+            object-fit: cover; display: block;
+            border-bottom: 1px solid var(--border);
+        }
+        .card-body { padding: 1.75rem; display: flex; flex-direction: column; flex: 1; }
+
+        .card-category {
+            display: inline-block; font-size: 0.75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--accent); margin-bottom: 0.75rem;
+        }
+        .card-title {
+            font-size: 1.25rem; font-weight: 600;
+            margin-bottom: 0.75rem; line-height: 1.4;
+        }
+        .card-excerpt {
+            color: var(--text-secondary); font-size: 0.92rem;
+            line-height: 1.65; flex: 1;
+            margin-bottom: 1.25rem;
+        }
+        .card-meta {
+            display: flex; align-items: center; gap: 1rem;
+            font-size: 0.8rem; color: var(--text-secondary);
+        }
+        .card-meta span { display: flex; align-items: center; gap: 0.35rem; }
+        .card-tags { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.75rem; }
+        .card-tag {
+            padding: 0.25rem 0.65rem; border-radius: 6px;
+            background: rgba(255,255,255,0.05); color: var(--text-secondary);
+            font-size: 0.72rem; font-weight: 500;
+        }
+
+        /* ─── Reader Hero Image ─── */
+        .reader-hero-img {
+            width: 100%; border-radius: 12px;
+            margin-bottom: 2rem; aspect-ratio: 16 / 9;
+            object-fit: cover; display: block;
+            border: 1px solid var(--border);
+        }
+
+        /* ─── Empty State ─── */
+        .empty-state {
+            grid-column: 1 / -1; text-align: center;
+            padding: 4rem 2rem; color: var(--text-secondary);
+        }
+        .empty-state i { font-size: 2.5rem; margin-bottom: 1rem; display: block; opacity: 0.4; }
+        .empty-state p { font-size: 1.05rem; }
+
+        /* ─── Reader View ─── */
+        .reader-view {
+            max-width: 760px; margin: 0 auto;
+            padding: 3rem 2rem 5rem;
+            display: none; /* toggled by JS */
+        }
+        .reader-back {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 0.9rem; font-weight: 500; margin-bottom: 2rem;
+            transition: color 0.2s;
+        }
+        .reader-back:hover { color: var(--text); }
+
+        .reader-category {
+            display: inline-block; font-size: 0.75rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--accent); margin-bottom: 1rem;
+        }
+        .reader-title {
+            font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+            font-weight: 700; line-height: 1.25;
+            margin-bottom: 1.25rem;
+        }
+        .reader-meta {
+            display: flex; flex-wrap: wrap; gap: 1.25rem;
+            color: var(--text-secondary); font-size: 0.85rem;
+            margin-bottom: 2.5rem; padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .reader-meta span { display: flex; align-items: center; gap: 0.4rem; }
+
+        /* ─── Article Body ─── */
+        .article-body { line-height: 1.8; font-size: 1.05rem; }
+        .article-body h2 {
+            font-size: 1.5rem; font-weight: 600;
+            margin: 2.5rem 0 1rem; color: var(--text);
+        }
+        .article-body h3 {
+            font-size: 1.2rem; font-weight: 600;
+            margin: 2rem 0 0.75rem; color: var(--text);
+        }
+        .article-body p { margin-bottom: 1.25rem; color: var(--text-secondary); }
+        .article-body ul, .article-body ol {
+            margin: 0 0 1.25rem 1.5rem; color: var(--text-secondary);
+        }
+        .article-body li { margin-bottom: 0.5rem; line-height: 1.7; }
+        .article-body strong { color: var(--text); }
+        .article-body code {
+            background: rgba(255,255,255,0.06); padding: 0.15rem 0.45rem;
+            border-radius: 4px; font-size: 0.88em; color: var(--accent);
+        }
+        .article-body pre {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--border);
+            border-radius: 10px; padding: 1.25rem 1.5rem;
+            overflow-x: auto; margin-bottom: 1.5rem;
+        }
+        .article-body pre code {
+            background: none; padding: 0; color: #c9d1d9;
+            font-size: 0.88rem; line-height: 1.6;
+        }
+
+        /* ─── Share Row ─── */
+        .share-row {
+            margin-top: 3rem; padding-top: 2rem;
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center; gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .share-row span { color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
+        .share-btn {
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 1rem; transition: all 0.2s; cursor: pointer;
+        }
+        .share-btn:hover {
+            color: var(--accent); border-color: var(--accent);
+            background: var(--accent-glow);
+        }
+
+        /* ─── Footer ─── */
+        .blog-footer {
+            text-align: center; padding: 3rem 2rem;
+            color: var(--text-secondary); font-size: 0.85rem;
+            border-top: 1px solid var(--border);
+            max-width: 1100px; margin: 0 auto;
+        }
+        .blog-footer a { color: var(--accent); text-decoration: none; }
+
+        /* ─── Responsive ─── */
+        @media (max-width: 600px) {
+            .blog-grid { grid-template-columns: 1fr; padding: 1.25rem; }
+            .blog-hero { padding: 2.5rem 1.25rem 1rem; }
+            .blog-controls { padding: 1rem 1.25rem 0; }
+            .blog-nav { padding: 0.85rem 1.25rem; }
+            .reader-view { padding: 2rem 1.25rem 4rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Reading Progress -->
+    <div class="reading-progress" id="readingProgress"></div>
+
+    <!-- Nav -->
+    <nav class="blog-nav">
+        <div class="blog-nav-inner">
+            <a href="index.html" class="blog-nav-logo">Ashish Gupta</a>
+            <div class="blog-nav-links">
+                <a href="index.html">Portfolio</a>
+                <a href="blog.html" style="color:var(--text);">Blog</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ════════════════════ LISTING VIEW ════════════════════ -->
+    <div id="listingView">
+        <header class="blog-hero">
+            <h1>Blog</h1>
+            <p>Thoughts, tutorials, and insights on cybersecurity, networking, and software development.</p>
+        </header>
+
+        <!-- Search & Filters -->
+        <div class="blog-controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="Search articles…">
+            </div>
+            <div class="filter-tags" id="filterTags">
+                <button class="filter-tag active" data-category="all">All</button>
+                <!-- JS will populate remaining categories -->
+            </div>
+        </div>
+
+        <!-- Cards -->
+        <div class="blog-grid" id="blogGrid"></div>
+    </div>
+
+    <!-- ════════════════════ READER VIEW ════════════════════ -->
+    <div class="reader-view" id="readerView">
+        <a href="#" class="reader-back" id="backToList">
+            <i class="fas fa-arrow-left"></i> Back to articles
+        </a>
+        <span class="reader-category" id="readerCategory"></span>
+        <h1 class="reader-title" id="readerTitle"></h1>
+        <div class="reader-meta" id="readerMeta"></div>
+        <img class="reader-hero-img" id="readerHeroImg" src="" alt="" style="display:none;">
+        <div class="article-body" id="readerBody"></div>
+
+        <div class="share-row">
+            <span>Share</span>
+            <a class="share-btn" id="shareTwitter" href="#" target="_blank" rel="noopener" title="Share on Twitter">
+                <i class="fab fa-twitter"></i>
+            </a>
+            <a class="share-btn" id="shareLinkedIn" href="#" target="_blank" rel="noopener" title="Share on LinkedIn">
+                <i class="fab fa-linkedin-in"></i>
+            </a>
+            <button class="share-btn" id="shareCopy" title="Copy link">
+                <i class="fas fa-link"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="blog-footer">
+        <p>&copy; 2025 <a href="index.html">Ashish Gupta</a>. All rights reserved.</p>
+    </footer>
+
+    <!-- Data -->
+    <script src="blog-data.js"></script>
+
+    <script>
+    (function () {
+        /* ─── DOM refs ─── */
+        const listingView   = document.getElementById('listingView');
+        const readerView    = document.getElementById('readerView');
+        const blogGrid      = document.getElementById('blogGrid');
+        const searchInput   = document.getElementById('searchInput');
+        const filterTags    = document.getElementById('filterTags');
+        const progressBar   = document.getElementById('readingProgress');
+
+        let activeCategory = 'all';
+
+        /* ─── Populate category filters ─── */
+        const categories = [...new Set(BLOG_POSTS.map(p => p.category))];
+        categories.forEach(cat => {
+            const btn = document.createElement('button');
+            btn.className = 'filter-tag';
+            btn.dataset.category = cat;
+            btn.textContent = cat;
+            filterTags.appendChild(btn);
+        });
+
+        /* ─── Filter tag clicks ─── */
+        filterTags.addEventListener('click', e => {
+            if (!e.target.classList.contains('filter-tag')) return;
+            filterTags.querySelectorAll('.filter-tag').forEach(b => b.classList.remove('active'));
+            e.target.classList.add('active');
+            activeCategory = e.target.dataset.category;
+            renderCards();
+        });
+
+        /* ─── Search ─── */
+        searchInput.addEventListener('input', () => renderCards());
+
+        /* ─── Render cards ─── */
+        function renderCards() {
+            const query = searchInput.value.toLowerCase().trim();
+
+            const filtered = BLOG_POSTS.filter(post => {
+                const matchesCat = activeCategory === 'all' || post.category === activeCategory;
+                const matchesQuery = !query ||
+                    post.title.toLowerCase().includes(query) ||
+                    post.excerpt.toLowerCase().includes(query) ||
+                    post.tags.some(t => t.toLowerCase().includes(query));
+                return matchesCat && matchesQuery;
+            });
+
+            if (filtered.length === 0) {
+                blogGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <p>No articles found. Try a different search or filter.</p>
+                    </div>`;
+                return;
+            }
+
+            blogGrid.innerHTML = filtered.map(post => `
+                <article class="blog-card" data-id="${post.id}">
+                    ${post.image ? `<img class="card-image" src="${post.image}" alt="${post.title}" loading="lazy">` : ''}
+                    <div class="card-body">
+                        <span class="card-category">${post.category}</span>
+                        <h2 class="card-title">${post.title}</h2>
+                        <p class="card-excerpt">${post.excerpt}</p>
+                        <div class="card-meta">
+                            <span><i class="fas fa-calendar-alt"></i> ${formatDate(post.date)}</span>
+                            <span><i class="fas fa-clock"></i> ${post.readTime}</span>
+                        </div>
+                        <div class="card-tags">
+                            ${post.tags.map(t => `<span class="card-tag">${t}</span>`).join('')}
+                        </div>
+                    </div>
+                </article>
+            `).join('');
+
+            /* attach click handlers */
+            blogGrid.querySelectorAll('.blog-card').forEach(card => {
+                card.addEventListener('click', () => openPost(card.dataset.id));
+            });
+        }
+
+        /* ─── Open post ─── */
+        function openPost(id) {
+            const post = BLOG_POSTS.find(p => p.id === id);
+            if (!post) return;
+
+            /* update URL */
+            history.pushState({ post: id }, '', `blog.html?post=${id}`);
+
+            showReaderView(post);
+        }
+
+        function showReaderView(post) {
+            /* populate */
+            document.getElementById('readerCategory').textContent = post.category;
+            document.getElementById('readerTitle').textContent = post.title;
+            document.getElementById('readerMeta').innerHTML = `
+                <span><i class="fas fa-user"></i> ${post.author}</span>
+                <span><i class="fas fa-calendar-alt"></i> ${formatDate(post.date)}</span>
+                <span><i class="fas fa-clock"></i> ${post.readTime}</span>
+            `;
+            document.getElementById('readerBody').innerHTML = post.content;
+            document.title = post.title + ' — Ashish Gupta';
+
+            /* hero image */
+            const heroImg = document.getElementById('readerHeroImg');
+            if (post.image) {
+                heroImg.src = post.image;
+                heroImg.alt = post.title;
+                heroImg.style.display = 'block';
+            } else {
+                heroImg.style.display = 'none';
+            }
+
+            /* share links */
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(post.title);
+            document.getElementById('shareTwitter').href = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+            document.getElementById('shareLinkedIn').href = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+            document.getElementById('shareCopy').onclick = () => {
+                navigator.clipboard.writeText(window.location.href);
+                const icon = document.querySelector('#shareCopy i');
+                icon.className = 'fas fa-check';
+                setTimeout(() => icon.className = 'fas fa-link', 1500);
+            };
+
+            /* toggle views */
+            listingView.style.display = 'none';
+            readerView.style.display = 'block';
+            progressBar.style.display = 'block';
+            window.scrollTo({ top: 0 });
+        }
+
+        /* ─── Back to list ─── */
+        document.getElementById('backToList').addEventListener('click', e => {
+            e.preventDefault();
+            history.pushState({}, '', 'blog.html');
+            showListingView();
+        });
+
+        function showListingView() {
+            readerView.style.display = 'none';
+            listingView.style.display = 'block';
+            progressBar.style.display = 'none';
+            document.title = 'Blog - Ashish Gupta';
+            window.scrollTo({ top: 0 });
+        }
+
+        /* ─── Handle browser back/forward ─── */
+        window.addEventListener('popstate', () => route());
+
+        /* ─── Reading progress ─── */
+        window.addEventListener('scroll', () => {
+            if (readerView.style.display !== 'block') return;
+            const scrolled = window.scrollY;
+            const height = document.documentElement.scrollHeight - window.innerHeight;
+            const pct = height > 0 ? (scrolled / height) * 100 : 0;
+            progressBar.style.width = pct + '%';
+        });
+
+        /* ─── Helpers ─── */
+        function formatDate(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        /* ─── Router ─── */
+        function route() {
+            const params = new URLSearchParams(window.location.search);
+            const postId = params.get('post');
+
+            if (postId) {
+                const post = BLOG_POSTS.find(p => p.id === postId);
+                if (post) { showReaderView(post); return; }
+            }
+            showListingView();
+            renderCards();
+        }
+
+        /* ─── Init ─── */
+        route();
+    })();
+    </script>
+</body>
+</html>
