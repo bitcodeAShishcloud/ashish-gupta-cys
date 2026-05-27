@@ -27,28 +27,48 @@
     <meta name="twitter:image:alt" content="Ashish Gupta Cyber Security Portfolio">
     
     <link rel="icon" type="image/webp" href="favicon.webp">
+    <link rel="preload" as="image" href="assets/profile-photo.webp">
+    <link rel="stylesheet" href="tokens.css">
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="components.css">
     <link rel="stylesheet" href="styles.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Cloudinary Core -->
     <script src="https://cdn.jsdelivr.net/npm/cloudinary-core@latest/cloudinary-core-shrinkwrap.min.js"></script>
 </head>
 <body>
+    <div class="page-bg-wrapper" aria-hidden="true">
+        <div class="page-bg-glow"></div>
+        <div class="page-bg-grid"></div>
+        <canvas id="bg-particles-canvas"></canvas>
+        <div class="page-bg-scanline"></div>
+    </div>
+
     <!-- Navigation -->
     <nav class="navbar" role="navigation" aria-label="Main navigation">
         <div class="nav-container">
             <div class="nav-logo">
-                <h2>Ashish Gupta</h2>
+                <a href="#home"><h2>Ashish Gupta</h2></a>
             </div>
             <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#about" class="nav-link" aria-label="Go to about section">About</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#skills" class="nav-link" aria-label="Go to skills section">Skills</a>
+                </li>
                 <li class="nav-item">
                     <a href="#projects" class="nav-link" aria-label="Go to projects section">Projects</a>
                 </li>
                 <li class="nav-item">
                     <a href="#gallery" class="nav-link" aria-label="Go to gallery section">Gallery</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#certifications" class="nav-link" aria-label="Go to certifications section">Certs</a>
                 </li>
                 <li class="nav-item">
                     <a href="blog.html" class="nav-link" aria-label="Go to blog page">Blog</a>
@@ -65,16 +85,22 @@
         </div>
     </nav>
 
+    <div class="site-shell">
+
     <!-- Hero Section -->
     <section id="home" class="hero">
         <div class="hero-container">
             <div class="hero-content">
                 <h1 class="hero-title">Hi, I'm <span class="highlight">Ashish Gupta</span></h1>
-                <h2 class="hero-subtitle">Cyber Security Student</h2>
+                <h2 class="hero-subtitle" id="heroTyping" aria-live="polite"></h2>
                 <p class="hero-description">
-                    A passionate 2nd-year Cyber Security student at NIET, focused on network defense, 
-                    ethical hacking, and digital forensics. Always learning and growing in the world of cyber security.
+                    Cyber Security student at NIET — building skills in network defense, ethical hacking, and digital forensics.
                 </p>
+                <div class="hero-stats">
+                    <span class="hero-stat"><strong>6+</strong> Projects</span>
+                    <span class="hero-stat"><strong>2</strong> Internships</span>
+                    <span class="hero-stat"><strong>2</strong> Certifications</span>
+                </div>
                 <div class="hero-buttons">
                     <a href="#contact" class="btn btn-primary">Get In Touch</a>
                     <a href="https://docs.google.com/document/d/1CyutTZwx5yiNymublFrvZl83Phl_J_4V5uztn3OJZJ0/edit?usp=sharing" 
@@ -97,7 +123,7 @@
             <div class="hero-image">
                 <div class="profile-card glass-panel">
                     <div class="profile-avatar">
-                        <i class="fas fa-user-shield"></i>
+                        <img src="assets/profile-photo.webp" alt="Ashish Gupta" width="120" height="120" loading="eager">
                     </div>
                     <div class="profile-info">
                         <h3>Ashish Gupta</h3>
@@ -116,6 +142,7 @@
     <section id="about" class="about">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// ABOUT</span>
                 <h2 class="section-title">About Me</h2>
                 <p class="section-subtitle">Get to know more about my journey and interests</p>
             </div>
@@ -163,6 +190,7 @@
     <section id="education" class="education">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// EDUCATION</span>
                 <h2 class="section-title">Education</h2>
                 <p class="section-subtitle">My academic journey and achievements</p>
             </div>
@@ -197,6 +225,7 @@
     <section id="experience" class="experience section-loading">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// EXPERIENCE</span>
                 <h2 class="section-title">Experience</h2>
                 <p class="section-subtitle">My professional journey and internships</p>
             </div>
@@ -236,6 +265,7 @@
     <section id="skills" class="skills">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// SKILLS</span>
                 <h2 class="section-title">Skills & Technologies</h2>
                 <p class="section-subtitle">My technical expertise and cyber security skills</p>
             </div>
@@ -247,16 +277,19 @@
                             <i class="fas fa-network-wired"></i>
                             <h4>Network Security</h4>
                             <p>Network monitoring, firewall configuration, and intrusion detection</p>
+                            <div class="skill-progress"><div class="skill-progress-bar" style="width: 85%"></div></div>
                         </div>
                         <div class="skill-item glass-panel">
                             <i class="fas fa-bug"></i>
                             <h4>Penetration Testing</h4>
                             <p>Vulnerability assessment and ethical hacking methodologies</p>
+                            <div class="skill-progress"><div class="skill-progress-bar" style="width: 75%"></div></div>
                         </div>
                         <div class="skill-item glass-panel">
                             <i class="fas fa-user-secret"></i>
                             <h4>Ethical Hacking</h4>
                             <p>Security testing and vulnerability identification</p>
+                            <div class="skill-progress"><div class="skill-progress-bar" style="width: 80%"></div></div>
                         </div>
                         <div class="skill-item glass-panel">
                             <i class="fas fa-search"></i>
@@ -278,6 +311,7 @@
                             <i class="fab fa-python"></i>
                             <h4>Python</h4>
                             <p>Security automation, scripting, and application development</p>
+                            <div class="skill-progress"><div class="skill-progress-bar" style="width: 90%"></div></div>
                         </div>
                         <div class="skill-item glass-panel">
                             <i class="fas fa-code"></i>
@@ -309,6 +343,7 @@
     <section id="projects" class="projects">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// PROJECTS</span>
                 <h2 class="section-title">Featured Projects</h2>
                 <p class="section-subtitle">Showcasing my development and security projects</p>
             </div>
@@ -317,7 +352,7 @@
 
                 <!-- CodSoft Repository Tasks removed per request -->
                 
-                <div class="project-card glass-panel">
+                <div class="project-card glass-panel" data-accent="cyan">
                     <div class="project-content">
                         <div class="project-header">
                             <div class="project-icon">
@@ -342,7 +377,7 @@
                     </div>
                 </div>
 
-                <div class="project-card glass-panel">
+                <div class="project-card glass-panel" data-accent="purple">
                     <div class="project-content">
                         <div class="project-header">
                             <div class="project-icon">
@@ -367,7 +402,7 @@
                     </div>
                 </div>
 
-                <div class="project-card glass-panel">
+                <div class="project-card glass-panel" data-accent="orange">
                     <div class="project-content">
                         <div class="project-header">
                             <div class="project-icon">
@@ -392,7 +427,7 @@
                     </div>
                 </div>
 
-                <div class="project-card glass-panel">
+                <div class="project-card glass-panel" data-accent="green">
                     <div class="project-content">
                         <div class="project-header">
                             <div class="project-icon">
@@ -418,7 +453,7 @@
                 </div>
                 
                 <!-- Re-insert Banking and Prodigy after the other projects -->
-                <div class="project-card glass-panel">
+                <div class="project-card glass-panel" data-accent="blue">
                     <div class="project-content">
                         <div class="project-header">
                             <div class="project-icon">
@@ -455,6 +490,7 @@
     <section id="gallery" class="gallery">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// GALLERY</span>
                 <h2 class="section-title">Gallery</h2>
                 <p class="section-subtitle">Moments captured through my journey</p>
             </div>
@@ -471,6 +507,7 @@
     <section id="certifications" class="certifications">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// CERTIFICATIONS</span>
                 <h2 class="section-title">Certifications & Workshops</h2>
                 <p class="section-subtitle">Continuous learning and professional development</p>
             </div>
@@ -479,7 +516,7 @@
                     <!-- Red Hat System Administration Training -->
                     <div class="certification-card glass-panel">
                         <div class="cert-img-container">
-                            <img src="assets/red_hat_training.webp" alt="Red Hat Training Certificate" class="cert-img">
+                            <img src="assets/red_hat_training.webp" alt="Red Hat Training Certificate" class="cert-img" loading="lazy">
                         </div>
                         <div class="cert-info">
                             <span class="cert-issuer">Red Hat</span>
@@ -497,7 +534,7 @@
                     <!-- TryHackMe Advent of Cyber 2025 -->
                     <div class="certification-card glass-panel">
                         <div class="cert-img-container">
-                            <img src="assets/advent_of_cyber_2025.webp" alt="Advent of Cyber 2025 Certificate" class="cert-img">
+                            <img src="assets/advent_of_cyber_2025.webp" alt="Advent of Cyber 2025 Certificate" class="cert-img" loading="lazy">
                         </div>
                         <div class="cert-info">
                             <span class="cert-issuer">TryHackMe</span>
@@ -520,6 +557,7 @@
     <section id="contact" class="contact">
         <div class="container">
             <div class="section-header">
+                <span class="section-label">// CONTACT</span>
                 <h2 class="section-title">Get In Touch</h2>
                 <p class="section-subtitle">Let's connect and discuss opportunities</p>
             </div>
@@ -654,6 +692,7 @@
             </div>
         </div>
     </footer>
+    </div><!-- /.site-shell -->
 
     <script src="script.js"></script>
 </body>

@@ -47,6 +47,119 @@ const Utils = {
     }
 };
 
+// Subtle particle background (respects reduced motion)
+class BackgroundEffect {
+    constructor() {
+        this.canvas = document.getElementById('bg-particles-canvas');
+        if (!this.canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        this.ctx = this.canvas.getContext('2d');
+        this.particles = [];
+        this.animationId = null;
+        this.init();
+    }
+
+    init() {
+        this.resize();
+        window.addEventListener('resize', Utils.debounce(() => this.resize(), 200));
+
+        for (let i = 0; i < 45; i++) {
+            this.particles.push({
+                x: Math.random() * this.canvas.width,
+                y: Math.random() * this.canvas.height,
+                vx: (Math.random() - 0.5) * 0.25,
+                vy: (Math.random() - 0.5) * 0.25,
+                size: Math.random() * 1.5 + 0.5
+            });
+        }
+
+        this.animate();
+    }
+
+    resize() {
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    animate() {
+        if (!this.ctx) return;
+
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+        this.particles.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+
+            if (p.x < 0 || p.x > this.canvas.width) p.vx *= -1;
+            if (p.y < 0 || p.y > this.canvas.height) p.vy *= -1;
+
+            this.ctx.beginPath();
+            this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            this.ctx.fillStyle = 'rgba(0, 240, 255, 0.35)';
+            this.ctx.fill();
+        });
+
+        this.animationId = requestAnimationFrame(() => this.animate());
+    }
+}
+
+// Hero typing subtitle
+class HeroTyping {
+    constructor() {
+        this.el = document.getElementById('heroTyping');
+        if (!this.el || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            if (this.el) {
+                this.el.textContent = 'Cyber Security Student';
+            }
+            return;
+        }
+
+        this.phrases = [
+            'Network Security',
+            'Ethical Hacking',
+            'Digital Forensics',
+            'Python Developer'
+        ];
+        this.phraseIndex = 0;
+        this.charIndex = 0;
+        this.deleting = false;
+        this.type();
+    }
+
+    type() {
+        const current = this.phrases[this.phraseIndex];
+        const displayed = this.deleting
+            ? current.substring(0, this.charIndex - 1)
+            : current.substring(0, this.charIndex + 1);
+
+        this.el.innerHTML = `${displayed}<span class="typing-cursor">|</span>`;
+
+        if (!this.deleting && this.charIndex < current.length) {
+            this.charIndex++;
+            setTimeout(() => this.type(), 80);
+            return;
+        }
+
+        if (this.deleting && this.charIndex > 0) {
+            this.charIndex--;
+            setTimeout(() => this.type(), 40);
+            return;
+        }
+
+        if (!this.deleting && this.charIndex === current.length) {
+            this.deleting = true;
+            setTimeout(() => this.type(), 1800);
+            return;
+        }
+
+        this.deleting = false;
+        this.phraseIndex = (this.phraseIndex + 1) % this.phrases.length;
+        setTimeout(() => this.type(), 400);
+    }
+}
+
 // Navigation functionality
 class Navigation {
     constructor() {
@@ -989,6 +1102,8 @@ class PortfolioApp {
         try {
             // Initialize all components
             new Navigation();
+            new BackgroundEffect();
+            new HeroTyping();
             new LazyLoader();
             new ContactForm();
             new ScrollToTop();
@@ -996,6 +1111,7 @@ class PortfolioApp {
             new PerformanceMonitor();
             new ServiceWorkerManager();
             new Gallery();
+            new ProjectsCarousel();
 
             console.log('✅ Portfolio website initialized successfully!');
             console.log('🚀 Optimized for performance and accessibility');
@@ -1096,7 +1212,3 @@ class ProjectsCarousel {
         });
     }
 }
-
-document.addEventListener('DOMContentLoaded', () => {
-    new ProjectsCarousel();
-});
