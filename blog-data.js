@@ -61,26 +61,89 @@ foreach ($data['articles'] as $article) {
     {
         id: "live-compiler-pro-real-time-collaboration",
         title: "Live Compiler Pro: Building a Real-Time Code Editor with WebRTC",
-        excerpt: "Behind the scenes of Live Compiler Pro — a collaborative code editor featuring real-time sync, built-in chat, and WebRTC-based code sharing.",
+        excerpt: "Behind the scenes of Live Compiler Pro — real-time collab rooms, live chat with photo sharing, and WebRTC-based code editing in the browser.",
         category: "Projects",
         tags: ["JavaScript", "Node.js", "Socket.io", "WebRTC"],
         date: "2026-05-05",
-        readTime: "7 min read",
+        readTime: "10 min read",
         author: "Ashish Gupta",
         image: "blog-images/live-compiler-pro.webp",
         content: `
-            <p><strong>Live Compiler Pro</strong> is a real-time collaborative code editor that lets multiple people write, edit, and run code together — perfect for pair programming sessions, live demos, and teaching.</p>
+            <p><strong>Live Compiler Pro</strong> is a browser-based IDE at <a href="https://live-code-hxft.onrender.com/" target="_blank" style="color: var(--accent);">live-code-hxft.onrender.com</a> that supports multi-language editing, live preview, a built-in console, and real-time collaboration — ideal for pair programming, demos, and teaching.</p>
 
             <h2>The Idea</h2>
-            <p>During college, I often wanted to code with friends remotely. Existing tools were either too heavy or required installations. I wanted something lightweight that works right in the browser — just share a link and start coding together.</p>
+            <p>During college, I often wanted to code with friends remotely. Existing tools were either too heavy or required installations. I wanted something lightweight that works right in the browser — open the app, share a room code, and start coding together.</p>
 
             <h2>Core Features</h2>
             <ul>
-                <li><strong>Real-time code sync</strong> — Every keystroke is broadcast to all connected users instantly.</li>
-                <li><strong>Built-in chat</strong> — A sidebar chat so you can discuss code without switching apps.</li>
-                <li><strong>WebRTC sharing</strong> — Peer-to-peer connections for lower latency and better performance.</li>
-                <li><strong>Live preview</strong> — See HTML/CSS/JS output update as you type.</li>
+                <li><strong>Multi-language editor</strong> — HTML, CSS, JavaScript, Python, JSON, and Markdown with syntax highlighting.</li>
+                <li><strong>Live preview</strong> — Run code manually or switch to Auto Run for instant HTML/CSS/JS updates.</li>
+                <li><strong>Built-in console</strong> — View logs, warnings, and errors; run JavaScript from the console input.</li>
+                <li><strong>Files &amp; export</strong> — Create files, import from disk, rename tabs, and export as ZIP or individual files.</li>
+                <li><strong>Theme toggle</strong> — Dark and light modes for comfortable long sessions.</li>
+                <li><strong>Code snippets</strong> — Quick templates to bootstrap common patterns.</li>
             </ul>
+
+            <h2>Live Collaboration (Collab)</h2>
+            <p>The <strong>Collab</strong> button in the header opens the <strong>Live Collaboration</strong> panel — the heart of real-time pair programming in Live Compiler Pro. You can code together with classmates or teammates without installing anything extra.</p>
+
+            <figure style="margin: 2rem 0; text-align: center;">
+                <img src="blog-images/live-compiler-collab.png" alt="Live Collaboration modal showing room code, P2P mode, and host controls" class="reader-hero-img" style="display: block; margin: 0 auto;">
+                <figcaption style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.75rem;">Live Collaboration room — create a session, get a 12-character code, and invite others to join.</figcaption>
+            </figure>
+
+            <h3>Two ways to collaborate</h3>
+            <ul>
+                <li><strong>Anywhere (P2P)</strong> — Connect with others over the internet using peer-to-peer networking. Best when you and your partner are on different networks or cities. The host sees a status badge (<em>Connected</em> / <em>Host</em>) and a shareable room code.</li>
+                <li><strong>Same Browser</strong> — Mirror code across tabs in the same browser with <strong>Tab Sync</strong>. Handy for testing responsive layouts or comparing two versions side by side without a network room.</li>
+            </ul>
+
+            <h3>How a live room works</h3>
+            <ol>
+                <li>Click <strong>Collab</strong> in the toolbar, then choose a username (shown to others in the room).</li>
+                <li><strong>Create &amp; Join Room</strong> — you become the host and receive a <strong>12-character room code</strong> (for example <code>HGAH1QTS29ST</code>).</li>
+                <li>Share the code via <strong>Copy invite &amp; share</strong> — teammates paste it under <strong>Join a room</strong> and click <strong>Join</strong>.</li>
+                <li>Everyone edits the same workspace in real time while the <strong>Chat</strong> sidebar stays open for live discussion.</li>
+                <li>Hosts can <strong>Reconnect</strong> if the session drops or <strong>Leave Room</strong> to end their participation.</li>
+            </ol>
+
+            <h3>Live Chat inside Collab rooms</h3>
+            <p>Collaboration is not just shared code — you also get a built-in <strong>Chat</strong> panel on the left so you never have to switch to WhatsApp or Discord mid-debug. On <a href="https://live-code-hxft.onrender.com/" target="_blank" style="color: var(--accent);">Live Compiler Pro</a>, chat is tied directly to the active room: text and images stay in the same thread as your live coding session.</p>
+
+            <figure style="margin: 2rem 0; text-align: center;">
+                <img src="blog-images/live-compiler-chat.png" alt="Live Compiler Pro chat sidebar with room code, online users, and message input with image attach button" class="reader-hero-img" style="display: block; margin: 0 auto;">
+                <figcaption style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 0.75rem;">In-room chat — send messages and share photos without leaving the editor.</figcaption>
+            </figure>
+
+            <p>Once you connect, the chat header shows your status (for example <em>“Connected. Enter a name and room to start.”</em> until you join). After entering a room:</p>
+            <ul>
+                <li><strong>Room bar</strong> — The active code (e.g. <code>HGAH1QTS29ST</code>) appears at the top with a one-click copy button and a live participant count.</li>
+                <li><strong>Online Users</strong> — See who is in the session (e.g. <em>Ashish (you)</em>) with a green online indicator so you know when teammates are present.</li>
+                <li><strong>System messages</strong> — Join events like <em>“You joined room HGAH1QTS29ST”</em> appear in the thread so everyone knows when someone enters.</li>
+                <li><strong>Live messaging</strong> — Type in <em>“Type a message…”</em> at the bottom and hit send — messages sync instantly to everyone in that room.</li>
+                <li><strong>Leave Room</strong> — A dedicated button exits the session cleanly without closing the whole editor.</li>
+            </ul>
+
+            <h3>Share photos right in the chat</h3>
+            <p>Text alone is not always enough when you are debugging or reviewing UI. Next to the message box you will see an <strong>image attach</strong> button (picture icon) — tap it, pick a photo from your device, and it is sent into the room chat for everyone to see. No need to upload to Google Drive, paste Imgur links, or open another app.</p>
+
+            <p>That makes the chat feel closer to a modern messaging app, but it stays inside your coding workspace. Useful scenarios include:</p>
+            <ul>
+                <li><strong>Bug screenshots</strong> — Capture a broken layout or console error and drop it in chat so your partner sees exactly what you mean.</li>
+                <li><strong>Design references</strong> — Share a mockup or Figma export while you implement HTML/CSS together in the editor.</li>
+                <li><strong>Assignment clarifications</strong> — During college labs, paste a photo of the question sheet or rubric so the whole group stays aligned.</li>
+                <li><strong>Quick visual feedback</strong> — After a code change, screenshot the live preview and ask <em>“Does this spacing look right?”</em> without screen-sharing software.</li>
+                <li><strong>Security demos</strong> — In cyber workshops, share evidence images (logs, Wireshark captures, alert screens) while discussing fixes in real time.</li>
+            </ul>
+
+            <p>Photos appear inline in the chat thread alongside text messages, so the conversation reads naturally — explain the issue in words, attach the proof in one click, and keep coding in the center panel. For remote pair programming, this removes the awkward loop of <em>“wait, let me send this on WhatsApp”</em> and keeps code, preview, console, and communication in a single browser tab.</p>
+
+            <p>This matters during pair programming: one person can explain a fix in chat (or share a screenshot of the problem) while the other applies it in the editor, preview updates on the right, and console output confirms the result — all without context switching.</p>
+
+            <p>When a room is created successfully, the app confirms with a message like <em>“Room created — you're in! Share the code to invite others.”</em> That flow keeps onboarding simple for non-technical users during lab sessions or hackathons.</p>
+
+            <h3>Why Collab matters for learning</h3>
+            <p>Remote cyber labs and project reviews often need a shared screen. With Live Compiler Pro, an instructor can host a room, students join with one code, and everyone sees the same files, preview, and console output. Combined with Manual/Auto run modes and keyboard shortcuts (Ctrl/Cmd+S to run, Ctrl/Cmd+B for the sidebar), it feels close to a desktop IDE while staying 100% in the browser.</p>
 
             <h2>Architecture</h2>
             <h3>Backend</h3>
