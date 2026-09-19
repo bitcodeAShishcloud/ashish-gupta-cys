@@ -47,7 +47,7 @@ export default function HomePage() {
           </div>
           <SectionLabel>{"who am i"}</SectionLabel>
           <h1 className="mt-2 text-4xl font-bold leading-tight sm:text-5xl">
-            Hi, I&apos;m <span className="text-primary">{p.name}</span>
+            Hi, I&apos;m <span className="grad-text">{p.name}</span>
           </h1>
           <p className="mt-3 flex items-center gap-2 font-mono text-lg text-foreground sm:text-2xl">
             <Terminal className="h-5 w-5 text-secondary" />
@@ -75,7 +75,7 @@ export default function HomePage() {
           </div>
           <div className="mt-12 grid max-w-md grid-cols-3 gap-3">
             {p.stats.map((s) => (
-              <div key={s.label} className="glass rounded-lg p-4 text-center">
+              <div key={s.label} className="grad-card rounded-lg p-4 text-center">
                 <div className="font-mono text-2xl font-bold text-primary">{s.value}</div>
                 <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
               </div>
@@ -330,7 +330,7 @@ export default function HomePage() {
       {/* ── Contact CTA ── */}
       <section className="py-20">
         <Separator />
-        <div className="glass mt-8 rounded-xl p-8 text-center">
+        <div className="grad-card mt-8 rounded-xl p-8 text-center">
           <SectionLabel>{"get in touch"}</SectionLabel>
           <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
             Want to collaborate or have a question?

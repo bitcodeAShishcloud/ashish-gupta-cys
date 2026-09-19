@@ -13,9 +13,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className="cyber-bg min-h-screen bg-background font-sans text-foreground antialiased">
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+        <div className="cyber-bg" aria-hidden />
+        <div className="cyber-grid" aria-hidden />
         <Navbar />
-        <main className="min-h-[calc(100vh-72px)] pt-[72px]">{children}</main>
+        <main className="relative z-0 min-h-[calc(100vh-72px)] pt-[72px]">{children}</main>
         <Footer />
       </body>
     </html>

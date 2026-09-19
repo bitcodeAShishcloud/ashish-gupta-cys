@@ -139,7 +139,8 @@ export function ChatPanel() {
         );
       }
       const reply: string = String(data.reply || "").trim() || "…";
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
+      const finalHistory = [...history, { role: "assistant" as const, content: reply }];
+      setMessages(finalHistory);
       if (data.model || data.provider) {
         setModelInfo(`${data.model || ""}${data.provider ? ` @ ${data.provider}` : ""}`.trim());
       }
@@ -149,7 +150,7 @@ export function ChatPanel() {
           USAGE_KEY,
           JSON.stringify({ date: todayKey(), count: next }),
         );
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(-50)));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(finalHistory.slice(-50)));
         if (next >= DAILY_LIMIT) setLimited(true);
       } catch {
         /* ignore */
@@ -187,10 +188,10 @@ export function ChatPanel() {
   if (!name) {
     return (
       <div className="flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-16">
-        <div className="glass w-full max-w-md rounded-xl p-8 text-center animate-fade-in-up">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full border border-primary/40 bg-primary/10">
-            <ShieldCheck className="h-7 w-7 text-primary" />
-          </div>
+      <div className="grad-card w-full max-w-md rounded-xl p-8 text-center animate-fade-in-up">
+        <div className="grad-btn mx-auto flex h-14 w-14 items-center justify-center rounded-full shadow-[0_0_24px_hsl(var(--primary)/0.4)]">
+          <ShieldCheck className="h-7 w-7 text-black" />
+        </div>
           <p className="section-label mt-5 font-mono text-xs uppercase tracking-widest text-primary">
             {"identity check"}
           </p>
@@ -248,7 +249,7 @@ export function ChatPanel() {
             <div>
               <div className="glass rounded-xl p-5">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/15 font-mono text-sm font-bold text-primary">
+                  <div className="grad-btn flex h-9 w-9 items-center justify-center rounded-lg font-mono text-sm font-bold text-black shadow-[0_0_14px_hsl(var(--primary)/0.4)]">
                     &gt;_
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -275,13 +276,13 @@ export function ChatPanel() {
             messages.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-primary/30 bg-primary/15 px-4 py-3 text-sm text-foreground">
+                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-[hsl(215_100%_55%/0.3)] px-4 py-3 text-sm text-foreground shadow-[0_0_16px_hsl(var(--primary)/0.15)]">
                     {m.content}
                   </div>
                 </div>
               ) : (
                 <div key={i} className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/15 font-mono text-xs font-bold text-primary">
+                  <div className="grad-btn mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold text-black shadow-[0_0_12px_hsl(var(--primary)/0.35)]">
                     &gt;_
                   </div>
                   <div className="markdown-body glass w-fit max-w-[85%] rounded-2xl rounded-tl-sm border border-border/60 px-4 py-3 text-sm">
@@ -294,7 +295,7 @@ export function ChatPanel() {
 
           {sending ? (
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/15 font-mono text-xs font-bold text-primary">
+              <div className="grad-btn flex h-8 w-8 items-center justify-center rounded-lg font-mono text-xs font-bold text-black shadow-[0_0_12px_hsl(var(--primary)/0.35)]">
                 &gt;_
               </div>
               <div className="glass flex items-center gap-1 rounded-2xl rounded-tl-sm px-4 py-3.5">

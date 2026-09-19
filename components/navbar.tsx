@@ -20,15 +20,18 @@ export function Navbar() {
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-border/60 bg-background/80 backdrop-blur-xl">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-5">
         <Link
           href="/"
           className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight"
         >
-          <Terminal className="h-5 w-5 text-primary" />
+          <span className="grad-btn inline-flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_14px_hsl(var(--primary)/0.35)]">
+            <Terminal className="h-5 w-5 text-black" />
+          </span>
           <span>
-            Ashish<span className="text-primary">_</span>Gupta
+            Ashish<span className="text-primary">_</span>
+            <span className="grad-text">Gupta</span>
           </span>
         </Link>
 
@@ -41,7 +44,7 @@ export function Navbar() {
               className={cn(
                 "rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 isActive(l.href)
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-primary/10 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.15)]"
                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               )}
             >
@@ -50,7 +53,7 @@ export function Navbar() {
           ))}
           <Link
             href="/admin/login"
-            className="ml-3 rounded-md border border-primary/40 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/10"
+            className="ml-3 rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/15 hover:shadow-[0_0_14px_hsl(var(--primary)/0.25)]"
           >
             Admin
           </Link>
@@ -65,6 +68,8 @@ export function Navbar() {
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
+      {/* gradient hairline */}
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
 
       {/* Mobile menu */}
       {open && (
