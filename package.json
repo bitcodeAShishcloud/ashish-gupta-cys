@@ -1,0 +1,7 @@
+{
+  "name": "ashish-gupta-portfolio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Ashish Gupta - Cyber Security Portfolio (static site + Vercel serverless API)"
+}

@@ -148,6 +148,79 @@
                 <div class="preview-grid" id="uploadedGrid"></div>
             </div>
 
+            <!-- AI Chat Providers Section -->
+            <div class="security-section" style="margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(0, 240, 255, 0.2);">
+                <h3 class="section-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+                    <span style="display: flex; align-items: center; gap: 0.625rem;">
+                        <i class="fas fa-robot" style="background: rgba(0, 240, 255, 0.1); color: var(--primary-color); border: 1px solid var(--primary-color);"></i>
+                        AI Chat Providers
+                    </span>
+                </h3>
+
+                <div class="info-box" style="margin-bottom: 1.5rem;">
+                    <h4><i class="fas fa-info-circle"></i> How it works (zero-database setup)</h4>
+                    <ul>
+                        <li>Chat history of visitors is <strong>never stored on the server</strong> — it stays in each visitor's browser.</li>
+                        <li>The AI provider(s) are configured via a single Vercel environment variable: <code>AI_PROVIDERS_JSON</code></li>
+                        <li>Any OpenAI-compatible provider works (OpenRouter, Groq, Gemini, xAI, custom…)</li>
+                        <li>Workflow: build the JSON below → Test the connection → copy it → paste into <strong>Vercel → Settings → Environment Variables</strong> → redeploy.</li>
+                    </ul>
+                </div>
+
+                <h4 style="margin: 0 0 0.75rem; color: var(--primary-color); font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: 0.1em;">&gt; Active on server</h4>
+                <div id="providerList" class="provider-list">
+                    <p style="color: #64748b; font-style: italic; text-align: center; padding: 1rem;">Loading…</p>
+                </div>
+
+                <div style="margin-top: 1.75rem; background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(0, 240, 255, 0.2); border-radius: 8px; padding: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem; color: var(--primary-color); font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: 0.1em;">&gt; Configure / Test a provider</h4>
+                    <form id="providerForm">
+                        <div class="provider-form-grid">
+                            <div class="provider-field">
+                                <label for="pfName">Provider Name *</label>
+                                <input type="text" id="pfName" class="input-field" placeholder="OpenRouter" maxlength="40" required>
+                            </div>
+                            <div class="provider-field">
+                                <label for="pfModel">Model ID *</label>
+                                <input type="text" id="pfModel" class="input-field" placeholder="qwen/qwen3-max:free" maxlength="120" required>
+                            </div>
+                            <div class="provider-field provider-field--wide">
+                                <label for="pfBaseUrl">Base URL (OpenAI-compatible) *</label>
+                                <input type="url" id="pfBaseUrl" class="input-field" placeholder="https://openrouter.ai/api/v1" required>
+                            </div>
+                            <div class="provider-field provider-field--wide">
+                                <label for="pfApiKey">API Key *</label>
+                                <input type="password" id="pfApiKey" class="input-field" placeholder="sk-or-…" autocomplete="new-password" required>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-sm" id="testProviderBtn" style="background: rgba(0, 255, 0, 0.08); color: var(--secondary-color); border: 1px solid var(--secondary-color); box-shadow: none;">
+                                <i class="fas fa-plug"></i> Test Connection
+                            </button>
+                            <button type="submit" class="btn btn-sm" style="background: rgba(0, 240, 255, 0.15); color: var(--primary-color); border: 1px solid var(--primary-color); box-shadow: none;">
+                                <i class="fas fa-code"></i> Generate Env JSON
+                            </button>
+                        </div>
+                        <div class="provider-test-result" id="providerTestResult"></div>
+                    </form>
+                </div>
+
+                <div id="envJsonCard" style="display: none; margin-top: 1.5rem; background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(0, 255, 0, 0.25); border-radius: 8px; padding: 1.5rem;">
+                    <h4 style="margin: 0 0 0.75rem; color: var(--secondary-color); font-family: 'Courier New', monospace;">
+                        <i class="fas fa-key"></i> Paste this into Vercel → Settings → Environment Variables
+                    </h4>
+                    <p style="margin: 0 0 0.75rem; color: #94a3b8; font-size: 0.85rem;">
+                        Key: <code style="color: var(--primary-color);">AI_PROVIDERS_JSON</code> — then redeploy the site.
+                    </p>
+                    <pre id="envJsonOutput" class="provider-env-box"></pre>
+                    <button type="button" class="btn btn-sm" id="copyEnvBtn" style="margin-top: 0.75rem; background: rgba(0, 255, 0, 0.08); color: var(--secondary-color); border: 1px solid var(--secondary-color); box-shadow: none;">
+                        <i class="fas fa-copy"></i> Copy JSON
+                    </button>
+                </div>
+
+                <div class="message" id="providerMessage"></div>
+            </div>
+
             <!-- Cybersecurity Event Logs Dashboard Section -->
             <div class="security-section" style="margin-top: 3rem; padding-top: 3rem; border-top: 1px solid rgba(0, 240, 255, 0.2);">
                 <h3 class="section-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
@@ -581,6 +654,131 @@
                 document.body.removeChild(link);
             });
         });
+    </script>
+
+    <!-- ═══════════════ AI Chat Providers Manager (env-var based, zero storage) ═══════════════ -->
+    <script>
+    (function () {
+        'use strict';
+
+        const listEl = document.getElementById('providerList');
+        const form = document.getElementById('providerForm');
+        const pfName = document.getElementById('pfName');
+        const pfModel = document.getElementById('pfModel');
+        const pfBaseUrl = document.getElementById('pfBaseUrl');
+        const pfApiKey = document.getElementById('pfApiKey');
+        const testResult = document.getElementById('providerTestResult');
+        const providerMessage = document.getElementById('providerMessage');
+        const envJsonCard = document.getElementById('envJsonCard');
+        const envJsonOutput = document.getElementById('envJsonOutput');
+
+        function showMessage(type, text) {
+            providerMessage.className = 'message ' + type;
+            providerMessage.innerHTML =
+                '<i class="fas fa-' + (type === 'success' ? 'check-circle' : 'exclamation-circle') + '"></i> ' +
+                escapeHTML(text);
+            providerMessage.style.display = 'block';
+        }
+
+        function escapeHTML(str) {
+            return String(str).replace(/[&<>'"]/g,
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        async function loadProviders() {
+            try {
+                const res = await fetch('/api/providers');
+                const data = await res.json();
+                renderProviders(data);
+            } catch (err) {
+                listEl.innerHTML = '<p style="color: #f87171; text-align: center; padding: 1rem;"><i class="fas fa-triangle-exclamation"></i> API not reachable — deploy to Vercel to manage providers.</p>';
+            }
+        }
+
+        function renderProviders(data) {
+            const providers = data.providers || [];
+            if (!providers.length) {
+                listEl.innerHTML = '<p style="color: #fb923c; text-align: center; padding: 1rem;"><i class="fas fa-triangle-exclamation"></i> No provider configured yet — build the env JSON below and set it on Vercel.</p>';
+                return;
+            }
+            listEl.innerHTML = providers.map((p, i) => `
+                <div class="provider-card ${i === 0 ? 'provider-card--active' : ''}">
+                    <div class="provider-card-main">
+                        <div class="provider-card-title">
+                            ${escapeHTML(p.name)}
+                            ${i === 0 ? '<span class="provider-badge provider-badge--active"><i class="fas fa-circle-check"></i> ACTIVE</span>' : ''}
+                        </div>
+                        <div class="provider-card-meta">
+                            <span><i class="fas fa-cube"></i> ${escapeHTML(p.model)}</span>
+                            <span><i class="fas fa-link"></i> ${escapeHTML(p.baseUrl)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const entry = {
+                id: 'p1',
+                name: pfName.value.trim(),
+                baseUrl: pfBaseUrl.value.trim().replace(/\/+$/, ''),
+                apiKey: pfApiKey.value.trim(),
+                model: pfModel.value.trim()
+            };
+            if (!entry.name || !entry.baseUrl || !entry.apiKey || !entry.model) {
+                showMessage('error', 'All fields are required to generate the env JSON.');
+                return;
+            }
+            envJsonOutput.textContent = JSON.stringify({ activeId: 'p1', providers: [entry] }, null, 2);
+            envJsonCard.style.display = 'block';
+            showMessage('success', 'Env JSON generated. Test the connection, then copy it into Vercel.');
+        });
+
+        document.getElementById('testProviderBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('testProviderBtn');
+            testResult.className = 'provider-test-result is-running';
+            testResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing connection…';
+            btn.disabled = true;
+            try {
+                const res = await fetch('/api/providers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'test',
+                        provider: {
+                            baseUrl: pfBaseUrl.value.trim(),
+                            apiKey: pfApiKey.value.trim(),
+                            model: pfModel.value.trim()
+                        }
+                    })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (data.ok) {
+                    testResult.className = 'provider-test-result is-ok';
+                    testResult.innerHTML = '<i class="fas fa-circle-check"></i> Connection OK — provider replied: "' + escapeHTML(data.reply) + '"';
+                } else {
+                    testResult.className = 'provider-test-result is-fail';
+                    testResult.innerHTML = '<i class="fas fa-circle-xmark"></i> ' + escapeHTML(data.message || 'Test failed.');
+                }
+            } catch (err) {
+                testResult.className = 'provider-test-result is-fail';
+                testResult.innerHTML = '<i class="fas fa-circle-xmark"></i> API not reachable — deploy to Vercel first.';
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('copyEnvBtn').addEventListener('click', () => {
+            navigator.clipboard.writeText(envJsonOutput.textContent).then(() => {
+                const btn = document.getElementById('copyEnvBtn');
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => { btn.innerHTML = '<i class="fas fa-copy"></i> Copy JSON'; }, 1500);
+            });
+        });
+
+        window.addEventListener('load', loadProviders);
+    })();
     </script>
 </body>
 </html>

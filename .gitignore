@@ -1,0 +1,10 @@
+node_modules/
+.vercel/
+.env
+.env.local
+.kiro/
+.mimosa/
+.cursor/
+.vscode/
+.dist/
+.zcode/

@@ -1,11 +1,14 @@
 // Service Worker for Offline Functionality
-const CACHE_NAME = 'portfolio-v13';
+const CACHE_NAME = 'portfolio-v14';
 const urlsToCache = [
     '/',
     '/index.html',
     '/styles.css',
     '/script.js',
     '/favicon.webp',
+    '/chat.html',
+    '/chat.css',
+    '/chat-app.js',
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
     'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap'
 ];

@@ -1,33 +1,31 @@
-// Admin Authentication & Cybersecurity Protection System
-// Credentials are secure hashed (SHA-256)
+// Admin Authentication — server-side via Vercel API routes.
+// Credentials live ONLY in server env vars (ADMIN_USERNAME / ADMIN_PASSWORD).
+// Sessions are signed HttpOnly cookies — localStorage can no longer grant access.
 
 const AUTH_CONFIG = {
-    // Hashed credentials (SHA-256)
-    usernameHash: '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // admin
-    passwordHash: '48c0be548f4c42613938ad25af203e17261ed0449c9f441fd906f9e7833aef98',
-    sessionKey: 'admin_authenticated',
-    sessionTimeout: 3600000 // 1 hour in milliseconds
+    sessionKey: 'admin_session_hint', // UI hint only — real gate is the server cookie
+    sessionTimeout: 3600000 // 1 hour (matches the server cookie TTL)
 };
 
-// Security Policy Configurations
+// Security Policy Configurations (client-side UX; the server enforces the real lockout)
 const SECURITY_CONFIG = {
     maxAttempts: 5,
-    lockoutTime: 900000, // 15 minutes (in milliseconds)
+    lockoutTime: 900000, // 15 minutes
     attemptsKey: 'admin_login_attempts',
     lockoutKey: 'admin_login_lockout_time',
     logsKey: 'admin_security_logs'
 };
 
-// SHA-256 hash function
+// SHA-256 hash function (used for the math captcha audit trail only)
 async function sha256(message) {
     const msgBuffer = new TextEncoder().encode(message);
     const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Lockout State Accessors
+/* ─── Lockout State Accessors (client-side UX) ─── */
+
 function getFailedAttempts() {
     return parseInt(localStorage.getItem(SECURITY_CONFIG.attemptsKey)) || 0;
 }
@@ -47,11 +45,10 @@ function setLockoutTime(timestamp) {
 function getRemainingLockout() {
     const lockoutTime = getLockoutTime();
     if (!lockoutTime) return 0;
-    
+
     const now = Date.now();
     const remaining = lockoutTime - now;
     if (remaining <= 0) {
-        // Lockout expired, reset counters
         setFailedAttempts(0);
         setLockoutTime(0);
         return 0;
@@ -59,18 +56,27 @@ function getRemainingLockout() {
     return remaining;
 }
 
-// Visual Math Captcha Logic
+/* ─── Visual Math Captcha Logic ─── */
+
 let currentCaptchaResult = null;
 
+// Cryptographically secure random int in [min, max]
+function secureRandomInt(min, max) {
+    const range = max - min + 1;
+    const buf = new Uint32Array(1);
+    crypto.getRandomValues(buf);
+    return min + (buf[0] % range);
+}
+
 function generateCaptcha() {
-    const num1 = Math.floor(Math.random() * 9) + 2; // numbers 2-10
-    const num2 = Math.floor(Math.random() * 9) + 2;
+    const num1 = secureRandomInt(2, 10);
+    const num2 = secureRandomInt(2, 10);
     const operations = ['+', '-', '*'];
-    const operation = operations[Math.floor(Math.random() * operations.length)];
-    
+    const operation = operations[secureRandomInt(0, operations.length - 1)];
+
     let question = '';
     let result = 0;
-    
+
     switch (operation) {
         case '+':
             question = `${num1} + ${num2}`;
@@ -90,43 +96,40 @@ function generateCaptcha() {
             result = num1 * num2;
             break;
     }
-    
+
     currentCaptchaResult = result;
-    
+
     const questionEl = document.getElementById('captchaQuestion');
     if (questionEl) {
         questionEl.textContent = question;
     }
-    
+
     const captchaInput = document.getElementById('captchaInput');
     if (captchaInput) {
         captchaInput.value = '';
     }
 }
 
-// Simulated Security Auditing
+/* ─── Local Security Audit Trail (display only) ─── */
+
 function getSimulatedIP() {
-    // Generate a realistic local/external simulated IP for visual aesthetics
     const octets = [
-        '192.168.1.' + Math.floor(Math.random() * 80 + 10),
-        '10.0.12.' + Math.floor(Math.random() * 200 + 20),
-        '172.16.4.' + Math.floor(Math.random() * 90 + 5)
+        '192.168.1.' + secureRandomInt(10, 89),
+        '10.0.12.' + secureRandomInt(20, 219),
+        '172.16.4.' + secureRandomInt(5, 93)
     ];
-    return octets[Math.floor(Math.random() * octets.length)];
+    return octets[secureRandomInt(0, octets.length - 1)];
 }
 
 function logSecurityEvent(action, details) {
     try {
         const logs = JSON.parse(localStorage.getItem(SECURITY_CONFIG.logsKey)) || [];
-        const newEvent = {
+        logs.unshift({
             timestamp: Date.now(),
             ip: getSimulatedIP(),
-            action: action, // 'SUCCESSFUL_LOGIN', 'FAILED_LOGIN_ATTEMPT', 'LOCKOUT_TRIGGERED', 'LOGOUT', 'LOCKOUT_EXPIRED'
-            details: details
-        };
-        logs.unshift(newEvent);
-        
-        // Cap at 100 entries
+            action,
+            details
+        });
         if (logs.length > 100) {
             logs.pop();
         }
@@ -136,7 +139,8 @@ function logSecurityEvent(action, details) {
     }
 }
 
-// Lockout Timer Handler
+/* ─── Lockout Timer Handler (client-side UX) ─── */
+
 let lockoutInterval = null;
 
 function checkAndRunLockoutTimer() {
@@ -149,34 +153,32 @@ function checkAndRunLockoutTimer() {
     const lockoutBanner = document.getElementById('lockoutBanner');
 
     if (remaining > 0) {
-        // Lockdown all login interface elements
         if (loginBtn) loginBtn.disabled = true;
         if (usernameInput) usernameInput.disabled = true;
         if (passwordInput) passwordInput.disabled = true;
         if (captchaInput) captchaInput.disabled = true;
         if (refreshCaptchaBtn) refreshCaptchaBtn.style.pointerEvents = 'none';
-        
+
         if (lockoutBanner) {
             lockoutBanner.style.display = 'flex';
         }
-        
+
         updateCountdownText(remaining);
-        
+
         if (lockoutInterval) clearInterval(lockoutInterval);
-        
+
         lockoutInterval = setInterval(() => {
             const curRemaining = getRemainingLockout();
             if (curRemaining <= 0) {
                 clearInterval(lockoutInterval);
-                
-                // Restore form
+
                 if (loginBtn) loginBtn.disabled = false;
                 if (usernameInput) usernameInput.disabled = false;
                 if (passwordInput) passwordInput.disabled = false;
                 if (captchaInput) captchaInput.disabled = false;
                 if (refreshCaptchaBtn) refreshCaptchaBtn.style.pointerEvents = 'auto';
                 if (lockoutBanner) lockoutBanner.style.display = 'none';
-                
+
                 logSecurityEvent('LOCKOUT_EXPIRED', 'Account lockout cool-off period expired. Access restored.');
                 hideError();
                 generateCaptcha();
@@ -201,7 +203,8 @@ function updateCountdownText(ms) {
     }
 }
 
-// Login Form Handler
+/* ─── Login Form Handler ─── */
+
 document.addEventListener('DOMContentLoaded', function () {
     const loginForm = document.getElementById('loginForm');
     const usernameInput = document.getElementById('username');
@@ -210,24 +213,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const togglePassword = document.getElementById('togglePassword');
     const refreshCaptchaBtn = document.getElementById('refreshCaptcha');
 
-    // Toggle password visibility
     if (togglePassword && passwordInput) {
         togglePassword.addEventListener('click', function () {
             const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
             passwordInput.setAttribute('type', type);
 
-            // Toggle icon
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
         });
     }
 
-    // Handle form submission
     if (loginForm) {
         loginForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
-            // First check if locked out
             if (getRemainingLockout() > 0) {
                 showError('Security Lockout is active. Please wait.');
                 return;
@@ -237,13 +236,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const password = passwordInput.value;
             const captchaInput = document.getElementById('captchaInput');
 
-            // Validate inputs
             if (!username || !password) {
                 showError('Please enter both username and password');
                 return;
             }
 
-            // Verify Captcha
             if (captchaInput) {
                 const userVal = parseInt(captchaInput.value.trim());
                 if (isNaN(userVal) || userVal !== currentCaptchaResult) {
@@ -253,152 +250,181 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Show loading state
             loginBtn.classList.add('loading');
             loginBtn.disabled = true;
             hideError();
 
-            // Simulate slight authentication verification latency
-            setTimeout(async () => {
-                await authenticateUser(username, password);
-            }, 800);
+            await authenticateUser(username, password);
         });
     }
 
-    // Refresh Captcha hook
     if (refreshCaptchaBtn) {
-        refreshCaptchaBtn.addEventListener('click', function(e) {
+        refreshCaptchaBtn.addEventListener('click', function (e) {
             e.preventDefault();
             generateCaptcha();
         });
     }
 
-    // Auto-focus username field and run startup checks
     if (usernameInput) {
         usernameInput.focus();
     }
-    
-    // Check lockout on load
+
     if (loginForm) {
         checkAndRunLockoutTimer();
         generateCaptcha();
     }
 });
 
-// Authenticate user with hashed credentials
+/* ─── Authenticate against the server ─── */
+
 async function authenticateUser(username, password) {
     const loginBtn = document.getElementById('loginBtn');
 
     try {
-        // Hash inputs
-        const usernameHashInput = await sha256(username);
-        const passwordHashInput = await sha256(password);
+        const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        const data = await res.json().catch(() => ({}));
 
-        // Compare credentials
-        if (usernameHashInput === AUTH_CONFIG.usernameHash &&
-            passwordHashInput === AUTH_CONFIG.passwordHash) {
-
-            // Success: Reset failed attempts & lockout
+        if (res.ok && data.ok) {
             setFailedAttempts(0);
             setLockoutTime(0);
+            logSecurityEvent('SUCCESSFUL_LOGIN', `Admin user "${username}" authenticated via server.`);
 
-            // Log event
-            logSecurityEvent('SUCCESSFUL_LOGIN', `Admin user "${username}" authenticated successfully.`);
-
-            // Create session
-            const session = {
+            localStorage.setItem(AUTH_CONFIG.sessionKey, JSON.stringify({
                 authenticated: true,
                 timestamp: Date.now(),
-                username: username
-            };
+                username
+            }));
 
-            // Store session
-            localStorage.setItem(AUTH_CONFIG.sessionKey, JSON.stringify(session));
-
-            // Show success and redirect
             showSuccess('Login successful! Access granted. Redirecting...');
-
             setTimeout(() => {
                 window.location.href = 'admin.html';
             }, 1000);
-        } else {
-            // Authentication failed
-            loginBtn.classList.remove('loading');
+            return;
+        }
+
+        // Failed — mirror the server-side lockout in the UI
+        loginBtn.classList.remove('loading');
+        loginBtn.disabled = false;
+
+        if (res.status === 429 || data.error === 'locked_out') {
+            const waitMs = (data.waitSec ? data.waitSec * 1000 : SECURITY_CONFIG.lockoutTime);
+            setLockoutTime(Date.now() + waitMs);
+            logSecurityEvent('LOCKOUT_TRIGGERED', 'Brute force defense triggered (server). Locked for 15 minutes.');
+            checkAndRunLockoutTimer();
+            showError('Too many failed attempts. Login locked for 15 minutes.');
+            return;
+        }
+
+        if (res.status === 500 && data.error === 'server_config') {
             loginBtn.disabled = false;
+            showError(data.message || 'Server is not configured with admin credentials.');
+            return;
+        }
 
-            const attempts = getFailedAttempts() + 1;
-            setFailedAttempts(attempts);
-            
-            logSecurityEvent('FAILED_LOGIN_ATTEMPT', `Failed login attempt for username: ${username}`);
+        const attempts = getFailedAttempts() + 1;
+        setFailedAttempts(attempts);
+        logSecurityEvent('FAILED_LOGIN_ATTEMPT', `Failed login attempt for username: ${username}`);
 
-            if (attempts >= SECURITY_CONFIG.maxAttempts) {
-                const lockoutTime = Date.now() + SECURITY_CONFIG.lockoutTime;
-                setLockoutTime(lockoutTime);
-                logSecurityEvent('LOCKOUT_TRIGGERED', `Brute force defense triggered. Locked for 15 minutes.`);
-                
-                checkAndRunLockoutTimer();
-                showError('Too many failed attempts. Login locked for 15 minutes.');
-            } else {
-                const remaining = SECURITY_CONFIG.maxAttempts - attempts;
-                showError(`Invalid username or password. ${remaining} attempts remaining before security lockout.`);
-                generateCaptcha();
-            }
+        if (attempts >= SECURITY_CONFIG.maxAttempts) {
+            setLockoutTime(Date.now() + SECURITY_CONFIG.lockoutTime);
+            logSecurityEvent('LOCKOUT_TRIGGERED', 'Brute force defense triggered. Locked for 15 minutes.');
+            checkAndRunLockoutTimer();
+            showError('Too many failed attempts. Login locked for 15 minutes.');
+        } else {
+            const remaining = SECURITY_CONFIG.maxAttempts - attempts;
+            showError(`Invalid username or password. ${remaining} attempts remaining before security lockout.`);
+            generateCaptcha();
+        }
 
-            // Clear password field
-            const passwordInput = document.getElementById('password');
-            if (passwordInput) {
-                passwordInput.value = '';
-                passwordInput.focus();
-            }
+        const passwordField = document.getElementById('password');
+        if (passwordField) {
+            passwordField.value = '';
+            passwordField.focus();
         }
     } catch (error) {
         console.error('Authentication error:', error);
         loginBtn.classList.remove('loading');
         loginBtn.disabled = false;
-        showError('Security authentication error. Please try again.');
+        showError('Authentication service not reachable — the admin API requires the Vercel deployment.');
     }
 }
 
-// Check if user is authenticated
+/* ─── Session checks ─── */
+
+// Quick local hint (UI only). The real gate is the server cookie via verifyAdminSession().
 function isAuthenticated() {
     const sessionData = localStorage.getItem(AUTH_CONFIG.sessionKey);
-
-    if (!sessionData) {
-        return false;
-    }
+    if (!sessionData) return false;
 
     try {
         const session = JSON.parse(sessionData);
-
-        // Check if session is valid
-        if (!session.authenticated) {
-            return false;
-        }
-
-        // Check if session has expired
-        const currentTime = Date.now();
-        const sessionAge = currentTime - session.timestamp;
-
-        if (sessionAge > AUTH_CONFIG.sessionTimeout) {
-            // Session expired
-            logout();
-            return false;
-        }
-
-        return true;
-    } catch (error) {
+        if (!session.authenticated) return false;
+        return (Date.now() - session.timestamp) <= AUTH_CONFIG.sessionTimeout;
+    } catch {
         return false;
     }
 }
 
-// Logout function
-function logout() {
+// Server-verified session check — resolves { ok: boolean }
+async function verifyAdminSession() {
+    try {
+        const res = await fetch('/api/admin/verify', { cache: 'no-store' });
+        if (!res.ok) return { ok: false };
+        const data = await res.json().catch(() => ({}));
+        return { ok: Boolean(data.ok) };
+    } catch {
+        return { ok: false, unreachable: true };
+    }
+}
+
+// Protect admin page — content stays hidden until the server confirms the session.
+function protectAdminPage() {
+    verifyAdminSession().then(({ ok }) => {
+        if (ok) {
+            document.documentElement.classList.add('authenticated');
+            refreshSession();
+        } else {
+            localStorage.removeItem(AUTH_CONFIG.sessionKey);
+            window.location.href = 'admin-login.html';
+        }
+    });
+}
+
+// Refresh session timestamp + re-validate with the server
+async function refreshSession() {
+    const { ok } = await verifyAdminSession();
+    if (!ok) {
+        logout();
+        return;
+    }
+    const sessionData = localStorage.getItem(AUTH_CONFIG.sessionKey);
+    if (sessionData) {
+        try {
+            const session = JSON.parse(sessionData);
+            session.timestamp = Date.now();
+            localStorage.setItem(AUTH_CONFIG.sessionKey, JSON.stringify(session));
+        } catch (error) {
+            console.error('Error refreshing session:', error);
+        }
+    }
+}
+
+// Logout — clears the HttpOnly cookie server-side, then local hint
+async function logout() {
     logSecurityEvent('LOGOUT', 'Admin session terminated by user action.');
+    try {
+        await fetch('/api/admin/logout', { method: 'POST' });
+    } catch { /* best effort */ }
     localStorage.removeItem(AUTH_CONFIG.sessionKey);
     window.location.href = 'admin-login.html';
 }
 
-// Show error message
+/* ─── UI helpers ─── */
+
 function showError(message) {
     const errorMessage = document.getElementById('errorMessage');
     const errorText = document.getElementById('errorText');
@@ -412,7 +438,6 @@ function showError(message) {
     }
 }
 
-// Hide error message
 function hideError() {
     const errorMessage = document.getElementById('errorMessage');
     if (errorMessage) {
@@ -420,7 +445,6 @@ function hideError() {
     }
 }
 
-// Show success message
 function showSuccess(message) {
     const errorMessage = document.getElementById('errorMessage');
     const errorText = document.getElementById('errorText');
@@ -434,35 +458,11 @@ function showSuccess(message) {
     }
 }
 
-// Protect admin page (call this on admin.html)
-function protectAdminPage() {
-    if (!isAuthenticated()) {
-        window.location.href = 'admin-login.html';
-    } else {
-        // Successful authentication check - allow content rendering
-        document.documentElement.classList.add('authenticated');
-    }
-}
-
-// Refresh session timestamp (call periodically on admin page)
-function refreshSession() {
-    const sessionData = localStorage.getItem(AUTH_CONFIG.sessionKey);
-
-    if (sessionData) {
-        try {
-            const session = JSON.parse(sessionData);
-            session.timestamp = Date.now();
-            localStorage.setItem(AUTH_CONFIG.sessionKey, JSON.stringify(session));
-        } catch (error) {
-            console.error('Error refreshing session:', error);
-        }
-    }
-}
-
 // Export functions for use in testing if module system exists
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         isAuthenticated,
+        verifyAdminSession,
         logout,
         protectAdminPage,
         refreshSession,

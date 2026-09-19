@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Chat - Ashish Gupta</title>
+    <meta name="description" content="Chat with SecureAI — Ashish Gupta's AI assistant for cybersecurity, networking, and portfolio questions.">
+    <meta name="author" content="Ashish Gupta">
+    <meta name="robots" content="noindex">
+
+    <link rel="icon" type="image/webp" href="favicon.webp">
+    <link rel="stylesheet" href="tokens.css">
+    <link rel="stylesheet" href="base.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="chat.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="chat-page">
+    <div class="page-bg-wrapper" aria-hidden="true">
+        <div class="page-bg-glow"></div>
+        <div class="page-bg-grid"></div>
+        <div class="page-bg-scanline"></div>
+    </div>
+
+    <nav class="navbar" role="navigation" aria-label="Chat navigation">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <a href="index.html"><h2>Ashish Gupta</h2></a>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="index.html#about" class="nav-link">About</a></li>
+                <li class="nav-item"><a href="index.html#skills" class="nav-link">Skills</a></li>
+                <li class="nav-item"><a href="index.html#projects" class="nav-link">Projects</a></li>
+                <li class="nav-item"><a href="index.html#gallery" class="nav-link">Gallery</a></li>
+                <li class="nav-item"><a href="blog.html" class="nav-link">Blog</a></li>
+                <li class="nav-item"><a href="chat.html" class="nav-link nav-link--current">Chat</a></li>
+                <li class="nav-item"><a href="index.html#contact" class="nav-link">Contact</a></li>
+            </ul>
+            <div class="hamburger" aria-label="Toggle mobile menu" role="button" tabindex="0">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="site-shell">
+        <main class="chat-main">
+
+            <!-- ════════════════════ NAME GATE ════════════════════ -->
+            <section class="gate-wrap" id="nameGate" aria-label="Introduce yourself">
+                <div class="gate-card glass-panel" id="gateCard">
+                    <span class="gate-label">introduce yourself</span>
+                    <h1 class="gate-title">What should we call you?</h1>
+                    <p class="gate-sub">Enter a name to start chatting. No email, no password — everything stays on this device.</p>
+                    <form class="gate-form" id="nameForm" autocomplete="off">
+                        <input type="text" id="nameInput" class="input-field" placeholder="e.g. Alex"
+                               aria-label="Your name" maxlength="30" required>
+                        <button type="submit" class="btn btn-primary btn-sm" id="startChatBtn">
+                            <i class="fas fa-terminal"></i> Start Chat
+                        </button>
+                    </form>
+                    <p class="gate-note">Zero tracking · Chats stored only in your browser · Nothing sent to any database</p>
+                    <div class="gate-status" id="gateStatus" role="alert"></div>
+                </div>
+            </section>
+
+            <!-- ════════════════════ CHAT VIEW ════════════════════ -->
+            <section id="chatView" style="display:none;" aria-label="AI chat">
+
+                <header class="chat-hero" id="chatHero">
+                    <span class="section-label">SecureAI Assistant</span>
+                    <h1>Hi, I'm <span class="accent">Ashish's AI</span></h1>
+                    <p>Ask me anything — cybersecurity, networking, ethical hacking, or about Ashish's skills and projects.</p>
+                </header>
+
+                <div class="chat-suggestions" id="chatSuggestions">
+                    <button class="suggestion-chip" data-msg="Tell me about Ashish Gupta"><i class="fas fa-user-astronaut"></i> About Ashish</button>
+                    <button class="suggestion-chip" data-msg="What skills does Ashish have?"><i class="fas fa-terminal"></i> Skills</button>
+                    <button class="suggestion-chip" data-msg="Show me Ashish's projects"><i class="fas fa-diagram-project"></i> Projects</button>
+                    <button class="suggestion-chip" data-msg="Give me 3 quick cybersecurity tips for beginners"><i class="fas fa-shield-halved"></i> Security Tips</button>
+                    <button class="suggestion-chip" data-msg="How can I start learning ethical hacking?"><i class="fas fa-bug"></i> Ethical Hacking</button>
+                </div>
+
+                <div class="chat-messages" id="chatMessages" aria-live="polite"></div>
+
+                <div class="chat-dock">
+                    <div class="chat-meta-row">
+                        <span class="chat-model-badge" id="modelBadge">
+                            <span class="dot"></span> connecting…
+                        </span>
+                        <button class="chat-new-btn" id="newChatBtn" title="Start a new conversation">
+                            <i class="fas fa-plus"></i> New chat
+                        </button>
+                        <button class="chat-new-btn" id="wipeBtn" title="Erase your name and all chats from this device">
+                            <i class="fas fa-trash-can"></i> Erase data
+                        </button>
+                    </div>
+                    <form class="chat-inputbar" id="chatForm">
+                        <input type="text" id="chatInput" placeholder="Ask me anything…" maxlength="1000"
+                               aria-label="Chat message" autocomplete="off">
+                        <button type="submit" class="chat-send" id="chatSendBtn" aria-label="Send message">
+                            <i class="fas fa-arrow-up"></i>
+                        </button>
+                    </form>
+                    <div class="chat-char-hint" id="charHint"></div>
+                </div>
+
+            </section>
+        </main>
+
+        <footer class="chat-footer">
+            <p>&copy; 2025 <a href="index.html">Ashish Gupta</a> · <a href="blog.html">Blog</a> · AI replies can make mistakes — verify important info.</p>
+        </footer>
+    </div><!-- /.site-shell -->
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js" defer></script>
+    <script src="chat-app.js" defer></script>
+</body>
+</html>
