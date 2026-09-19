@@ -16,19 +16,19 @@
        Base neutrals: premium deep-navy scale (SOC-console dark)
        ═══════════════════════════════════════════════════════════ */
 
-    /* Neutrals — deep navy, not pure black */
-    --background: 220 30% 5%;
-    --foreground: 214 30% 96%;
-    --card: 220 25% 8%;
-    --card-foreground: 214 30% 96%;
-    --muted: 220 22% 14%;
-    --muted-foreground: 218 14% 66%;
-    --accent: 220 25% 12%;
-    --accent-foreground: 214 30% 96%;
-    --border: 220 20% 16%;
-    --input: 220 22% 14%;
-    --popover: 220 26% 7%;
-    --popover-foreground: 214 30% 96%;
+    /* Neutrals — pure black base with barely-there cool tint (premium dark) */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 96%;
+    --muted: 0 0% 11%;
+    --muted-foreground: 218 12% 66%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 96%;
+    --border: 0 0% 14%;
+    --input: 0 0% 12%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 96%;
 
     /* MAJOR 1 — signature cyan */
     --primary: 187 100% 50%;
@@ -63,29 +63,17 @@
 }
 
 @layer utilities {
-  /* ── Layered background: deep navy wash + cyan/shield-blue glows + faint secure-green ── */
+  /* ── Pure black base with a faint center focus glow. The point-light
+       particle canvas renders on top of this (see ParticleField). ── */
   .cyber-bg {
     position: fixed;
     inset: 0;
     z-index: -2;
     pointer-events: none;
     background:
-      radial-gradient(1100px 640px at 78% -6%, hsl(var(--primary) / 0.14), transparent 60%),
-      radial-gradient(900px 620px at -8% 28%, hsl(var(--secondary) / 0.12), transparent 55%),
-      radial-gradient(1000px 700px at 55% 118%, hsl(var(--success) / 0.07), transparent 55%),
-      linear-gradient(180deg, hsl(220 32% 6%) 0%, hsl(220 30% 4%) 55%, hsl(222 28% 7%) 100%);
-  }
-  .cyber-grid {
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      linear-gradient(hsl(var(--primary) / 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--primary) / 0.045) 1px, transparent 1px);
-    background-size: 44px 44px;
-    mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
-    -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
+      radial-gradient(900px 620px at 50% 38%, hsl(var(--primary) / 0.06), transparent 70%),
+      radial-gradient(760px 520px at 50% 38%, hsl(var(--secondary) / 0.05), transparent 72%),
+      #000;
   }
 
   /* ── Gradient helpers: brand major 1 → major 2 only (no other hues) ── */

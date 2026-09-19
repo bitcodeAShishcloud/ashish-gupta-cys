@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ParticleField } from "@/components/particle-field";
 
 export const metadata: Metadata = {
   title: "Ashish Gupta — Cyber Security Portfolio",
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <div className="cyber-bg" aria-hidden />
-        <div className="cyber-grid" aria-hidden />
+        <ParticleField />
         <div className="relative z-0 min-h-screen">{children}</div>
       </body>
     </html>
