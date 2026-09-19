@@ -16,13 +16,17 @@ export async function readJsonBody(req: NextRequest): Promise<Record<string, unk
 }
 
 export function clientIp(req: NextRequest): string {
+  // Vercel's edge sets x-real-ip to the true client IP, which the caller
+  // cannot spoof. Prefer it; only fall back to the first x-forwarded-for
+  // entry when behind a proxy platform that rewrites these headers.
+  const real = req.headers.get("x-real-ip");
+  if (real?.trim()) return real.trim().slice(0, 64);
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) {
     const first = fwd.split(",")[0].trim();
     if (first) return first.slice(0, 64);
   }
-  const real = req.headers.get("x-real-ip");
-  return (real || "unknown").slice(0, 64);
+  return "unknown";
 }
 
 // Per-key in-memory sliding 1-minute window (single instance is enough here).
@@ -35,7 +39,11 @@ export function rateLimit(key: string, limit: number): boolean {
     b = { count: 0, resetAt: now + 60_000 };
     buckets.set(key, b);
   }
-  if (buckets.size > 10_000) buckets.clear();
+  if (buckets.size > 10_000) {
+    // Sweep only expired entries — clearing active buckets would reset
+    // live limits (and an attacker could flood distinct keys to do exactly that)
+    for (const [k, b] of buckets) if (now >= b.resetAt) buckets.delete(k);
+  }
   b.count += 1;
   return b.count <= limit;
 }

@@ -5,49 +5,49 @@
 @layer base {
   :root {
     /* ═══════════════════════════════════════════════════════════
-       BRAND COLOR SYSTEM
+       BRAND COLOR SYSTEM — matched to the cyberinvaders.tech palette
        2 MAJOR (brand identity) + 4 MINOR (semantic)
-       Major 1  --primary     signature cyan   (tech / attack surface)
-       Major 2  --secondary   shield blue      (defense / trust)
-       Minor 1  --success     secure green
-       Minor 2  --warning     amber alert
-       Minor 3  --destructive threat red
-       Minor 4  --info        steel ice (muted hierarchy)
-       Base neutrals: premium deep-navy scale (SOC-console dark)
+       Major 1  --primary     neon violet  #5e17eb (their accent / glow)
+       Major 2  --secondary  light violet #a78bfa (their secondary)
+       Minor 1  --success     brand violet (their theme success = primary)
+       Minor 2  --warning     soft lavender #c4b5fd (their secondary.light)
+       Minor 3  --destructive alert red    #ff4444 (their theme error)
+       Minor 4  --info        light violet #a78bfa (muted hierarchy)
+       Neutrals: pure black base + #0a0a0f paper (their bg/paper)
        ═══════════════════════════════════════════════════════════ */
 
-    /* Neutrals — pure black base with barely-there cool tint (premium dark) */
+    /* Neutrals — pure black base, near-black violet paper (#0a0a0f) */
     --background: 0 0% 0%;
     --foreground: 0 0% 96%;
-    --card: 0 0% 5%;
+    --card: 240 1% 5%;
     --card-foreground: 0 0% 96%;
-    --muted: 0 0% 11%;
-    --muted-foreground: 218 12% 66%;
-    --accent: 0 0% 8%;
+    --muted: 240 1% 9%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 260 81% 13%;
     --accent-foreground: 0 0% 96%;
     --border: 0 0% 14%;
-    --input: 0 0% 12%;
-    --popover: 0 0% 5%;
+    --input: 0 0% 14%;
+    --popover: 240 1% 7%;
     --popover-foreground: 0 0% 96%;
 
-    /* MAJOR 1 — signature cyan */
-    --primary: 187 100% 50%;
-    --primary-foreground: 220 30% 5%;
-    --ring: 187 100% 50%;
+    /* MAJOR 1 — neon violet (#5e17eb) */
+    --primary: 260 84% 51%;
+    --primary-foreground: 0 0% 100%;
+    --ring: 260 84% 51%;
 
-    /* MAJOR 2 — shield blue */
-    --secondary: 217 85% 58%;
-    --secondary-foreground: 220 30% 5%;
+    /* MAJOR 2 — light violet (#a78bfa) */
+    --secondary: 255 92% 76%;
+    --secondary-foreground: 0 0% 5%;
 
     /* MINOR — semantic */
-    --success: 152 70% 50%;
+    --success: 260 84% 51%;
     --success-foreground: 0 0% 100%;
-    --warning: 42 95% 55%;
-    --warning-foreground: 220 30% 8%;
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 0 0% 98%;
-    --info: 215 25% 62%;
-    --info-foreground: 220 30% 8%;
+    --warning: 255 79% 86%;
+    --warning-foreground: 262 60% 15%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --info: 255 92% 76%;
+    --info-foreground: 262 60% 15%;
 
     --radius: 0.6rem;
   }
@@ -63,8 +63,8 @@
 }
 
 @layer utilities {
-  /* ── Pure black base with a faint center focus glow. The point-light
-       particle canvas renders on top of this (see ParticleField). ── */
+  /* ── Pure black base with a faint center focus glow. The blinking
+       dot-grid canvas (see DotGrid) renders on top of this. ── */
   .cyber-bg {
     position: fixed;
     inset: 0;

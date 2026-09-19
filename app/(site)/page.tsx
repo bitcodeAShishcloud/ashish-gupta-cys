@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { HeroTerminal } from "@/components/hero-terminal";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -37,55 +38,58 @@ export default function HomePage() {
     <div className="mx-auto max-w-6xl px-5">
       {/* ── Hero ── */}
       <section className="flex min-h-[calc(100vh-72px)] flex-col justify-center py-16">
-        <div className="animate-fade-in-up">
-          <div className="mb-4 flex items-center gap-2">
-            <Badge variant="success" className="font-mono">
-              <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-current" />
-              open to opportunities
-            </Badge>
-            <span className="font-mono text-xs text-muted-foreground">~/portfolio</span>
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+          <div className="animate-fade-in-up">
+            <div className="mb-4 flex items-center gap-2">
+              <Badge variant="success" className="font-mono">
+                <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-current" />
+                open to opportunities
+              </Badge>
+              <span className="font-mono text-xs text-muted-foreground">~/portfolio</span>
+            </div>
+            <SectionLabel>{"who am i"}</SectionLabel>
+            <h1 className="mt-2 text-4xl font-bold leading-tight sm:text-5xl">
+              Hi, I&apos;m <span className="grad-text">{p.name}</span>
+            </h1>
+            <p className="mt-3 flex items-center gap-2 font-mono text-lg text-foreground sm:text-2xl">
+              <Terminal className="h-5 w-5 text-secondary" />
+              {p.role}
+            </p>
+            <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
+              {p.tagline}
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Button asChild>
+                <a href="#projects">
+                  <Rocket className="mr-2 h-4 w-4" /> View Projects
+                </a>
+              </Button>
+              <Button asChild variant="outline">
+                <a href={`mailto:${p.socials.email}`}>
+                  <Mail className="mr-2 h-4 w-4" /> Contact
+                </a>
+              </Button>
+              <Button asChild variant="secondary">
+                <Link href="/chat">
+                  <Terminal className="mr-2 h-4 w-4" /> Ask the AI
+                </Link>
+              </Button>
+            </div>
+            <div className="mt-12 grid max-w-md grid-cols-3 gap-3">
+              {p.stats.map((s) => (
+                <div key={s.label} className="grad-card rounded-lg p-4 text-center">
+                  <div className="font-mono text-2xl font-bold text-primary">{s.value}</div>
+                  <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <SectionLabel>{"who am i"}</SectionLabel>
-          <h1 className="mt-2 text-4xl font-bold leading-tight sm:text-5xl">
-            Hi, I&apos;m <span className="grad-text">{p.name}</span>
-          </h1>
-          <p className="mt-3 flex items-center gap-2 font-mono text-lg text-foreground sm:text-2xl">
-            <Terminal className="h-5 w-5 text-secondary" />
-            {p.role}
-          </p>
-          <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg">
-            {p.tagline}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild>
-              <a href="#projects">
-                <Rocket className="mr-2 h-4 w-4" /> View Projects
-              </a>
-            </Button>
-            <Button asChild variant="outline">
-              <a href={`mailto:${p.socials.email}`}>
-                <Mail className="mr-2 h-4 w-4" /> Contact
-              </a>
-            </Button>
-            <Button asChild variant="secondary">
-              <Link href="/chat">
-                <Terminal className="mr-2 h-4 w-4" /> Ask the AI
-              </Link>
-            </Button>
-          </div>
-          <div className="mt-12 grid max-w-md grid-cols-3 gap-3">
-            {p.stats.map((s) => (
-              <div key={s.label} className="grad-card rounded-lg p-4 text-center">
-                <div className="font-mono text-2xl font-bold text-primary">{s.value}</div>
-                <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
-              </div>
-            ))}
-          </div>
+          <HeroTerminal />
         </div>
       </section>
 
       {/* ── About + Education ── */}
-      <section id="about" className="py-20">
+      <section id="about" className="scroll-mt-24 py-20">
         <SectionLabel>{"about"}</SectionLabel>
         <h2 className="mt-1 text-3xl font-bold">About Me</h2>
         <div className="mt-8 grid gap-6 lg:grid-cols-2">
@@ -129,7 +133,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Skills ── */}
-      <section id="skills" className="py-12">
+      <section id="skills" className="scroll-mt-24 py-12">
         <SectionLabel>{"skills"}</SectionLabel>
         <h2 className="mt-1 text-3xl font-bold">Skills & Tools</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -167,7 +171,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Projects ── */}
-      <section id="projects" className="py-20">
+      <section id="projects" className="scroll-mt-24 py-20">
         <SectionLabel>{"projects"}</SectionLabel>
         <h2 className="mt-1 text-3xl font-bold">Projects</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -216,7 +220,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Experience ── */}
-      <section id="experience" className="py-12">
+      <section id="experience" className="scroll-mt-24 py-12">
         <SectionLabel>{"experience"}</SectionLabel>
         <h2 className="mt-1 text-3xl font-bold">Internships</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -246,7 +250,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Certifications ── */}
-      <section id="certifications" className="py-12">
+      <section id="certifications" className="scroll-mt-24 py-12">
         <SectionLabel>{"certifications"}</SectionLabel>
         <h2 className="mt-1 text-3xl font-bold">Certifications</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
@@ -289,7 +293,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Latest posts ── */}
-      <section id="blog" className="py-12">
+      <section id="blog" className="scroll-mt-24 py-12">
         <div className="flex items-end justify-between">
           <div>
             <SectionLabel>{"blog"}</SectionLabel>

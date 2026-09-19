@@ -13,7 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <div className="flex items-center gap-2.5 font-mono text-sm font-bold">
             <span className="grad-btn flex h-7 w-7 items-center justify-center rounded-md shadow-[0_0_14px_hsl(var(--primary)/0.35)]">
-              <Lock className="h-3.5 w-3.5 text-black" />
+              <Lock className="h-3.5 w-3.5 text-white" />
             </span>
             <span>
               admin<span className="text-primary">.</span>console

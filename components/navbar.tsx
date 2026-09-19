@@ -27,7 +27,7 @@ export function Navbar() {
           className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight"
         >
           <span className="grad-btn inline-flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_14px_hsl(var(--primary)/0.35)]">
-            <Terminal className="h-5 w-5 text-black" />
+            <Terminal className="h-5 w-5 text-white" />
           </span>
           <span>
             Ashish<span className="text-primary">_</span>
@@ -58,6 +58,8 @@ export function Navbar() {
           className="inline-flex h-10 w-10 items-center justify-center rounded-md text-foreground md:hidden"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
+          aria-expanded={open}
+          aria-controls="site-mobile-nav"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -66,8 +68,11 @@ export function Navbar() {
       <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
 
       {/* Mobile menu */}
-      {open && (
-        <div className="border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden">
+        {open ? (
+          <div
+            id="site-mobile-nav"
+            className="border-t border-border/60 bg-background/95 backdrop-blur-xl md:hidden"
+          >
           <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-5 py-3">
             {LINKS.map((l) => (
               <Link
@@ -84,9 +89,9 @@ export function Navbar() {
                 {l.label}
               </Link>
             ))}
-          </nav>
-        </div>
-      )}
-    </header>
+            </nav>
+          </div>
+        ) : null}
+      </header>
   );
 }

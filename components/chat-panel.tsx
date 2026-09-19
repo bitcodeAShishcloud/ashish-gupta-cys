@@ -135,9 +135,8 @@ export function ChatPanel() {
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(
-          data.message || `Request failed (${res.status})` + (data.detail ? ` — ${data.detail}` : ""),
-        );
+        const base = data.message || `Request failed (${res.status})`;
+        throw new Error(base + (data.detail ? ` — ${data.detail}` : ""));
       }
       const reply: string = String(data.reply || "").trim() || "…";
       const finalHistory = [...history, { role: "assistant" as const, content: reply }];
@@ -191,7 +190,7 @@ export function ChatPanel() {
       <div className="flex h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-5 py-16">
       <div className="grad-card w-full max-w-md rounded-xl p-8 text-center animate-fade-in-up">
         <div className="grad-btn mx-auto flex h-14 w-14 items-center justify-center rounded-full shadow-[0_0_24px_hsl(var(--primary)/0.4)]">
-          <ShieldCheck className="h-7 w-7 text-black" />
+          <ShieldCheck className="h-7 w-7 text-white" />
         </div>
           <p className="section-label mt-5 font-mono text-xs uppercase tracking-widest text-primary">
             {"identity check"}
@@ -251,7 +250,7 @@ export function ChatPanel() {
             <div>
               <div className="glass rounded-xl p-5">
                 <div className="flex items-center gap-3">
-                  <div className="grad-btn flex h-9 w-9 items-center justify-center rounded-lg font-mono text-sm font-bold text-black shadow-[0_0_14px_hsl(var(--primary)/0.4)]">
+                  <div className="grad-btn flex h-9 w-9 items-center justify-center rounded-lg font-mono text-sm font-bold text-white shadow-[0_0_14px_hsl(var(--primary)/0.4)]">
                     &gt;_
                   </div>
                   <p className="text-sm text-muted-foreground">
@@ -284,7 +283,7 @@ export function ChatPanel() {
                 </div>
               ) : (
                 <div key={i} className="flex items-start gap-3">
-                  <div className="grad-btn mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold text-black shadow-[0_0_12px_hsl(var(--primary)/0.35)]">
+                  <div className="grad-btn mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold text-white shadow-[0_0_12px_hsl(var(--primary)/0.35)]">
                     &gt;_
                   </div>
                   <div className="markdown-body glass w-fit max-w-[85%] rounded-2xl rounded-tl-sm border border-border/60 px-4 py-3 text-sm">
@@ -297,7 +296,7 @@ export function ChatPanel() {
 
           {sending ? (
             <div className="flex items-center gap-3">
-              <div className="grad-btn flex h-8 w-8 items-center justify-center rounded-lg font-mono text-xs font-bold text-black shadow-[0_0_12px_hsl(var(--primary)/0.35)]">
+              <div className="grad-btn flex h-8 w-8 items-center justify-center rounded-lg font-mono text-xs font-bold text-white shadow-[0_0_12px_hsl(var(--primary)/0.35)]">
                 &gt;_
               </div>
               <div className="glass flex items-center gap-1 rounded-2xl rounded-tl-sm px-4 py-3.5">
@@ -335,6 +334,7 @@ export function ChatPanel() {
               }}
               placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
               rows={1}
+              maxLength={1000}
               className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2 py-2 text-sm shadow-none focus-visible:ring-0"
               disabled={limited}
             />

@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
  * cyberinvaders.tech reference). Denser toward the center via a radial
  * falloff. Pure WebGL2, no dependencies.
  *
- * Colors: brand cyan / shield blue / white only.
+ * Colors: neon violet #5e17eb — same palette as the reference.
  * Honors prefers-reduced-motion (renders one static frame, no blinking).
  */
 
@@ -99,16 +99,17 @@ export function DotGrid() {
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // Brand colors (RGB 0-1): cyan, shield blue, white
+    // Brand colors (RGB 0-1): neon violet #5e17eb — the reference's dot
+    // palette is a single violet; all six color slots use it.
     const colors = [
-      0, 225 / 255, 1, // cyan
-      0, 225 / 255, 1, // cyan
-      57 / 255, 127 / 255, 239 / 255, // shield blue
-      57 / 255, 127 / 255, 239 / 255, // shield blue
-      240 / 255, 248 / 255, 1, // white
-      240 / 255, 248 / 255, 1, // white
+      94 / 255, 23 / 255, 235 / 255,
+      94 / 255, 23 / 255, 235 / 255,
+      94 / 255, 23 / 255, 235 / 255,
+      94 / 255, 23 / 255, 235 / 255,
+      94 / 255, 23 / 255, 235 / 255,
+      94 / 255, 23 / 255, 235 / 255,
     ];
-    const opacities = [0.08, 0.08, 0.08, 0.14, 0.14, 0.14, 0.24, 0.24, 0.4, 0.65];
+    const opacities = [0.04, 0.04, 0.04, 0.04, 0.04, 0.08, 0.08, 0.08, 0.08, 0.14];
     const speed = 3;
 
     function compile(type: number, src: string) {
@@ -123,49 +124,69 @@ export function DotGrid() {
       return s;
     }
 
-    const vs = compile(gl.VERTEX_SHADER, VERT);
-    const fs = compile(gl.FRAGMENT_SHADER, FRAG);
-    if (!vs || !fs) return;
+    // GL resources (program, buffer, attribute setup) are invalidated when
+    // the context is lost, so everything below is wrapped in initGL() and
+    // re-run after a restore.
+    let program: WebGLProgram | null = null;
+    let buffer: WebGLBuffer | null = null;
+    let loc = {
+      res: null,
+      time: null,
+      opacities: null,
+      colors: null,
+      total: null,
+      dot: null,
+      speed: null,
+    } as Record<string, WebGLUniformLocation | null>;
 
-    const prog = gl.createProgram();
-    if (!prog) return;
-    gl.attachShader(prog, vs);
-    gl.attachShader(prog, fs);
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
-      console.warn("DotGrid program link failed:", gl.getProgramInfoLog(prog));
-      return;
+    function initGL(): boolean {
+      const vs = compile(gl.VERTEX_SHADER, VERT);
+      const fs = compile(gl.FRAGMENT_SHADER, FRAG);
+      if (!vs || !fs) return false;
+      const prog = gl.createProgram();
+      if (!prog) return false;
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        console.warn("DotGrid program link failed:", gl.getProgramInfoLog(prog));
+        return false;
+      }
+      program = prog;
+      gl.useProgram(prog);
+
+      // fullscreen quad
+      buffer = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.bufferData(
+        gl.ARRAY_BUFFER,
+        new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
+        gl.STATIC_DRAW,
+      );
+      const aPos = gl.getAttribLocation(prog, "a_position");
+      gl.enableVertexAttribArray(aPos);
+      gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+      loc = {
+        res: gl.getUniformLocation(prog, "u_resolution"),
+        time: gl.getUniformLocation(prog, "u_time"),
+        opacities: gl.getUniformLocation(prog, "u_opacities"),
+        colors: gl.getUniformLocation(prog, "u_colors"),
+        total: gl.getUniformLocation(prog, "u_total_size"),
+        dot: gl.getUniformLocation(prog, "u_dot_size"),
+        speed: gl.getUniformLocation(prog, "u_speed"),
+      };
+      gl.uniform1f(loc.speed, speed);
+      gl.uniform1fv(loc.opacities, opacities);
+      gl.uniform3fv(loc.colors, colors);
+
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+      gl.clearColor(0, 0, 0, 0);
+      return true;
     }
-    gl.useProgram(prog);
 
-    // fullscreen quad
-    const buf = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
-      gl.STATIC_DRAW,
-    );
-    const aPos = gl.getAttribLocation(prog, "a_position");
-    gl.enableVertexAttribArray(aPos);
-    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
-
-    const loc = {
-      res: gl.getUniformLocation(prog, "u_resolution"),
-      time: gl.getUniformLocation(prog, "u_time"),
-      opacities: gl.getUniformLocation(prog, "u_opacities"),
-      colors: gl.getUniformLocation(prog, "u_colors"),
-      total: gl.getUniformLocation(prog, "u_total_size"),
-      dot: gl.getUniformLocation(prog, "u_dot_size"),
-      speed: gl.getUniformLocation(prog, "u_speed"),
-    };
-    gl.uniform1f(loc.speed, speed);
-    gl.uniform1fv(loc.opacities, opacities);
-    gl.uniform3fv(loc.colors, colors);
-
-    gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    gl.clearColor(0, 0, 0, 0);
+    if (!initGL()) return;
 
     function resize() {
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -179,7 +200,7 @@ export function DotGrid() {
       gl!.uniform2f(loc.res, canvas!.width, canvas!.height);
       // cell/dot sizes in CSS pixels, converted to device pixels
       gl!.uniform1f(loc.total, 20 * dpr);
-      gl!.uniform1f(loc.dot, 3 * dpr);
+      gl!.uniform1f(loc.dot, 4 * dpr);
       if (reduced) draw(40);
     }
 
@@ -205,6 +226,9 @@ export function DotGrid() {
     const onRestored = () => {
       if (lost && gl) {
         lost = false;
+        // GL resources were invalidated by the context loss — rebuild them
+        initGL();
+        resize();
         if (!reduced) raf = requestAnimationFrame(start);
       }
     };
@@ -220,10 +244,8 @@ export function DotGrid() {
       canvas?.removeEventListener("webglcontextlost", onLost);
       canvas?.removeEventListener("webglcontextrestored", onRestored);
       if (raf) cancelAnimationFrame(raf);
-      gl?.deleteBuffer(buf);
-      gl?.deleteProgram(prog);
-      gl?.deleteShader(vs);
-      gl?.deleteShader(fs);
+      if (buffer) gl.deleteBuffer(buffer);
+      if (program) gl.deleteProgram(program);
     };
   }, []);
 
@@ -239,9 +261,7 @@ function runCanvas2DFallback(canvas: HTMLCanvasElement) {
   if (!ctx) return;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const colors: [number, number, number][] = [
-    [0, 225, 255],
-    [57, 127, 239],
-    [240, 248, 255],
+    [94, 23, 235],
   ];
   let w = 0;
   let h = 0;
@@ -283,13 +303,13 @@ function runCanvas2DFallback(canvas: HTMLCanvasElement) {
         const edge = 0.2 + 0.8 * Math.max(0, 1 - d / maxD);
         const slot = Math.floor(seed(i, 1) * 10);
         const color = colors[slot % colors.length];
-        let alpha = 0.08 + (slot / 9) * 0.57;
+        let alpha = 0.04 + (slot / 9) * 0.1;
         if (!reduced) {
           const tick = Math.floor((t / flickerRate) + seed(i, 2) * flickerRate);
           alpha *= 0.4 + 0.6 * seed(i + tick, 3);
         }
         ctx!.fillStyle = `rgba(${color[0]},${color[1]},${color[2]},${(alpha * edge).toFixed(3)})`;
-        ctx!.fillRect(px - 1.5, py - 1.5, 3, 3);
+        ctx!.fillRect(px - 2, py - 2, 4, 4);
       }
     }
   }

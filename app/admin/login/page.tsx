@@ -105,7 +105,7 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md animate-fade-in-up">
         <div className="mb-4 flex items-center gap-3">
           <div className="grad-btn flex h-11 w-11 items-center justify-center rounded-lg shadow-[0_0_18px_hsl(var(--primary)/0.35)]">
-            <ShieldCheck className="h-5 w-5 text-black" />
+            <ShieldCheck className="h-5 w-5 text-white" />
           </div>
           <div>
             <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">
