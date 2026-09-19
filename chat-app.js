@@ -80,13 +80,17 @@
             heroP.textContent = `Hello ${name} — ask me anything about cybersecurity, networking, ethical hacking, or Ashish's skills and projects.`;
         }
 
-        const saved = loadJSON(LS_HISTORY, []);
-        if (saved.length > 0) {
-            saved.forEach(m => appendMessage(m.role, m.content, { persist: false }));
-            hideGreeting();
-        } else {
-            chatInput.focus();
-        }
+        /* Restore saved history only after the markdown libs are ready */
+        waitMdLibs().then(() => {
+            const saved = loadJSON(LS_HISTORY, []);
+            if (saved.length > 0) {
+                saved.forEach(m => appendMessage(m.role, m.content, { persist: false }));
+                hideGreeting();
+            } else {
+                chatInput.focus();
+            }
+            scrollToBottom();
+        });
         loadModelBadge();
     }
 
@@ -131,7 +135,29 @@
     }
 
     /* ─── Markdown rendering (marked + DOMPurify, loaded via defer) ─── */
+
+    // Wait for the deferred CDN markdown libs so the first message renders as
+    // proper markdown instead of falling back to plain text.
+    function waitMdLibs(timeoutMs = 5000) {
+        return new Promise(resolve => {
+            const ready = () => typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined';
+            if (ready()) return resolve(true);
+            const start = Date.now();
+            const timer = setInterval(() => {
+                if (ready() || Date.now() - start > timeoutMs) {
+                    clearInterval(timer);
+                    resolve(ready());
+                }
+            }, 100);
+        });
+    }
+
     function renderMarkdown(text) {
+        let md = String(text);
+        /* Models often emit "## Heading" directly after a paragraph line with no
+           blank line; CommonMark then keeps the ## as literal text. Force a blank
+           line before ATX headings so they render properly. */
+        md = md.replace(/(^|\n)(#{1,6}\s)/g, '$1\n$2');
         if (typeof marked === 'undefined' || typeof DOMPurify === 'undefined') {
             const div = document.createElement('div');
             div.textContent = text;
@@ -237,7 +263,11 @@
         showTyping();
 
         try {
-            const history = loadJSON(LS_HISTORY, []).slice(-12).map(m => ({ role: m.role, content: m.content }));
+            /* let the deferred markdown libs finish loading while we wait on the API */
+            const [history] = await Promise.all([
+                Promise.resolve(loadJSON(LS_HISTORY, []).slice(-12).map(m => ({ role: m.role, content: m.content }))),
+                waitMdLibs()
+            ]);
             const data = await api('/api/chat', {
                 method: 'POST',
                 body: JSON.stringify({ messages: history })
