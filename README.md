@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/Status-Available%20for%20Opportunities-brightgreen?style=for-the-badge)
 ![GitHub](https://img.shields.io/badge/GitHub-Portfolio-181717?style=for-the-badge&logo=github&logoColor=white)
 
-**🎓 B.Tech CSE (Cyber Security) | NIET Greater Noida | 2nd Year**
+**🎓 B.Tech CSE (Cyber Security) | NIET Greater Noida | 3rd Year**
 
 [🌐 Live Portfolio](https://bitcodeashishcloud.github.io/Ashish-Gupta-Cyber-Security-Portfolio/) • [📧 Contact](mailto:agupta38160@gmail.com) • [💼 LinkedIn](https://www.linkedin.com/in/ashish-gupta-037973259/) • [📄 Resume](https://docs.google.com/document/d/1CyutTZwx5yiNymublFrvZl83Phl_J_4V5uztn3OJZJ0/edit?usp=sharing)
 
@@ -15,7 +15,7 @@
 ---
 # 🛡️ Ashish Gupta - Cyber Security Portfolio (Optimized)
 
-A modern, performance-optimized portfolio website for Ashish Gupta, a 2nd-year Cyber Security student at NIET, Greater Noida. Now featuring professional design, improved accessibility, and enhanced user experience.
+A modern, performance-optimized portfolio website for Ashish Gupta, a 3rd-year Cyber Security student at NIET, Greater Noida. Now featuring professional design, improved accessibility, and enhanced user experience.
 
 ## ✨ Key Features
 
