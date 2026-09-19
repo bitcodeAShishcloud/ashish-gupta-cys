@@ -109,7 +109,7 @@ export default function BlogPage() {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="glass mt-10 rounded-lg p-10 text-center text-muted-foreground">
+        <div className="grad-card mt-10 rounded-lg p-10 text-center text-muted-foreground">
           No posts match &ldquo;{query}&rdquo;.
         </div>
       ) : null}

@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Navbar } from "@/components/navbar";
-import { Footer } from "@/components/footer";
 
 export const metadata: Metadata = {
   title: "Ashish Gupta — Cyber Security Portfolio",
@@ -10,15 +8,18 @@ export const metadata: Metadata = {
   icons: { icon: "/favicon.webp" },
 };
 
+/*
+ * Root layout: html/body + the shared layered background. Each route group
+ * (site / admin) adds its own chrome — the public site gets the navbar +
+ * footer, while the admin console stays standalone like its own subdomain.
+ */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
         <div className="cyber-bg" aria-hidden />
         <div className="cyber-grid" aria-hidden />
-        <Navbar />
-        <main className="relative z-0 min-h-[calc(100vh-72px)] pt-[72px]">{children}</main>
-        <Footer />
+        <div className="relative z-0 min-h-screen">{children}</div>
       </body>
     </html>
   );

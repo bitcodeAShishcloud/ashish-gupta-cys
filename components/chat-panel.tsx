@@ -67,7 +67,7 @@ export function ChatPanel() {
   const [modelInfo, setModelInfo] = useState<string | null>(null);
   const [eraseOpen, setEraseOpen] = useState(false);
   const [limited, setLimited] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -104,7 +104,8 @@ export function ChatPanel() {
   }, []);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = scrollRef.current;
+    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
 
   function enterName() {
@@ -187,7 +188,7 @@ export function ChatPanel() {
   // ── Name gate ──
   if (!name) {
     return (
-      <div className="flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-16">
+      <div className="flex h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-5 py-16">
       <div className="grad-card w-full max-w-md rounded-xl p-8 text-center animate-fade-in-up">
         <div className="grad-btn mx-auto flex h-14 w-14 items-center justify-center rounded-full shadow-[0_0_24px_hsl(var(--primary)/0.4)]">
           <ShieldCheck className="h-7 w-7 text-black" />
@@ -219,10 +220,10 @@ export function ChatPanel() {
     );
   }
 
-  // ── Chat view ──
+  // ── Chat view: full-height app, messages scroll internally ──
   return (
-    <div className="flex min-h-[calc(100vh-72px)] flex-col px-5 py-8">
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+    <div className="flex h-[calc(100vh-72px)] flex-col overflow-hidden px-5 py-8">
+      <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -244,7 +245,7 @@ export function ChatPanel() {
         </div>
 
         {/* Messages */}
-        <div className="mt-6 flex-1 space-y-5">
+        <div ref={scrollRef} className="chat-scroll mt-6 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
           {messages.length === 0 ? (
             <div>
               <div className="glass rounded-xl p-5">
@@ -317,12 +318,10 @@ export function ChatPanel() {
               resets tomorrow.
             </div>
           ) : null}
-
-          <div ref={bottomRef} />
         </div>
 
         {/* Composer */}
-        <div className="sticky bottom-4 mt-6">
+        <div className="mt-4">
           <div className="glass flex items-end gap-2 rounded-2xl border border-border/60 p-2.5">
             <Textarea
               value={input}

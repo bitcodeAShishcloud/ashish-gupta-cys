@@ -198,14 +198,14 @@ export default function AdminPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-16">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-16">
+    <div className="mx-auto w-full max-w-6xl px-5 py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">

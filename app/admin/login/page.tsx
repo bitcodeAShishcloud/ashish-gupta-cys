@@ -94,14 +94,14 @@ export default function AdminLoginPage() {
 
   if (checking) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="flex flex-1 items-center justify-center py-16">
         <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-72px)] items-center justify-center px-5 py-16">
+    <div className="flex flex-1 items-center justify-center px-5 py-10">
       <div className="w-full max-w-md animate-fade-in-up">
         <div className="mb-4 flex items-center gap-3">
           <div className="grad-btn flex h-11 w-11 items-center justify-center rounded-lg shadow-[0_0_18px_hsl(var(--primary)/0.35)]">

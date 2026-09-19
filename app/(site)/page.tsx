@@ -63,7 +63,7 @@ export default function HomePage() {
               </a>
             </Button>
             <Button asChild variant="outline">
-              <a href={p.socials.email && `mailto:${p.socials.email}`}>
+              <a href={`mailto:${p.socials.email}`}>
                 <Mail className="mr-2 h-4 w-4" /> Contact
               </a>
             </Button>

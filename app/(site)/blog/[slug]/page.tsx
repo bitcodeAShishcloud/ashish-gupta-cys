@@ -1,8 +1,7 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, notFound } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { ArrowLeft, Calendar, Clock, Tag } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";

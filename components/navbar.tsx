@@ -51,12 +51,6 @@ export function Navbar() {
               {l.label}
             </Link>
           ))}
-          <Link
-            href="/admin/login"
-            className="ml-3 rounded-md border border-primary/40 bg-primary/5 px-3 py-2 text-sm font-medium text-primary transition hover:bg-primary/15 hover:shadow-[0_0_14px_hsl(var(--primary)/0.25)]"
-          >
-            Admin
-          </Link>
         </nav>
 
         {/* Mobile toggle */}
@@ -90,13 +84,6 @@ export function Navbar() {
                 {l.label}
               </Link>
             ))}
-            <Link
-              href="/admin/login"
-              onClick={() => setOpen(false)}
-              className="rounded-md border border-primary/40 px-3 py-2.5 text-center text-sm font-medium text-primary"
-            >
-              Admin
-            </Link>
           </nav>
         </div>
       )}
