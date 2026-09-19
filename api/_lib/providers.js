@@ -79,29 +79,83 @@ function isPrivateOrReservedIP(ip) {
     return first === 'fe80' || first === 'fc' || first === 'fd' || ip === '::1' || ip === '::';
 }
 
-/* Normalize: strip trailing slash so baseUrl + '/chat/completions' is safe */
+/* Normalize: strip trailing slash so baseUrl + endpoint joins safely */
 export function normalizeBaseUrl(url) {
     return String(url || '').trim().replace(/\/+$/, '');
 }
 
-/* Minimal OpenAI-compatible chat completion call. */
-export async function callProvider(provider, messages, { maxTokens = 900, timeoutMs = 30000 } = {}) {
+/* Optional endpoint path, must be a clean absolute path (no query, no //). */
+export function normalizeEndpoint(raw) {
+    if (raw === undefined || raw === null || String(raw).trim() === '') return '/chat/completions';
+    const path = String(raw).trim();
+    if (!path.startsWith('/')) return null;
+    if (path.includes('//') || path.includes('?') || path.includes('#')) return null;
+    return path;
+}
+
+/* Resolve a dotted path (with numeric index segments) in a JSON value. */
+export function resolvePath(data, dotted) {
+    if (!dotted || data === undefined || data === null) return undefined;
+    return String(dotted).split('.').reduce((node, key) => {
+        if (node === undefined || node === null) return undefined;
+        return node[key];
+    }, data);
+}
+
+/* Rough token estimate for client-text (1 token ≈ 4 chars). */
+export function estimateTokens(text) {
+    return Math.max(4, Math.round(String(text).length / 4));
+}
+
+/* Trim history to fit the provider's context window (system prompt always kept). */
+export function trimToContext(systemPrompt, history, contextWindow, maxOutput) {
+    const budget = Math.max(2000, Number(contextWindow) || 32000) - Math.max(200, Number(maxOutput) || 900) - 200;
+    const msgs = [{ role: 'system', content: systemPrompt }];
+    let used = estimateTokens(systemPrompt);
+    const picked = [];
+    for (let i = history.length - 1; i >= 0 && picked.length < 24; i--) {
+        const m = history[i];
+        const cost = estimateTokens(m.content) + 4;
+        if (used + cost > budget) break;
+        picked.unshift(m);
+        used += cost;
+    }
+    return msgs.concat(picked);
+}
+
+export function providerDefaults(provider) {
+    const d = provider || {};
+    return {
+        endpoint: normalizeEndpoint(d.endpoint) || '/chat/completions',
+        authHeader: String(d.authHeader || '').trim() || 'Authorization',
+        authPrefix: d.authPrefix === undefined ? 'Bearer ' : String(d.authPrefix),
+        responseField: d.responseField ? String(d.responseField) : null,
+        maxOutput: Math.min(32000, Math.max(100, Number(d.maxOutput) || 900)),
+        contextWindow: Math.min(512000, Math.max(2000, Number(d.contextWindow) || 32000))
+    };
+}
+
+/* Flexible provider call: OpenAI-compatible by default, but endpoint / auth
+   header / key prefix / response path are all configurable so non-OpenAI
+   providers (e.g. custom /v1/chat/message style APIs) work too. */
+export async function callProvider(provider, messages, { timeoutMs = 30000 } = {}) {
+    const c = providerDefaults(provider);
     const baseUrl = normalizeBaseUrl(provider.baseUrl);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${provider.apiKey}`
-    };
+    const headers = { 'Content-Type': 'application/json' };
+    headers[c.authHeader] = c.authPrefix + String(provider.apiKey || '');
     // OpenRouter-specific attribution headers (ignored by other providers)
-    if (/openrouter\.ai$/i.test(new URL(baseUrl).hostname)) {
-        headers['HTTP-Referer'] = process.env.PUBLIC_SITE_URL || 'https://ashish-gupta-portfolio.vercel.app';
-        headers['X-Title'] = 'Ashish Gupta Portfolio Chat';
-    }
+    try {
+        if (/openrouter\.ai$/i.test(new URL(baseUrl).hostname)) {
+            headers['HTTP-Referer'] = process.env.PUBLIC_SITE_URL || 'https://ashish-gupta-cys-portfolio.vercel.app';
+            headers['X-Title'] = 'Ashish Gupta Portfolio Chat';
+        }
+    } catch { /* bad baseUrl is caught later */ }
 
     try {
-        const res = await fetch(`${baseUrl}/chat/completions`, {
+        const res = await fetch(baseUrl + c.endpoint, {
             method: 'POST',
             headers,
             signal: controller.signal,
@@ -109,7 +163,7 @@ export async function callProvider(provider, messages, { maxTokens = 900, timeou
                 model: provider.model,
                 messages,
                 temperature: 0.7,
-                max_tokens: maxTokens
+                max_tokens: c.maxOutput
             })
         });
 
@@ -118,13 +172,41 @@ export async function callProvider(provider, messages, { maxTokens = 900, timeou
         try { data = text ? JSON.parse(text) : null; } catch { data = null; }
 
         if (!res.ok) {
-            const err = new Error(data?.error?.message || text || `HTTP ${res.status}`);
+            const detailRaw = data?.error?.message || data?.message || data?.msg || data?.detail || text || `HTTP ${res.status}`;
+            const detail = String(detailRaw).slice(0, 300);
+            const err = new Error(detail);
             err.status = res.status;
+            err.detail = detail;
             throw err;
         }
-        const reply = data?.choices?.[0]?.message?.content;
-        if (!reply) throw new Error('Provider returned an empty response');
-        return reply;
+
+        let reply;
+        if (c.responseField) {
+            reply = resolvePath(data, c.responseField);
+            if (reply === undefined || reply === null || reply === '') {
+                const err = new Error(`Provider reply not found at responseField "${c.responseField}"`);
+                err.status = 502;
+                err.detail = 'Response did not contain the configured responseField — check the provider docs.';
+                throw err;
+            }
+        } else {
+            // OpenAI-style first, then common fallbacks
+            reply = resolvePath(data, 'choices.0.message.content');
+            if (reply === undefined || reply === null || reply === '') {
+                reply = resolvePath(data, 'choices.0.text')
+                    ?? data?.reply ?? data?.response ?? data?.answer ?? data?.message;
+            }
+            if (typeof reply !== 'string' || reply.trim() === '') {
+                const err = new Error('Provider returned an empty or unrecognized response');
+                err.status = 502;
+                err.detail = `Got keys: ${data ? Object.keys(data).join(', ') : 'non-JSON body'} — set "Response Field" in the provider config if it is not OpenAI-compatible.`;
+                throw err;
+            }
+        }
+
+        const out = String(reply).slice(0, 12000);
+        if (!out.trim()) throw new Error('Provider returned an empty response');
+        return out;
     } finally {
         clearTimeout(timer);
     }

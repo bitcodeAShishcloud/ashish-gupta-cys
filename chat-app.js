@@ -248,10 +248,15 @@
             updateBadgeRemaining(Math.max(0, DAILY_LIMIT - count));
         } catch (err) {
             removeTyping();
-            const msg = (err.data && err.data.message) ||
+            let msg = (err.data && err.data.message) ||
                 (err.code === 'network'
                     ? 'Chat server not reachable. The API routes require the Vercel deployment.'
                     : 'Something went wrong. Please try again.');
+            /* Provider-level detail (e.g. "404 Not Found" or "invalid model") helps
+               the owner debug the provider config — redacted server-side already. */
+            if (err.data && err.data.detail) {
+                msg += ' — provider said: ' + err.data.detail;
+            }
             appendMessage('bot', msg, { persist: false, error: true });
         } finally {
             isSending = false;

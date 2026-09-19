@@ -160,12 +160,31 @@
                 <div class="info-box" style="margin-bottom: 1.5rem;">
                     <h4><i class="fas fa-info-circle"></i> How it works (zero-database setup)</h4>
                     <ul>
-                        <li>Chat history of visitors is <strong>never stored on the server</strong> — it stays in each visitor's browser.</li>
-                        <li>The AI provider(s) are configured via a single Vercel environment variable: <code>AI_PROVIDERS_JSON</code></li>
-                        <li>Any OpenAI-compatible provider works (OpenRouter, Groq, Gemini, xAI, custom…)</li>
-                        <li>Workflow: build the JSON below → Test the connection → copy it → paste into <strong>Vercel → Settings → Environment Variables</strong> → redeploy.</li>
+                        <li>Visitor chat history is <strong>never stored on the server</strong> — it stays in each visitor's browser.</li>
+                        <li>The AI provider(s) are configured via one Vercel env var: <code>AI_PROVIDERS_JSON</code></li>
+                        <li>Any provider works — OpenAI-compatible (OpenRouter, Groq, Gemini…) or a custom API</li>
+                        <li>OpenAI-compatible? Fill name/base URL/key/model and skip Advanced. Custom (e.g. <code>/v1/chat/messages</code> style)? Open Advanced and set the endpoint + response field.</li>
+                        <li>Workflow: fill the form → <strong>Test Connection</strong> → <strong>Generate Env JSON</strong> → copy → paste into <strong>Vercel → Settings → Environment Variables</strong> as <code>AI_PROVIDERS_JSON</code> → redeploy.</li>
                     </ul>
                 </div>
+
+                <details class="provider-example" style="margin-bottom: 1.5rem;">
+                    <summary style="cursor: pointer; color: var(--text-secondary); font-size: 0.85rem; font-family: 'Courier New', monospace;">
+                        <i class="fas fa-code"></i> Example formats (full field reference)
+                    </summary>
+                    <pre class="provider-env-box" style="margin-top: 0.75rem;">// OpenAI-compatible (OpenRouter / Groq / Gemini / xAI …)
+{ "activeId": "p1", "providers": [ { "id": "p1", "name": "OpenRouter",
+    "baseUrl": "https://openrouter.ai/api/v1", "apiKey": "sk-or-…",
+    "model": "qwen/qwen3-max:free" } ] }
+
+// Custom API (non-OpenAI endpoint, e.g. /v1/chat/messages)
+{ "activeId": "p1", "providers": [ { "id": "p1", "name": "MyProvider",
+    "baseUrl": "https://api.myprovider.example.com", "apiKey": "sk-…",
+    "model": "my-model",
+    "endpoint": "/v1/chat/messages", "authHeader": "x-api-key",
+    "authPrefix": "", "responseField": "message.content",
+    "contextWindow": 8000, "maxOutput": 1024 } ] }</pre>
+                </details>
 
                 <h4 style="margin: 0 0 0.75rem; color: var(--primary-color); font-family: 'Courier New', monospace; text-transform: uppercase; letter-spacing: 0.1em;">&gt; Active on server</h4>
                 <div id="providerList" class="provider-list">
@@ -185,14 +204,51 @@
                                 <input type="text" id="pfModel" class="input-field" placeholder="qwen/qwen3-max:free" maxlength="120" required>
                             </div>
                             <div class="provider-field provider-field--wide">
-                                <label for="pfBaseUrl">Base URL (OpenAI-compatible) *</label>
-                                <input type="url" id="pfBaseUrl" class="input-field" placeholder="https://openrouter.ai/api/v1" required>
+                                <label for="pfBaseUrl">Base URL *</label>
+                                <input type="url" id="pfBaseUrl" class="input-field" placeholder="https://openrouter.ai/api/v1  (OpenRouter) · https://api.xkiro.example.com  (custom)" required>
                             </div>
                             <div class="provider-field provider-field--wide">
                                 <label for="pfApiKey">API Key *</label>
                                 <input type="password" id="pfApiKey" class="input-field" placeholder="sk-or-…" autocomplete="new-password" required>
                             </div>
                         </div>
+
+                        <details class="provider-advanced" style="margin-top: 1rem;">
+                            <summary style="cursor: pointer; color: var(--primary-color); font-family: 'Courier New', monospace; font-size: 0.8rem; letter-spacing: 0.05em;">
+                                <i class="fas fa-sliders"></i> Advanced settings (custom / non-OpenAI providers — leave defaults if OpenAI-compatible)
+                            </summary>
+                            <div class="provider-form-grid" style="margin-top: 1rem;">
+                                <div class="provider-field">
+                                    <label for="pfEndpoint">Endpoint path</label>
+                                    <input type="text" id="pfEndpoint" class="input-field" placeholder="/chat/completions (default) · e.g. /v1/chat/messages" maxlength="120">
+                                </div>
+                                <div class="provider-field">
+                                    <label for="pfResponseField">Response field</label>
+                                    <input type="text" id="pfResponseField" class="input-field" placeholder="choices.0.message.content (default)" maxlength="80">
+                                </div>
+                                <div class="provider-field">
+                                    <label for="pfAuthHeader">Auth header</label>
+                                    <input type="text" id="pfAuthHeader" class="input-field" placeholder="Authorization (default)" maxlength="40">
+                                </div>
+                                <div class="provider-field">
+                                    <label for="pfAuthPrefix">Key prefix</label>
+                                    <input type="text" id="pfAuthPrefix" class="input-field" placeholder="Bearer  (default) · empty = raw key" maxlength="20">
+                                </div>
+                                <div class="provider-field">
+                                    <label for="pfContextWindow">Context window (tokens)</label>
+                                    <input type="number" id="pfContextWindow" class="input-field" placeholder="32000 (default)" min="2000" max="512000" step="1000">
+                                </div>
+                                <div class="provider-field">
+                                    <label for="pfMaxOutput">Max output (tokens)</label>
+                                    <input type="number" id="pfMaxOutput" class="input-field" placeholder="900 (default)" min="100" max="32000" step="100">
+                                </div>
+                                <div class="provider-field">
+                                    <label class="provider-check">
+                                        <input type="checkbox" id="pfRawKey"> Send key without prefix (no "Bearer ")
+                                    </label>
+                                </div>
+                            </div>
+                        </details>
                         <div style="display: flex; gap: 0.75rem; margin-top: 1.25rem; flex-wrap: wrap;">
                             <button type="button" class="btn btn-sm" id="testProviderBtn" style="background: rgba(0, 255, 0, 0.08); color: var(--secondary-color); border: 1px solid var(--secondary-color); box-shadow: none;">
                                 <i class="fas fa-plug"></i> Test Connection
@@ -667,6 +723,12 @@
         const pfModel = document.getElementById('pfModel');
         const pfBaseUrl = document.getElementById('pfBaseUrl');
         const pfApiKey = document.getElementById('pfApiKey');
+        const pfEndpoint = document.getElementById('pfEndpoint');
+        const pfResponseField = document.getElementById('pfResponseField');
+        const pfAuthHeader = document.getElementById('pfAuthHeader');
+        const pfAuthPrefix = document.getElementById('pfAuthPrefix');
+        const pfContextWindow = document.getElementById('pfContextWindow');
+        const pfMaxOutput = document.getElementById('pfMaxOutput');
         const testResult = document.getElementById('providerTestResult');
         const providerMessage = document.getElementById('providerMessage');
         const envJsonCard = document.getElementById('envJsonCard');
@@ -717,6 +779,22 @@
             `).join('');
         }
 
+        function advancedFields() {
+            const out = {};
+            if (pfEndpoint && pfEndpoint.value.trim()) out.endpoint = pfEndpoint.value.trim();
+            if (pfResponseField && pfResponseField.value.trim()) out.responseField = pfResponseField.value.trim();
+            if (pfAuthHeader && pfAuthHeader.value.trim()) out.authHeader = pfAuthHeader.value.trim();
+            const rawKey = document.getElementById('pfRawKey');
+            if (rawKey && rawKey.checked) {
+                out.authPrefix = ''; // explicit: send key with no prefix
+            } else if (pfAuthPrefix && pfAuthPrefix.value.trim()) {
+                out.authPrefix = pfAuthPrefix.value.trim();
+            }
+            if (pfContextWindow && pfContextWindow.value.trim()) out.contextWindow = Number(pfContextWindow.value);
+            if (pfMaxOutput && pfMaxOutput.value.trim()) out.maxOutput = Number(pfMaxOutput.value);
+            return out;
+        }
+
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             const entry = {
@@ -724,7 +802,8 @@
                 name: pfName.value.trim(),
                 baseUrl: pfBaseUrl.value.trim().replace(/\/+$/, ''),
                 apiKey: pfApiKey.value.trim(),
-                model: pfModel.value.trim()
+                model: pfModel.value.trim(),
+                ...advancedFields()
             };
             if (!entry.name || !entry.baseUrl || !entry.apiKey || !entry.model) {
                 showMessage('error', 'All fields are required to generate the env JSON.');
@@ -749,7 +828,8 @@
                         provider: {
                             baseUrl: pfBaseUrl.value.trim(),
                             apiKey: pfApiKey.value.trim(),
-                            model: pfModel.value.trim()
+                            model: pfModel.value.trim(),
+                            ...advancedFields()
                         }
                     })
                 });

@@ -827,6 +827,26 @@ body {
     overflow-y: auto;
 }
 
+.provider-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    user-select: none;
+}
+
+.provider-check input {
+    accent-color: var(--primary-color);
+    width: 15px;
+    height: 15px;
+}
+
+.provider-advanced summary:hover {
+    text-decoration: underline;
+}
+
 .provider-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
