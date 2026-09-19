@@ -308,8 +308,8 @@ export default function AdminPage() {
                         className={cn(
                           "mt-3 rounded-md border px-3 py-2 font-mono text-xs",
                           testResult.ok
-                            ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                            : "border-red-500/40 bg-red-500/10 text-red-300",
+                            ? "border-success/40 bg-success/10 text-success"
+                            : "border-danger/40 bg-danger/10 text-danger",
                         )}
                       >
                         {testResult.ok ? "✓ " : "✗ "}
@@ -477,7 +477,7 @@ export default function AdminPage() {
                     Output
                     <Button size="sm" variant="outline" onClick={copySnippet}>
                       {copied ? (
-                        <Check className="mr-1.5 h-4 w-4 text-emerald-400" />
+                        <Check className="mr-1.5 h-4 w-4 text-success" />
                       ) : (
                         <Copy className="mr-1.5 h-4 w-4" />
                       )}

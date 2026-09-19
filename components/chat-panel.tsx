@@ -203,6 +203,7 @@ export function ChatPanel() {
           </p>
           <div className="mt-6 flex gap-2">
             <Input
+              id="chat-name"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && enterName()}
@@ -277,7 +278,7 @@ export function ChatPanel() {
             messages.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-[hsl(215_100%_55%/0.3)] px-4 py-3 text-sm text-foreground shadow-[0_0_16px_hsl(var(--primary)/0.15)]">
+                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-[hsl(var(--secondary)/0.35)] px-4 py-3 text-sm text-foreground shadow-[0_0_16px_hsl(var(--primary)/0.15)]">
                     {m.content}
                   </div>
                 </div>
@@ -308,12 +309,12 @@ export function ChatPanel() {
           ) : null}
 
           {error ? (
-            <div className="rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
               {error}
             </div>
           ) : null}
           {limited ? (
-            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-300">
+            <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
               Daily limit of {DAILY_LIMIT} messages reached. The counter
               resets tomorrow.
             </div>
@@ -346,7 +347,7 @@ export function ChatPanel() {
               {sending ? <Terminal className="h-5 w-5 animate-pulse" /> : <Send className="h-5 w-5" />}
             </Button>
           </div>
-          <p className={cn("mt-2 text-center font-mono text-[11px]", limited ? "text-amber-400" : "text-muted-foreground")}>
+          <p className={cn("mt-2 text-center font-mono text-[11px]", limited ? "text-warning" : "text-muted-foreground")}>
             {limited
               ? "Daily limit reached"
               : `${messages.filter((m) => m.role === "user").length} sent today · limit ${DAILY_LIMIT} · data stays in your browser`}

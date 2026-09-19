@@ -4,36 +4,50 @@
 
 @layer base {
   :root {
-    --background: 236 28% 5%;
-    --foreground: 220 30% 96%;
+    /* ═══════════════════════════════════════════════════════════
+       BRAND COLOR SYSTEM
+       2 MAJOR (brand identity) + 4 MINOR (semantic)
+       Major 1  --primary     signature cyan   (tech / attack surface)
+       Major 2  --secondary   shield blue      (defense / trust)
+       Minor 1  --success     secure green
+       Minor 2  --warning     amber alert
+       Minor 3  --destructive threat red
+       Minor 4  --info        steel ice (muted hierarchy)
+       Base neutrals: premium deep-navy scale (SOC-console dark)
+       ═══════════════════════════════════════════════════════════ */
 
-    /* cyber cyan primary + gradient partner hues (used by .grad-* utilities) */
+    /* Neutrals — deep navy, not pure black */
+    --background: 220 30% 5%;
+    --foreground: 214 30% 96%;
+    --card: 220 25% 8%;
+    --card-foreground: 214 30% 96%;
+    --muted: 220 22% 14%;
+    --muted-foreground: 218 14% 66%;
+    --accent: 220 25% 12%;
+    --accent-foreground: 214 30% 96%;
+    --border: 220 20% 16%;
+    --input: 220 22% 14%;
+    --popover: 220 26% 7%;
+    --popover-foreground: 214 30% 96%;
+
+    /* MAJOR 1 — signature cyan */
     --primary: 187 100% 50%;
-    --primary-foreground: 0 0% 6%;
-    --blue: 215 100% 55%;
-    --violet: 265 90% 68%;
-
-    --secondary: 140 85% 45%;
-    --secondary-foreground: 240 30% 4%;
-
-    --muted: 235 18% 14%;
-    --muted-foreground: 225 12% 68%;
-
-    --accent: 236 30% 12%;
-    --accent-foreground: 220 30% 96%;
-
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 236 18% 16%;
-    --input: 236 20% 14%;
+    --primary-foreground: 220 30% 5%;
     --ring: 187 100% 50%;
 
-    --popover: 236 25% 7%;
-    --popover-foreground: 220 30% 96%;
+    /* MAJOR 2 — shield blue */
+    --secondary: 217 85% 58%;
+    --secondary-foreground: 220 30% 5%;
 
-    --card: 237 22% 8%;
-    --card-foreground: 220 30% 96%;
+    /* MINOR — semantic */
+    --success: 152 70% 50%;
+    --success-foreground: 0 0% 100%;
+    --warning: 42 95% 55%;
+    --warning-foreground: 220 30% 8%;
+    --destructive: 0 72% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --info: 215 25% 62%;
+    --info-foreground: 220 30% 8%;
 
     --radius: 0.6rem;
   }
@@ -49,17 +63,17 @@
 }
 
 @layer utilities {
-  /* ── Layered cyber background: deep indigo wash + cyan/violet/green glows ── */
+  /* ── Layered background: deep navy wash + cyan/shield-blue glows + faint secure-green ── */
   .cyber-bg {
     position: fixed;
     inset: 0;
     z-index: -2;
     pointer-events: none;
     background:
-      radial-gradient(1100px 640px at 78% -6%, hsl(var(--primary) / 0.16), transparent 60%),
-      radial-gradient(900px 620px at -8% 28%, hsl(var(--violet) / 0.13), transparent 55%),
-      radial-gradient(1000px 700px at 55% 118%, hsl(var(--secondary) / 0.09), transparent 55%),
-      linear-gradient(180deg, hsl(236 30% 6%) 0%, hsl(236 28% 4%) 55%, hsl(240 25% 6%) 100%);
+      radial-gradient(1100px 640px at 78% -6%, hsl(var(--primary) / 0.14), transparent 60%),
+      radial-gradient(900px 620px at -8% 28%, hsl(var(--secondary) / 0.12), transparent 55%),
+      radial-gradient(1000px 700px at 55% 118%, hsl(var(--success) / 0.07), transparent 55%),
+      linear-gradient(180deg, hsl(220 32% 6%) 0%, hsl(220 30% 4%) 55%, hsl(222 28% 7%) 100%);
   }
   .cyber-grid {
     position: fixed;
@@ -67,41 +81,39 @@
     z-index: -1;
     pointer-events: none;
     background-image:
-      linear-gradient(hsl(var(--primary) / 0.05) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(var(--primary) / 0.05) 1px, transparent 1px);
+      linear-gradient(hsl(var(--primary) / 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--primary) / 0.045) 1px, transparent 1px);
     background-size: 44px 44px;
     mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
     -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 100%);
   }
 
-  /* ── Gradient helpers ── */
+  /* ── Gradient helpers: brand major 1 → major 2 only (no other hues) ── */
   .grad-text {
     background: linear-gradient(
       95deg,
       hsl(var(--primary)) 0%,
-      hsl(var(--blue)) 45%,
-      hsl(var(--violet)) 100%
+      hsl(var(--secondary)) 100%
     );
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
   .grad-btn {
-    background-image: linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--blue)) 100%);
+    background-image: linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
   }
   .grad-card {
     position: relative;
     border: 1px solid transparent;
     background:
       linear-gradient(165deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.55)) padding-box,
-      linear-gradient(135deg, hsl(var(--primary) / 0.55), hsl(var(--blue) / 0.18) 45%, hsl(var(--violet) / 0.5))
-        border-box;
+      linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.45)) border-box;
     transition: box-shadow 0.3s ease, transform 0.3s ease;
   }
   .grad-card:hover {
     box-shadow:
-      0 0 24px hsl(var(--primary) / 0.12),
-      0 18px 48px hsl(var(--violet) / 0.1);
+      0 0 24px hsl(var(--primary) / 0.1),
+      0 18px 48px hsl(var(--secondary) / 0.12);
   }
 
   .glass {
@@ -113,10 +125,10 @@
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
   }
   .glass:hover {
-    border-color: hsl(var(--primary) / 0.45);
+    border-color: hsl(var(--secondary) / 0.45);
     box-shadow:
-      0 0 24px hsl(var(--primary) / 0.1),
-      0 18px 48px hsl(var(--violet) / 0.08);
+      0 0 24px hsl(var(--primary) / 0.08),
+      0 18px 48px hsl(var(--secondary) / 0.1);
   }
 
   /* Slim gradient scrollbar for the chat message pane */
@@ -131,7 +143,7 @@
     background: transparent;
   }
   .chat-scroll::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, hsl(var(--primary) / 0.5), hsl(var(--violet) / 0.5));
+    background: linear-gradient(180deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.5));
     border-radius: 9999px;
   }
 
