@@ -130,8 +130,9 @@ export function providerDefaults(provider) {
         authHeader: String(d.authHeader || '').trim() || 'Authorization',
         authPrefix: d.authPrefix === undefined ? 'Bearer ' : String(d.authPrefix),
         responseField: d.responseField ? String(d.responseField) : null,
-        maxOutput: Math.min(32000, Math.max(100, Number(d.maxOutput) || 900)),
-        contextWindow: Math.min(512000, Math.max(2000, Number(d.contextWindow) || 32000))
+        // Upper bounds only clamp absurd/mistyped values; real provider caps pass through.
+        maxOutput: Math.min(196608, Math.max(100, Number(d.maxOutput) || 900)),
+        contextWindow: Math.min(2000000, Math.max(2000, Number(d.contextWindow) || 32000))
     };
 }
 
