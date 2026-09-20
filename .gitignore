@@ -28,3 +28,6 @@ npm-debug.log*
 
 # old static-site build tool
 dev-server.mjs
+
+# build artifacts
+*.tsbuildinfo
