@@ -99,17 +99,18 @@ export function DotGrid() {
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    // Brand colors (RGB 0-1): neon violet #5e17eb — the reference's dot
-    // palette is a single violet; all six color slots use it.
+    // Brand colors (RGB 0-1): violet family — mostly neon violet #5e17eb,
+    // with lighter violet/lavender variants so the dots stay clearly visible
+    // on the pure-black background.
     const colors = [
-      94 / 255, 23 / 255, 235 / 255,
-      94 / 255, 23 / 255, 235 / 255,
-      94 / 255, 23 / 255, 235 / 255,
-      94 / 255, 23 / 255, 235 / 255,
-      94 / 255, 23 / 255, 235 / 255,
-      94 / 255, 23 / 255, 235 / 255,
+      94 / 255, 23 / 255, 235 / 255, // #5e17eb
+      94 / 255, 23 / 255, 235 / 255, // #5e17eb
+      139 / 255, 92 / 255, 246 / 255, // #8b5cf6 lighter violet
+      139 / 255, 92 / 255, 246 / 255, // #8b5cf6
+      167 / 255, 139 / 255, 250 / 255, // #a78bfa lavender
+      167 / 255, 139 / 255, 250 / 255, // #a78bfa
     ];
-    const opacities = [0.04, 0.04, 0.04, 0.04, 0.04, 0.08, 0.08, 0.08, 0.08, 0.14];
+    const opacities = [0.08, 0.08, 0.12, 0.12, 0.18, 0.18, 0.3, 0.42, 0.6, 0.85];
     const speed = 3;
 
     function compile(type: number, src: string) {
@@ -262,6 +263,8 @@ function runCanvas2DFallback(canvas: HTMLCanvasElement) {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const colors: [number, number, number][] = [
     [94, 23, 235],
+    [139, 92, 246],
+    [167, 139, 250],
   ];
   let w = 0;
   let h = 0;
@@ -303,7 +306,7 @@ function runCanvas2DFallback(canvas: HTMLCanvasElement) {
         const edge = 0.2 + 0.8 * Math.max(0, 1 - d / maxD);
         const slot = Math.floor(seed(i, 1) * 10);
         const color = colors[slot % colors.length];
-        let alpha = 0.04 + (slot / 9) * 0.1;
+        let alpha = 0.06 + (slot / 9) * 0.55;
         if (!reduced) {
           const tick = Math.floor((t / flickerRate) + seed(i, 2) * flickerRate);
           alpha *= 0.4 + 0.6 * seed(i + tick, 3);
