@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { HeroTerminal } from "@/components/hero-terminal";
+import { HeroCard } from "@/components/hero-card";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
@@ -38,7 +38,7 @@ export default function HomePage() {
     <div className="mx-auto max-w-6xl px-5">
       {/* ── Hero ── */}
       <section className="flex min-h-[calc(100vh-72px)] flex-col justify-center py-16">
-        <div className="grid items-center gap-12 lg:grid-cols-2">
+        <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
           <div className="animate-fade-in-up">
             <div className="mb-4 flex items-center gap-2">
               <Badge variant="success" className="font-mono">
@@ -77,14 +77,14 @@ export default function HomePage() {
             </div>
             <div className="mt-12 grid max-w-md grid-cols-3 gap-3">
               {p.stats.map((s) => (
-                <div key={s.label} className="grad-card rounded-lg p-4 text-center">
-                  <div className="font-mono text-2xl font-bold text-primary">{s.value}</div>
+                <div key={s.label} className="grad-card rounded-lg p-3 text-center sm:p-4">
+                  <div className="font-mono text-xl font-bold text-foreground sm:text-2xl">{s.value}</div>
                   <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
                 </div>
               ))}
             </div>
           </div>
-          <HeroTerminal />
+          <HeroCard />
         </div>
       </section>
 
@@ -117,7 +117,7 @@ export default function HomePage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="font-mono text-sm text-primary">
+              <div className="font-mono text-sm font-semibold text-foreground">
                 {p.education.degree}
               </div>
               <div className="mt-1 text-sm text-muted-foreground">
@@ -150,7 +150,7 @@ export default function HomePage() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="font-medium">{sk.name}</span>
                       {"level" in sk && sk.level ? (
-                        <span className="font-mono text-xs text-primary">{sk.level}%</span>
+                        <span className="font-mono text-xs text-muted-foreground">{sk.level}%</span>
                       ) : null}
                     </div>
                     <p className="mt-0.5 text-xs text-muted-foreground">{sk.desc}</p>
@@ -232,7 +232,7 @@ export default function HomePage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="font-mono text-sm text-primary">
+                <div className="font-mono text-sm text-foreground">
                   {exp.org} · {exp.year}
                 </div>
                 <p className="mt-2 text-sm text-muted-foreground">{exp.desc}</p>
@@ -262,6 +262,8 @@ export default function HomePage() {
                   <img
                     src={cert.image}
                     alt={cert.title}
+                    loading="lazy"
+                    decoding="async"
                     className="h-20 w-20 shrink-0 rounded-lg border border-border/60 object-cover"
                   />
                 ) : null}
@@ -273,7 +275,7 @@ export default function HomePage() {
                     {cert.issuer} · {cert.date}
                   </div>
                   {cert.status ? (
-                    <div className="mt-1 font-mono text-xs text-primary">{cert.status}</div>
+                    <div className="mt-1 font-mono text-xs text-muted-foreground">{cert.status}</div>
                   ) : null}
                   {cert.link ? (
                     <a

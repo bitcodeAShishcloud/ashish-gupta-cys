@@ -75,6 +75,8 @@ export default function BlogPage() {
                 <img
                   src={post.image}
                   alt={post.title}
+                  loading="lazy"
+                  decoding="async"
                   className="mb-4 h-36 w-full rounded-lg border border-border/60 object-cover"
                 />
               ) : null}

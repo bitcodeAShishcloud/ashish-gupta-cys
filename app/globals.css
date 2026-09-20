@@ -161,13 +161,13 @@
   @apply font-semibold tracking-tight text-foreground;
 }
 .markdown-body h1 { @apply text-2xl mt-6; }
-.markdown-body h2 { @apply text-xl mt-6 border-b border-border/60 pb-2 text-primary; }
+.markdown-body h2 { @apply text-xl mt-6 border-b border-border/60 pb-2 text-foreground; }
 .markdown-body h3 { @apply text-base mt-4 text-foreground; }
 .markdown-body p { @apply my-3; }
 .markdown-body ul { @apply list-disc pl-6 space-y-1; }
 .markdown-body ol { @apply list-decimal pl-6 space-y-1; }
 .markdown-body code {
-  @apply mono rounded bg-primary/10 px-1.5 py-0.5 text-[13px] text-primary;
+  @apply mono rounded bg-primary/10 px-1.5 py-0.5 text-[13px] text-foreground;
 }
 .markdown-body pre {
   @apply mono overflow-x-auto rounded-lg border border-border bg-black/50 p-4 text-[13px] leading-6;

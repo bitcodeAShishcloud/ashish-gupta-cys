@@ -54,6 +54,8 @@ export default function BlogPostPage() {
         <img
           src={post.image}
           alt={post.title}
+          fetchPriority="high"
+          decoding="async"
           className="mt-8 max-h-96 w-full rounded-xl border border-border/60 object-cover"
         />
       ) : null}
