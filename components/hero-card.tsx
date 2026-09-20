@@ -41,21 +41,21 @@ export function HeroCard() {
           </div>
         </div>
 
-        {/* photo */}
-        <div className="relative overflow-hidden rounded-xl border border-primary/25">
+        {/* photo — circular avatar */}
+        <div className="relative mx-auto h-40 w-40 overflow-hidden rounded-full border-2 border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.4)] sm:h-44 sm:w-44">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/assets/profile-photo.webp"
             alt={p.name}
             loading="eager"
             decoding="async"
-            className="aspect-square w-full object-cover object-top"
+            className="h-full w-full object-cover object-center"
           />
-          <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-white/5" />
+          <div className="pointer-events-none absolute inset-0 rounded-full ring-1 ring-inset ring-white/10" />
         </div>
 
         {/* name + role */}
-        <div className="mt-4">
+        <div className="mt-4 text-center">
           <h2 className="text-lg font-bold text-foreground">{p.name}</h2>
           <p className="mt-0.5 font-mono text-xs text-muted-foreground">
             {p.role} · {p.education.institution}
