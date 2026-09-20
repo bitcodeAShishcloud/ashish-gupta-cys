@@ -4,6 +4,7 @@ import {
   Award,
   BadgeCheck,
   Briefcase,
+  ExternalLink,
   GraduationCap,
   Github,
   Globe,
@@ -175,7 +176,9 @@ export default function HomePage() {
         <SectionLabel>{"projects"}</SectionLabel>
         <h2 className="mt-1 text-3xl font-bold">Projects</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {p.projects.map((proj) => (
+          {p.projects
+            .filter((proj) => !proj.freelance)
+            .map((proj) => (
             <Card key={proj.name} className="group transition-colors hover:border-primary/40">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
@@ -216,6 +219,66 @@ export default function HomePage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </section>
+
+      {/* ── Freelance work ── */}
+      <section id="freelance" className="scroll-mt-24 py-20">
+        <SectionLabel>{"freelance work"}</SectionLabel>
+        <h2 className="mt-1 text-3xl font-bold">Freelance Work</h2>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+          Client properties I designed, built, and shipped end-to-end, solo —
+          2025–present. Each one has a full technical case study on the{" "}
+          <Link href="/blog" className="text-primary hover:underline">
+            blog
+          </Link>
+          .
+        </p>
+        <div className="mt-8 grid gap-6 md:grid-cols-2">
+          {p.projects
+            .filter((proj) => proj.freelance)
+            .map((proj) => (
+              <Card key={proj.name} className="group transition-colors hover:border-primary/40">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-lg font-semibold text-foreground">{proj.name}</h3>
+                    <div className="flex gap-1.5">
+                      {proj.live ? (
+                        <a
+                          href={proj.live}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`Visit ${proj.name}`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      ) : null}
+                      {proj.caseStudy ? (
+                        <Link
+                          href={`/blog/${proj.caseStudy}`}
+                          aria-label={`Read the case study for ${proj.name}`}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition hover:border-primary/50 hover:text-primary"
+                        >
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">{proj.desc}</p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {proj.tech.map((t) => (
+                      <Badge key={t} variant="outline" className="font-mono text-[11px]">
+                        {t}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="mt-3 font-mono text-xs text-muted-foreground">
+                    {proj.live.replace(/^https?:\/\//, "")}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
         </div>
       </section>
 

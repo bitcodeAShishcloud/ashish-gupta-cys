@@ -20,7 +20,7 @@ export const BLOG_POSTS: BlogPost[] = [
     tags: ["PHP", "MySQL", "JavaScript", "API"],
     date: "2026-05-08",
     readTime: "6 min read",
-    image: "blog-images/news-aggregator.webp",
+    image: "/blog-images/news-aggregator.webp",
     content: `
 One of the projects I'm most proud of is my **News Aggregator** — a full-stack web application that fetches the latest technology news from NewsAPI, stores articles in a MySQL database, and presents them in a clean, browsable feed with user authentication.
 
@@ -73,7 +73,7 @@ This project taught me how to work with third-party APIs, design database schema
     tags: ["JavaScript", "Node.js", "Socket.io", "WebRTC"],
     date: "2026-05-05",
     readTime: "10 min read",
-    image: "blog-images/live-compiler-pro.webp",
+    image: "/blog-images/live-compiler-pro.webp",
     content: `
 **Live Compiler Pro** is a browser-based IDE at [live-code-hxft.onrender.com](https://live-code-hxft.onrender.com/) that supports multi-language editing, live preview, a built-in console, and real-time collaboration — ideal for pair programming, demos, and teaching.
 
@@ -145,7 +145,7 @@ This project deepened my understanding of WebSockets, real-time event architectu
     tags: ["Google Drive API", "JavaScript", "HTML", "Serverless"],
     date: "2026-05-01",
     readTime: "5 min read",
-    image: "blog-images/files-shorter.webp",
+    image: "/blog-images/files-shorter.webp",
     content: `
 **Files Shorter** is a lightweight, client-side web application that lets users upload files directly to Google Drive, automatically organizing them into folders by subject or category. No backend server required.
 
@@ -202,7 +202,7 @@ Working with the Google Drive API taught me about OAuth2 flows, multipart file u
     tags: ["XSS Prevention", "JavaScript", "Frontend Security", "CSP"],
     date: "2026-04-25",
     readTime: "6 min read",
-    image: "blog-images/security-showcase.webp",
+    image: "/blog-images/security-showcase.webp",
     content: `
 My **Security Showcase** project is a frontend-only demonstration of common DOM-based Cross-Site Scripting (XSS) attacks and the layered defenses that prevent them. It's designed as an educational tool for students learning web security.
 
@@ -503,6 +503,202 @@ With your lab running, try these beginner exercises:
 - Only practice on systems you own or have explicit permission to test.
 `,
   },
+  {
+    id: "freelance-sri-prayag-classes",
+    title: "Case Study: Building a PWA Coaching Platform Without a Framework",
+    excerpt:
+      "The Sri Prayag Classes coaching PWA — installable app shell, offline-first service worker, deep course taxonomy, and a Cloudflare edge in front of a custom domain.",
+    category: "Freelance",
+    tags: ["PWA", "Service Worker", "Vanilla JS", "Cloudflare"],
+    date: "2026-09-19",
+    readTime: "8 min read",
+    image: "/blog-images/freelance-sri-prayag-classes.webp",
+    content: `
+In 2025 I took on the web presence for **Sri Prayag Classes** as a solo delivery — architecture, frontend, and the full deploy pipeline. The result, [sriprayagclasses.com](https://sriprayagclasses.com/), is a **progressive web app**: installable on a phone, openable offline, and deep-linkable straight into a specific course.
+
+## Why No Framework
+The target device is a mid-range Android on 3G, and the person maintaining the codebase after me is not a developer. A framework runtime — 60–90 KB of min+gzip just to bootstrap React or Vue — is a cost I did not want to push through the app shell. So the frontend is **vanilla JavaScript composed as ES modules**: small purpose-built modules (banner, main, modal) with no build step and no transpile. The module graph stays tiny, and the code remains legible to a different kind of maintainer.
+
+## The PWA Layer
+Two artifacts carry the weight:
+
+- **Web app manifest** — \`display: standalone\`, \`theme_color\`, and the 192/512 icon set. This is what makes the app installable to the home screen with its own splash and standalone viewport.
+- **Service worker** — the offline brain. Its fetch handler routes by resource type:
+
+\`\`\`js
+// navigate requests (real URLs): network-first, fall back to cache
+// static assets: cache-first, backfill the cache on miss
+// That split keeps the shell instant on revisit while letting
+// course-catalog updates propagate.
+\`\`\`
+
+**Network-first for routes, cache-first for static assets** — the whole offline strategy in one line.
+
+## Deep Course Taxonomy
+The catalog is not one list. It is a set of deep routes: \`/courses/jee-advanced\`, \`/courses/neet-ug\`, and so on — each with its own head, metadata, and CTA. The routes are real URLs (not hash fragments), which is exactly what lets the service worker's navigation handler intercept and serve them offline.
+
+## Conversion and Retention Surfaces
+- **Student sign-in** at \`/signin\` — the portal gates study material behind a client-managed session.
+- **WhatsApp deep links** (\`wa.me\`) on every course page — the conversion channel that actually works in this market: one tap exits to the messaging app with the enrollment message pre-filled.
+
+## The Edge
+The site sits behind **Cloudflare** on a custom domain: TLS termination at the edge, CDN-cached static assets, and PWA assets tagged as long-lived immutable URLs, so the service worker's cache is filled with byte-stable content.
+
+## Performance Budget
+The targets I set for the build:
+- LCP under 2.5 s on a mid-range phone over throttled 3G.
+- JS payload kept under ~30 KB total.
+- WebP images, hero carrying \`fetchpriority="high"\`.
+- Near-zero CLS — every image gets a fixed aspect-ratio box.
+
+## What I Learned
+Shipping a PWA without a framework forced me to think about *where* each byte runs. A service worker is not a cache — it is a routing and fallback policy. Get that right and the offline story mostly takes care of itself.
+`,
+  },
+  {
+    id: "freelance-gupta-dental-care",
+    title: "Case Study: A Local-SEO-Driven Clinic Website with a Real Booking Funnel",
+    excerpt:
+      "The Gupta Dental Care build — Bootstrap 5 grid, IntersectionObserver scroll reveals, a symptom-to-booking funnel, and schema.org local-business markup aimed at Kushinagar.",
+    category: "Freelance",
+    tags: ["Bootstrap 5", "Local SEO", "Core Web Vitals", "IntersectionObserver"],
+    date: "2026-09-14",
+    readTime: "6 min read",
+    image: "/blog-images/freelance-gupta-dental-care.webp",
+    content: `
+Building a web presence for a **dental clinic** is a different beast from building an app: the user is a patient, and the site's job is to convert concern into an appointment. For [guptadentalcare.cyou](https://guptadentalcare.cyou/), I designed the site as a **conversion funnel**, not a brochure.
+
+## Funnel Architecture
+- **Home** — outcome-led hero, services grid, social proof (testimonials), and a persistent "Book Appointment" CTA.
+- **Symptom pages** (\`symptoms.html\`) — content pages that target the searches patients actually type. One canonical URL per condition, each with a CTA back into booking.
+- **Booking** (\`booking.html\`) — a single-purpose conversion page: name, phone, preferred time. Minimal fields, no login, no multi-step wizard.
+
+The principle: every page has a *job to do*, and the navigation hierarchy encodes that.
+
+## Bootstrap 5, Used Deliberately
+The layout rides **Bootstrap 5's 12-column grid** with its standard breakpoints (sm 576, md 768, lg 992, xl 1200). Why a framework kit instead of a bespoke design system? Because the client's maintenance needs come first: any web developer can pick up a Bootstrap layout, and the 5.x JS bundle is dependency-free. I used the grid and the components, then overrode the theme tokens with the clinic's brand palette.
+
+## Scroll Reveals Without the JS Weight
+Page animations use **IntersectionObserver**-driven reveals (AOS-style): elements register with a threshold and a rootMargin, and receive an opacity/translate transition on intersection. Two details matter:
+
+\`\`\`js
+const io = new IntersectionObserver(
+  (entries) =>
+    entries.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add("revealed");
+        io.unobserve(e.target); // fire once, then done
+      }
+    }),
+  { threshold: 0.15, rootMargin: "0px 0px -10% 0px" }
+);
+\`\`\`
+
+- **Once-semantics** — unobserving after reveal means no re-trigger on scroll-back and no work spent on off-screen elements.
+- The **-10% bottom rootMargin** reveals elements slightly *before* they hit the viewport, so nothing pops in at the last moment.
+
+## The Local-SEO Layer
+This is where a clinic site actually wins or loses:
+
+- **On-page** — geo-qualified keywords in title/meta; the H1 carries service + city.
+- **Structured data** — \`schema.org\` **LocalBusiness / Dentist** JSON-LD: address, geo coordinates, opening hours, phone. That markup is what earns rich results (hours, phone) in the local pack.
+- **NAP consistency** — Name, Address, Phone in one canonical shape across the footer, the schema, and the booking page.
+
+## Core Web Vitals
+- **LCP** — hero is a WebP with \`fetchpriority="high"\` (or a text LCP with zero blocking requests).
+- **CLS** — every image box has a fixed aspect-ratio, so the page never reflows mid-load.
+- **TBT** — all interactivity is under 2 KB of inline JS: no framework, no third-party runtime.
+
+## What I Learned
+A clinic site is an SEO and funnel exercise wearing a design skin. The schema layer and the booking funnel do more for the client than any animation.
+`,
+  },
+  {
+    id: "freelance-kashyap-tutorial",
+    title: "Case Study: Multi-Route Static Architecture on the Vercel Edge",
+    excerpt:
+      "How the Kashyap Tutorial portal is structured: static multi-page routing, a data model for results and faculty, a demo-booking flow, and a dual-domain vercel.app + custom CNAME setup.",
+    category: "Freelance",
+    tags: ["Vercel", "Static Site", "Core Web Vitals", "DNS"],
+    date: "2026-09-09",
+    readTime: "7 min read",
+    image: "/blog-images/freelance-kashyap-tutorial.webp",
+    content: `
+The [Kashyap Tutorial](https://kashyap-tutorial.vercel.app/) portal (mirrored on a custom domain) is a **static multi-page application** on the Vercel edge. The "static" part is the architectural decision worth writing about.
+
+## Why Static, and Why Multi-Page
+The data — course catalog, past results, faculty profiles — changes on a human timescale: days, not minutes. So I ship **pre-rendered pages**, not client-side-rendered routes:
+
+- **TTFB near zero** — pages are edge-cached; a request hits a CDN PoP near the user, not a server that has to generate a route.
+- **No hydration cost** — zero client-side route resolution, zero bundle download before paint.
+- **Atomic deploys** — one build, pushed to every edge PoP at once. Rollback means repointing at the previous build.
+- **Multi-page, not SPA** — each route is a real HTML document. A link from WhatsApp or Google lands on a fully-formed page, not a blank shell that flashes in its content.
+
+## Route Map and Data Model
+The portal is a handful of real routes: the catalog, course detail pages, \`/results\`, and \`/demo-booking\`.
+
+The **results dataset** is the modeling piece: a table keyed by *(exam, year, name, score)*. Flat at export, indexed at build time so the results page can look up without shipping the full table to the client.
+
+**Faculty and results are social proof by design** — the highest-trust content in the domain is what goes at the top of the funnel.
+
+## The Demo-Booking Funnel
+A single-purpose form page: client-side validation on blur, field-level error states, phone normalization before submit, and an explicit success affordance. No login, no multi-step wizard — one screen, one action.
+
+## Dual-Domain Strategy
+The same build is served on **both** the \`vercel.app\` URL **and** a custom domain:
+
+- DNS points the custom domain at the Vercel edge via CNAME.
+- The \`vercel.app\` URL stays live as a failover and a shareable link.
+- One deploy updates both domains — the custom domain is a pointer, not a copy of the build.
+
+## Core Web Vitals
+- **LCP** — the first hero media is a WebP inside a fixed aspect-ratio box.
+- **CLS** — near zero by construction: static HTML, no client-side reflow after layout.
+- **TBT** — negligible JS budget, so total blocking time is effectively zero on any connection.
+
+## What I Learned
+Static is a design constraint that forces you to make the data-modeling decisions up front. The payoff is the simplest possible runtime: no server, no state, no deploy drama — and Core Web Vitals you do not have to fight for.
+`,
+  },
+  {
+    id: "freelance-infinity-classes",
+    title: "Case Study: Institute Site with Mock-Test Performance Analytics",
+    excerpt:
+      "The Infinity Classes build — a static multi-page institute site where a mock-test flow turns attempt data into topic-level weak-area diagnostics, served from the Vercel edge.",
+    category: "Freelance",
+    tags: ["Vercel", "Static Site", "Data Analytics", "Accessibility"],
+    date: "2026-09-05",
+    readTime: "7 min read",
+    image: "/blog-images/freelance-infinity-classes.webp",
+    content: `
+The [Infinity Classes](https://infinity-classes-one.vercel.app/) site is a static, multi-page institute web app whose headline feature is **mock-test performance analytics**: sit a test, get topic-level diagnostics. Here is how that data flows, and why the whole thing stays on the Vercel edge.
+
+## Page Architecture
+A handful of real routes: the catalog, course detail pages, \`/study-material\`, \`/results\`, and \`/blog\`. Static multi-page for the same TTFB/hydration reasons as any SSG: the content changes slowly, so pre-render it and edge-cache it.
+
+## The Mock-Test Analytics Flow
+The interesting part is the diagnostic pipeline:
+
+1. **Input** — an attempt record: answers, time-per-question, topic tags per question, and the max score.
+2. **Client-side computation** — there is no backend analytics service. The browser does the math on the attempt JSON:
+   - accuracy per topic (\`correct / attempted\`)
+   - time-per-question against a par time
+   - **weak-area detection** — topics below a pass-accuracy threshold, ranked by their weight in the exam
+3. **Output** — per-topic performance, a prioritized weak-area list, and a suggested study order.
+
+Because the computation is local, the feature works offline once the page is cached, and attempt data never leaves the student's device — a privacy property that came for free. The institute markets this as **AI-powered performance analysis**; what ships is the deterministic analytics above, which does the diagnostic job without a model call.
+
+## Study-Material Distribution
+Notes and past papers are **static files** served from the edge: byte-stable, cache-immutable, zero origin load. The page that lists them is just an index.
+
+## Performance and Accessibility Budget
+- **CWV** — WebP hero, fixed aspect-ratio boxes (CLS near zero), minimal inline JS (TBT near zero), LCP under 2.5 s on a throttled mid-range phone.
+- **A11y** — results rendered as semantic tables with proper \`scope\`, focus managed in the diagnostic panel, and all motion gated behind \`prefers-reduced-motion\`.
+
+## What I Learned
+Static architecture forces the data-modeling decisions — attempt schemas, topic tags — to the front, and pays back in the simplest runtime possible. And a small local computation beats a remote model call on both latency and privacy.
+`,
+  },
 ];
 
 export const BLOG_CATEGORIES = Array.from(
@@ -516,7 +712,7 @@ export const PORTFOLIO = {
   tagline:
     "Cyber Security student at NIET — building skills in network defense, ethical hacking, and digital forensics.",
   stats: [
-    { label: "Projects", value: "6+" },
+    { label: "Projects", value: "10+" },
     { label: "Internships", value: "2" },
     { label: "Certifications", value: "2" },
   ],
@@ -538,6 +734,13 @@ export const PORTFOLIO = {
     subjects: ["Network Security", "Cryptography", "Digital Forensics", "Ethical Hacking", "Cyber Law"],
   },
   experience: [
+    {
+      title: "Freelance Web Developer",
+      org: "Self-employed",
+      year: "2025 – Present",
+      desc: "Solo delivery of four production web properties for coaching institutes and a dental clinic: architecture and responsive frontends, forms and booking funnels, a PWA offline strategy, local-SEO schema, and the full deploy pipeline (Vercel edge + Cloudflare, custom DNS and TLS).",
+      tech: ["Responsive Frontend", "PWA", "Vercel", "Cloudflare", "Local SEO"],
+    },
     {
       title: "Cyber Security Intern",
       org: "Prodigy InfoTech",
@@ -609,6 +812,38 @@ export const PORTFOLIO = {
       desc: "A comprehensive banking and shopping desktop application built with Python, featuring secure transaction processing, user authentication, and inventory management.",
       tech: ["Python", "Desktop App", "Security"],
       github: "https://github.com/bitcodeAShishcloud/banking-shopping-system/",
+    },
+    {
+      name: "Sri Prayag Classes",
+      desc: "Coaching-institute PWA: installable app shell, offline-first service worker, deep course taxonomy (JEE/NEET), student sign-in portal, and WhatsApp enrollment CTAs — designed and shipped solo.",
+      tech: ["PWA", "Service Worker", "Vanilla JS", "Cloudflare"],
+      live: "https://sriprayagclasses.com/",
+      caseStudy: "freelance-sri-prayag-classes",
+      freelance: true,
+    },
+    {
+      name: "Gupta Dental Care",
+      desc: "Clinic website as a conversion funnel: Bootstrap 5 layout, symptom-to-booking flow, IntersectionObserver scroll reveals, and schema.org local-business markup for Kushinagar.",
+      tech: ["Bootstrap 5", "Local SEO", "Core Web Vitals", "WebP"],
+      live: "https://guptadentalcare.cyou/",
+      caseStudy: "freelance-gupta-dental-care",
+      freelance: true,
+    },
+    {
+      name: "Kashyap Tutorial",
+      desc: "Course and results portal on the Vercel edge: static multi-page routes, exam-year-keyed results data model, demo-booking funnel, dual-domain vercel.app + custom CNAME setup.",
+      tech: ["Vercel Edge", "Static Multi-page", "DNS/CNAME", "Core Web Vitals"],
+      live: "https://kashyap-tutorial.vercel.app/",
+      caseStudy: "freelance-kashyap-tutorial",
+      freelance: true,
+    },
+    {
+      name: "Infinity Classes",
+      desc: "Institute site with mock-test performance analytics: static multi-page app, client-side weak-area diagnostics from attempt data, static study-material distribution, served from the Vercel edge.",
+      tech: ["Vercel Edge", "Static Site", "Analytics UI", "Accessibility"],
+      live: "https://infinity-classes-one.vercel.app/",
+      caseStudy: "freelance-infinity-classes",
+      freelance: true,
     },
   ],
   certifications: [
