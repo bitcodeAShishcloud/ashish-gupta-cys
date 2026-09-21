@@ -31,3 +31,4 @@ dev-server.mjs
 
 # build artifacts
 *.tsbuildinfo
+.next-serve.log

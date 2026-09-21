@@ -1,0 +1,8 @@
+# security.txt — https://www.ietf.org/rfc/rfc9116.txt
+Contact: mailto:agupta38160@gmail.com
+Expires: 2027-09-01T00:00:00.000Z
+Policy: https://www.ashishcys.cyou/
+
+Vulnerability reports are welcome. Please do NOT disclose a confirmed
+vulnerability publicly before it is fixed — include reproduction steps and
+give 7 days for a response.

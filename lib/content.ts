@@ -7,6 +7,9 @@ export interface BlogPost {
   date: string;
   readTime: string;
   image?: string;
+  /** Intrinsic image dimensions — used to reserve exact layout boxes (zero CLS). */
+  imageWidth?: number;
+  imageHeight?: number;
   content: string; // markdown
 }
 
@@ -21,6 +24,8 @@ export const BLOG_POSTS: BlogPost[] = [
     date: "2026-05-08",
     readTime: "6 min read",
     image: "/blog-images/news-aggregator.webp",
+    imageWidth: 1024,
+    imageHeight: 1024,
     content: `
 One of the projects I'm most proud of is my **News Aggregator** — a full-stack web application that fetches the latest technology news from NewsAPI, stores articles in a MySQL database, and presents them in a clean, browsable feed with user authentication.
 
@@ -74,6 +79,8 @@ This project taught me how to work with third-party APIs, design database schema
     date: "2026-05-05",
     readTime: "10 min read",
     image: "/blog-images/live-compiler-pro.webp",
+    imageWidth: 2560,
+    imageHeight: 1600,
     content: `
 **Live Compiler Pro** is a browser-based IDE at [live-code-hxft.onrender.com](https://live-code-hxft.onrender.com/) that supports multi-language editing, live preview, a built-in console, and real-time collaboration — ideal for pair programming, demos, and teaching.
 
@@ -146,6 +153,8 @@ This project deepened my understanding of WebSockets, real-time event architectu
     date: "2026-05-01",
     readTime: "5 min read",
     image: "/blog-images/files-shorter.webp",
+    imageWidth: 1024,
+    imageHeight: 1024,
     content: `
 **Files Shorter** is a lightweight, client-side web application that lets users upload files directly to Google Drive, automatically organizing them into folders by subject or category. No backend server required.
 
@@ -203,6 +212,8 @@ Working with the Google Drive API taught me about OAuth2 flows, multipart file u
     date: "2026-04-25",
     readTime: "6 min read",
     image: "/blog-images/security-showcase.webp",
+    imageWidth: 1024,
+    imageHeight: 1024,
     content: `
 My **Security Showcase** project is a frontend-only demonstration of common DOM-based Cross-Site Scripting (XSS) attacks and the layered defenses that prevent them. It's designed as an educational tool for students learning web security.
 
@@ -513,6 +524,8 @@ With your lab running, try these beginner exercises:
     date: "2026-09-19",
     readTime: "8 min read",
     image: "/blog-images/freelance-sri-prayag-classes.webp",
+    imageWidth: 1280,
+    imageHeight: 900,
     content: `
 In 2025 I took on the web presence for **Sri Prayag Classes** as a solo delivery — architecture, frontend, and the full deploy pipeline. The result, [sriprayagclasses.com](https://sriprayagclasses.com/), is a **progressive web app**: installable on a phone, openable offline, and deep-linkable straight into a specific course.
 
@@ -565,6 +578,8 @@ Shipping a PWA without a framework forced me to think about *where* each byte ru
     date: "2026-09-14",
     readTime: "6 min read",
     image: "/blog-images/freelance-gupta-dental-care.webp",
+    imageWidth: 1280,
+    imageHeight: 900,
     content: `
 Building a web presence for a **dental clinic** is a different beast from building an app: the user is a patient, and the site's job is to convert concern into an appointment. For [guptadentalcare.cyou](https://guptadentalcare.cyou/), I designed the site as a **conversion funnel**, not a brochure.
 
@@ -623,6 +638,8 @@ A clinic site is an SEO and funnel exercise wearing a design skin. The schema la
     date: "2026-09-09",
     readTime: "7 min read",
     image: "/blog-images/freelance-kashyap-tutorial.webp",
+    imageWidth: 1280,
+    imageHeight: 900,
     content: `
 The [Kashyap Tutorial](https://kashyap-tutorial.vercel.app/) portal (mirrored on a custom domain) is a **static multi-page application** on the Vercel edge. The "static" part is the architectural decision worth writing about.
 
@@ -670,6 +687,8 @@ Static is a design constraint that forces you to make the data-modeling decision
     date: "2026-09-05",
     readTime: "7 min read",
     image: "/blog-images/freelance-infinity-classes.webp",
+    imageWidth: 1280,
+    imageHeight: 900,
     content: `
 The [Infinity Classes](https://infinity-classes-one.vercel.app/) site is a static, multi-page institute web app whose headline feature is **mock-test performance analytics**: sit a test, get topic-level diagnostics. Here is how that data flows, and why the whole thing stays on the Vercel edge.
 
@@ -760,31 +779,31 @@ export const PORTFOLIO = {
     {
       category: "Cyber Security",
       items: [
-        { name: "Network Security", desc: "Network monitoring, firewall configuration, and intrusion detection", level: 85 },
-        { name: "Penetration Testing", desc: "Vulnerability assessment and ethical hacking methodologies", level: 75 },
-        { name: "Ethical Hacking", desc: "Security testing and vulnerability identification", level: 80 },
-        { name: "Digital Forensics", desc: "Evidence collection and analysis for cyber investigations" },
-        { name: "Threat Analysis", desc: "Cyber threat intelligence and risk assessment" },
+        { name: "Network Security", desc: "Network monitoring, firewall configuration, and intrusion detection", skillLevel: "Core" },
+        { name: "Penetration Testing", desc: "Vulnerability assessment and ethical hacking methodologies", skillLevel: "Proficient" },
+        { name: "Ethical Hacking", desc: "Security testing and vulnerability identification", skillLevel: "Core" },
+        { name: "Digital Forensics", desc: "Evidence collection and analysis for cyber investigations", skillLevel: "Proficient" },
+        { name: "Threat Analysis", desc: "Cyber threat intelligence and risk assessment", skillLevel: "Proficient" },
       ],
     },
     {
       category: "Programming & Tools",
       items: [
-        { name: "Python", desc: "Security automation, scripting, and application development", level: 90 },
-        { name: "C++", desc: "System programming and performance-critical applications" },
-        { name: "Wireshark", desc: "Network protocol analysis and traffic monitoring" },
-        { name: "Kali Linux", desc: "Penetration testing and security auditing platform" },
-        { name: "Metasploit", desc: "Exploitation framework and vulnerability testing" },
+        { name: "Python", desc: "Security automation, scripting, and application development", skillLevel: "Core" },
+        { name: "C++", desc: "System programming and performance-critical applications", skillLevel: "Proficient" },
+        { name: "Wireshark", desc: "Network protocol analysis and traffic monitoring", skillLevel: "Proficient" },
+        { name: "Kali Linux", desc: "Penetration testing and security auditing platform", skillLevel: "Proficient" },
+        { name: "Metasploit", desc: "Exploitation framework and vulnerability testing", skillLevel: "Learning" },
       ],
     },
   ],
   projects: [
     {
-      name: "News Aggregator",
-      desc: "A full-stack news aggregator that pulls latest technology articles via NewsAPI, stores them to MySQL and presents a clean feed with user accounts.",
-      tech: ["PHP", "MySQL", "JavaScript"],
-      github: "https://github.com/bitcodeAShishcloud/News-Aggregator",
-      live: "https://news-aggregator.rf.gd",
+      name: "Security Showcase",
+      desc: "A security-first frontend demo showing DOM-based XSS prevention techniques, safe DOM rendering, sanitization layers, and CSP enforcement.",
+      tech: ["XSS Prevention", "JavaScript", "Frontend Security"],
+      github: "https://github.com/bitcodeAShishcloud/security-showcase",
+      live: "https://bitcodeashishcloud.github.io/security-showcase/",
     },
     {
       name: "Live Compiler Pro",
@@ -794,18 +813,18 @@ export const PORTFOLIO = {
       live: "https://live-code-hxft.onrender.com/",
     },
     {
+      name: "News Aggregator",
+      desc: "A full-stack news aggregator that pulls latest technology articles via NewsAPI, stores them to MySQL and presents a clean feed with user accounts.",
+      tech: ["PHP", "MySQL", "JavaScript"],
+      github: "https://github.com/bitcodeAShishcloud/News-Aggregator",
+      live: "https://news-aggregator.rf.gd",
+    },
+    {
       name: "Files Shorter",
       desc: "Client-side secure file uploader that organizes uploads into Google Drive folders by subject—easy to use, no server required.",
       tech: ["Google Drive", "JavaScript", "HTML"],
       github: "https://github.com/bitcodeAShishcloud/Files-Shorter",
       live: "https://bitcodeashishcloud.github.io/Files-Shorter/",
-    },
-    {
-      name: "Security Showcase",
-      desc: "A security-first frontend demo showing DOM-based XSS prevention techniques, safe DOM rendering, sanitization layers, and CSP enforcement.",
-      tech: ["XSS Prevention", "JavaScript", "Frontend Security"],
-      github: "https://github.com/bitcodeAShishcloud/security-showcase",
-      live: "https://bitcodeashishcloud.github.io/security-showcase/",
     },
     {
       name: "Banking Shopping System",
@@ -819,6 +838,9 @@ export const PORTFOLIO = {
       tech: ["PWA", "Service Worker", "Vanilla JS", "Cloudflare"],
       live: "https://sriprayagclasses.com/",
       caseStudy: "freelance-sri-prayag-classes",
+      image: "/blog-images/freelance-sri-prayag-classes-thumb.webp",
+      thumbW: 720,
+      thumbH: 506,
       freelance: true,
     },
     {
@@ -827,6 +849,9 @@ export const PORTFOLIO = {
       tech: ["Bootstrap 5", "Local SEO", "Core Web Vitals", "WebP"],
       live: "https://guptadentalcare.cyou/",
       caseStudy: "freelance-gupta-dental-care",
+      image: "/blog-images/freelance-gupta-dental-care-thumb.webp",
+      thumbW: 720,
+      thumbH: 506,
       freelance: true,
     },
     {
@@ -835,6 +860,9 @@ export const PORTFOLIO = {
       tech: ["Vercel Edge", "Static Multi-page", "DNS/CNAME", "Core Web Vitals"],
       live: "https://kashyap-tutorial.vercel.app/",
       caseStudy: "freelance-kashyap-tutorial",
+      image: "/blog-images/freelance-kashyap-tutorial-thumb.webp",
+      thumbW: 720,
+      thumbH: 506,
       freelance: true,
     },
     {
@@ -843,6 +871,9 @@ export const PORTFOLIO = {
       tech: ["Vercel Edge", "Static Site", "Analytics UI", "Accessibility"],
       live: "https://infinity-classes-one.vercel.app/",
       caseStudy: "freelance-infinity-classes",
+      image: "/blog-images/freelance-infinity-classes-thumb.webp",
+      thumbW: 720,
+      thumbH: 506,
       freelance: true,
     },
   ],
@@ -853,7 +884,9 @@ export const PORTFOLIO = {
       date: "2025",
       status: "Completed Training",
       link: "https://www.linkedin.com/in/ashish-gupta-037973259/details/certifications/",
-      image: "assets/red_hat_training.webp",
+      image: "/assets/red_hat_training.webp",
+      imageWidth: 1024,
+      imageHeight: 1024,
     },
     {
       issuer: "TryHackMe",
@@ -861,7 +894,9 @@ export const PORTFOLIO = {
       date: "26th December 2025",
       status: "Credential ID: THM-9K6QLVOJPQ",
       link: "https://tryhackme-certificates.s3-eu-west-1.amazonaws.com/THM-9K6QLVOJPQ.pdf",
-      image: "assets/advent_of_cyber_2025.webp",
+      image: "/assets/advent_of_cyber_2025.webp",
+      imageWidth: 1531,
+      imageHeight: 930,
     },
   ],
 };

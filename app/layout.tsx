@@ -1,8 +1,35 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
-import { DotGrid } from "@/components/dot-grid";
 
 const SITE_URL = "https://www.ashishcys.cyou";
+
+/*
+ * Self-hosted WOFF2 (Latin-subset, ~60KB total for all four weights).
+ * Body = Inter (400/600), headings = Space Grotesk (700, preloaded: it is the
+ * hero/LCP text font), tags/HUD = JetBrains Mono (500).
+ */
+const inter = localFont({
+  src: [
+    { path: "./fonts/Inter400-latin.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/Inter600-latin.woff2", weight: "600", style: "normal" },
+  ],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const spaceGrotesk = localFont({
+  src: [{ path: "./fonts/SpaceGrotesk-latin.woff2", weight: "700", style: "normal" }],
+  variable: "--font-spacegrotesk",
+  display: "swap",
+  preload: true,
+});
+
+const jetBrainsMono = localFont({
+  src: [{ path: "./fonts/JetBrainsMono500-latin.woff2", weight: "500", style: "normal" }],
+  variable: "--font-jbmono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -37,19 +64,19 @@ export const metadata: Metadata = {
       "3rd-year B.Tech Cyber Security student at NIET — projects, writeups, skills and an AI chat assistant.",
     images: [
       {
-        url: "/assets/profile-photo.webp",
-        width: 640,
-        height: 480,
+        url: "/assets/og-image.webp",
+        width: 1200,
+        height: 630,
         alt: "Ashish Gupta — Cyber Security Portfolio",
       },
     ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Ashish Gupta — Cyber Security Portfolio",
     description:
       "3rd-year B.Tech Cyber Security student at NIET — projects, writeups, skills and an AI chat assistant.",
-    images: ["/assets/profile-photo.webp"],
+    images: ["/assets/og-image.webp"],
   },
   robots: {
     index: true,
@@ -62,20 +89,28 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#000000",
+  themeColor: "#05070A",
 };
 
+/* Person JSON-LD — inert data for search engines; allowed by the page CSP
+   (script-src 'unsafe-inline'), same as Next's own inline flight payload. */
+const personJsonLd = `{"@context":"https://schema.org","@type":"Person","name":"Ashish Gupta","jobTitle":"Cyber Security Student","url":"https://www.ashishcys.cyou","sameAs":["https://github.com/bitcodeAShishcloud","https://www.linkedin.com/in/ashish-gupta-037973259/"],"alumniOf":{"@type":"CollegeOrUniversity","name":"NIET, Greater Noida"}}`;
+
 /*
- * Root layout: html/body + the shared layered background. Each route group
- * (site / admin) adds its own chrome — the public site gets the navbar +
- * footer, while the admin console stays standalone like its own subdomain.
+ * Root layout: html/body + the pure-CSS grid background (no canvas, no images).
+ * Each route group (site / admin) adds its own chrome.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen overflow-x-hidden bg-background font-sans text-foreground antialiased">
-        <div className="cyber-bg" aria-hidden />
-        <DotGrid />
+      <body
+        className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} min-h-screen overflow-x-hidden bg-background font-sans text-foreground antialiased`}
+      >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: personJsonLd }}
+        />
+        <div className="bg-grid" aria-hidden />
         <div className="relative z-0 min-h-screen">{children}</div>
       </body>
     </html>

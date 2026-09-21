@@ -5,84 +5,121 @@
 @layer base {
   :root {
     /* ═══════════════════════════════════════════════════════════
-       BRAND COLOR SYSTEM — matched to the cyberinvaders.tech palette
-       2 MAJOR (brand identity) + 4 MINOR (semantic)
-       Major 1  --primary     neon violet  #5e17eb (their accent / glow)
-       Major 2  --secondary  light violet #a78bfa (their secondary)
-       Minor 1  --success     brand violet (their theme success = primary)
-       Minor 2  --warning     soft lavender #c4b5fd (their secondary.light)
-       Minor 3  --destructive alert red    #ff4444 (their theme error)
-       Minor 4  --info        light violet #a78bfa (muted hierarchy)
-       Neutrals: pure black base + #0a0a0f paper (their bg/paper)
+       BRAND SYSTEM — "signal green on near-black" (premium cyber)
+       Primary   --accent  signal green  #00E5A8  (CTAs, active, key numbers)
+       Secondary --accent2 violet        #7C5CFF  (gradients / highlight ONLY)
+       Rule:       gradient green→violet on exactly one hero word, the
+                   primary button, and one soft background glow.
+       Neutrals:   near-black bg + layered surfaces, translucent borders
        ═══════════════════════════════════════════════════════════ */
 
-    /* Neutrals — pure black base, near-black violet paper (#0a0a0f) */
-    --background: 0 0% 0%;
-    --foreground: 0 0% 96%;
-    --card: 240 1% 5%;
-    --card-foreground: 0 0% 96%;
-    --muted: 240 1% 9%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 260 81% 13%;
-    --accent-foreground: 0 0% 96%;
-    --border: 0 0% 14%;
-    --input: 0 0% 14%;
-    --popover: 240 1% 7%;
-    --popover-foreground: 0 0% 96%;
+    /* Surfaces — near-black layered sheet (8px-grid friendly tones) */
+    --background: 210 33% 3%;            /* #05070A page bg */
+    --foreground: 210 33% 93%;           /* #E6EDF3 text */
+    --card: 217 21% 6%;                  /* #0B0F14 surface */
+    --card-foreground: 210 33% 93%;
+    --muted: 213 20% 9%;                 /* surface-2, subtle */
+    --muted-foreground: 209 13% 60%;     /* #8B98A5 muted text */
+    --accent: 163 40% 12%;               /* faint green tint (hover bg) */
+    --accent-foreground: 163 45% 90%;
+    --popover: 212 20% 10%;              /* #111820 surface-2 */
+    --popover-foreground: 210 33% 93%;
 
-    /* MAJOR 1 — neon violet (#5e17eb) */
-    --primary: 260 84% 51%;
-    --primary-foreground: 0 0% 100%;
-    --ring: 260 84% 51%;
+    /* Borders — opaque tokens equal to the brief's translucent hairlines
+       (rgba(255,255,255,.08/.10) composited over --bg). Opaque on purpose:
+       Tailwind /NN opacity modifiers inject a second alpha slot, so the base
+       token must not carry one or every `border-border/NN` rule goes invalid. */
+    --border: 210 7% 10%;          /* ≈ rgba(255,255,255,.08) over #05070A */
+    --input: 210 7% 11%;           /* ≈ rgba(255,255,255,.10) over #05070A */
+    --ring: 163 100% 45%;
 
-    /* MAJOR 2 — light violet (#a78bfa) */
-    --secondary: 255 92% 76%;
-    --secondary-foreground: 0 0% 5%;
+    /* Brand majors (map onto shadcn role tokens) */
+    --primary: 163 100% 45%;             /* signal green #00E5A8 */
+    --primary-foreground: 0 0% 4%;
+    --secondary: 252 100% 68%;           /* violet #7C5CFF */
+    --secondary-foreground: 0 0% 100%;
 
-    /* MINOR — semantic */
-    --success: 260 84% 51%;
-    --success-foreground: 0 0% 100%;
-    --warning: 255 79% 86%;
-    --warning-foreground: 262 60% 15%;
-    --destructive: 0 100% 50%;
+    /* Semantic — kept minimal; only where actually used */
+    --success: 163 100% 45%;
+    --success-foreground: 0 0% 4%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --info: 255 92% 76%;
-    --info-foreground: 262 60% 15%;
+    --info: 210 60% 60%;
+    --info-foreground: 0 0% 100%;
 
-    --radius: 0.6rem;
+    --radius: 0.75rem;
   }
 
   * {
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 88px; /* clear the sticky nav for #section jumps */
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    text-rendering: optimizeLegibility;
+  }
+
+  /* AAA-visible accent focus ring for keyboard navigation */
+  :focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+    }
   }
 }
 
 @layer utilities {
-  /* ── Pure black base with a faint center focus glow. The blinking
-       dot-grid canvas (see DotGrid) renders on top of this. ── */
-  .cyber-bg {
+  /* ── Pure-CSS background texture: hairline grid + soft radial glow.
+       No image files, no canvas — just repeating gradients on GPU. ── */
+  .bg-grid {
     position: fixed;
     inset: 0;
     z-index: -2;
     pointer-events: none;
     background:
-      radial-gradient(900px 620px at 50% 38%, hsl(var(--primary) / 0.06), transparent 70%),
-      radial-gradient(760px 520px at 50% 38%, hsl(var(--secondary) / 0.05), transparent 72%),
-      #000;
+      radial-gradient(900px 600px at 50% 30%, hsl(var(--primary) / 0.07), transparent 70%),
+      radial-gradient(1100px 700px at 82% 0%, hsl(var(--secondary) / 0.05), transparent 60%),
+      repeating-linear-gradient(0deg, transparent 0 39px, hsl(var(--border) / 0.45) 39px 40px),
+      repeating-linear-gradient(90deg, transparent 0 39px, hsl(var(--border) / 0.45) 39px 40px),
+      hsl(var(--background));
+    mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, #000 55%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, #000 55%, transparent 100%);
   }
 
-  /* ── Gradient helpers: brand major 1 → major 2 only (no other hues) ── */
+  /* ── One-time reveal (driven by IntersectionObserver; GPU-only) ── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity 0.3s cubic-bezier(0.2, 0.7, 0.3, 1), transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .reveal { opacity: 1; transform: none; transition: none; }
+  }
+
+  /* ── Gradient helpers — green → violet ONLY (no other hues) ── */
   .grad-text {
-    background: linear-gradient(
-      95deg,
-      hsl(var(--primary)) 0%,
-      hsl(var(--secondary)) 100%
-    );
+    background: linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -90,18 +127,21 @@
   .grad-btn {
     background-image: linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
   }
+
+  /* ── Card: translucent surface with a green→violet hairline border ── */
   .grad-card {
     position: relative;
     border: 1px solid transparent;
     background:
-      linear-gradient(165deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.55)) padding-box,
-      linear-gradient(135deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.45)) border-box;
-    transition: box-shadow 0.3s ease, transform 0.3s ease;
+      linear-gradient(165deg, hsl(var(--card) / 0.92), hsl(var(--card) / 0.6)) padding-box,
+      linear-gradient(135deg, hsl(var(--primary) / 0.4), hsl(var(--secondary) / 0.35)) border-box;
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
   }
   .grad-card:hover {
+    transform: translateY(-2px);
     box-shadow:
-      0 0 24px hsl(var(--primary) / 0.1),
-      0 18px 48px hsl(var(--secondary) / 0.12);
+      0 0 26px hsl(var(--primary) / 0.12),
+      0 18px 48px hsl(var(--secondary) / 0.1);
   }
 
   .glass {
@@ -109,84 +149,70 @@
     background: linear-gradient(165deg, hsl(var(--card) / 0.85), hsl(var(--card) / 0.5));
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid hsl(var(--primary) / 0.14);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid hsl(var(--border));
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
   }
   .glass:hover {
-    border-color: hsl(var(--secondary) / 0.45);
-    box-shadow:
-      0 0 24px hsl(var(--primary) / 0.08),
-      0 18px 48px hsl(var(--secondary) / 0.1);
+    border-color: hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 26px hsl(var(--primary) / 0.1);
   }
 
   /* Slim gradient scrollbar for the chat message pane */
   .chat-scroll {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--primary) / 0.35) transparent;
+    scrollbar-color: hsl(var(--primary) / 0.4) transparent;
   }
-  .chat-scroll::-webkit-scrollbar {
-    width: 8px;
-  }
-  .chat-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
+  .chat-scroll::-webkit-scrollbar { width: 8px; }
+  .chat-scroll::-webkit-scrollbar-track { background: transparent; }
   .chat-scroll::-webkit-scrollbar-thumb {
     background: linear-gradient(180deg, hsl(var(--primary) / 0.5), hsl(var(--secondary) / 0.5));
     border-radius: 9999px;
   }
 
   .mono {
-    font-family: ui-monospace, "JetBrains Mono", "SFMono-Regular", Menlo, monospace;
+    font-family: var(--font-jbmono), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   }
 }
 
 @layer components {
   .section-label {
-    @apply mono text-xs font-semibold uppercase tracking-[0.25em] text-primary;
+    @apply mono flex items-center gap-2 text-xs font-medium uppercase tracking-[0.25em] text-primary;
   }
   .section-label::before {
-    content: "// ";
-    @apply text-muted-foreground/60;
+    content: "//";
+    @apply text-muted-foreground/70;
   }
 }
 
 /* Markdown (prose) styling for blog + chat */
 .markdown-body {
-  @apply space-y-4 text-sm leading-7 text-foreground/90;
+  @apply space-y-4 text-[15px] leading-7 text-foreground/90;
 }
 .markdown-body h1,
 .markdown-body h2,
 .markdown-body h3,
 .markdown-body h4 {
-  @apply font-semibold tracking-tight text-foreground;
+  @apply font-sans font-semibold tracking-tight text-foreground;
 }
 .markdown-body h1 { @apply text-2xl mt-6; }
-.markdown-body h2 { @apply text-xl mt-6 border-b border-border/60 pb-2 text-foreground; }
-.markdown-body h3 { @apply text-base mt-4 text-foreground; }
+.markdown-body h2 {
+  @apply mt-8 border-b border-border pb-2 text-xl text-foreground;
+  font-family: var(--font-spacegrotesk), var(--font-inter), ui-sans-serif, sans-serif;
+}
+.markdown-body h3 { @apply mt-5 text-base text-foreground; }
 .markdown-body p { @apply my-3; }
-.markdown-body ul { @apply list-disc pl-6 space-y-1; }
-.markdown-body ol { @apply list-decimal pl-6 space-y-1; }
+.markdown-body ul { @apply list-disc space-y-1 pl-6; }
+.markdown-body ol { @apply list-decimal space-y-1 pl-6; }
 .markdown-body code {
   @apply mono rounded bg-primary/10 px-1.5 py-0.5 text-[13px] text-foreground;
 }
 .markdown-body pre {
   @apply mono overflow-x-auto rounded-lg border border-border bg-black/50 p-4 text-[13px] leading-6;
 }
-.markdown-body pre code {
-  @apply bg-transparent p-0 text-foreground;
-}
-.markdown-body a {
-  @apply text-primary underline underline-offset-4 hover:no-underline;
-}
-.markdown-body table {
-  @apply w-full border-collapse text-sm;
-}
-.markdown-body th,
-.markdown-body td {
-  @apply border border-border px-3 py-2 text-left;
-}
+.markdown-body pre code { @apply bg-transparent p-0 text-foreground; }
+.markdown-body a { @apply text-primary underline underline-offset-4 hover:no-underline; }
+.markdown-body table { @apply w-full border-collapse text-sm; }
+.markdown-body th, .markdown-body td { @apply border border-border px-3 py-2 text-left; }
 .markdown-body th { @apply bg-muted/50 font-semibold; }
-.markdown-body blockquote {
-  @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground;
-}
+.markdown-body blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
 .markdown-body img { @apply my-4 rounded-lg border border-border; }
