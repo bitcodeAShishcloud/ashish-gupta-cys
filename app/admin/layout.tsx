@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Lock, Home } from "lucide-react";
+import { Home } from "lucide-react";
 
 /*
- * Standalone admin console — deliberately without the public navbar/footer,
+ * Standalone admin console, deliberately without the public navbar/footer,
  * so /admin reads like its own subdomain (admin.<yourdomain.com>). The public
  * site never links to it; the only way in is the URL.
  */
@@ -12,9 +12,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <header className="border-b border-border/40 bg-background/70 backdrop-blur-xl">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-5">
           <div className="flex items-center gap-2.5 font-mono text-sm font-bold">
-            <span className="grad-btn flex h-7 w-7 items-center justify-center rounded-md shadow-[0_0_14px_hsl(var(--primary)/0.35)]">
-              <Lock className="h-3.5 w-3.5 text-white" />
-            </span>
+            <img
+              src="/favicon.webp"
+              alt="Ashish Gupta logo"
+              width={28}
+              height={28}
+              className="h-7 w-7 rounded-md object-cover"
+            />
             <span>
               admin<span className="text-primary">.</span>console
             </span>

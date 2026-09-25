@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 
 /**
  * Counts an integer up the first time it enters the viewport.
- * `value` may carry a trailing suffix ("10+") — the numeral animates, the
+ * `value` may carry a trailing suffix ("10+"), the numeral animates, the
  * suffix stays static. Respects `prefers-reduced-motion`.
  */
 export function CountUp({

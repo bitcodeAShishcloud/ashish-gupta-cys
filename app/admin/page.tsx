@@ -173,7 +173,7 @@ export default function AdminPage() {
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        setTestResult({ ok: true, text: `Connected to ${data.provider} (${data.model}) — replied: "${(data.reply || "").slice(0, 80)}"` });
+        setTestResult({ ok: true, text: `Connected to ${data.provider} (${data.model}), replied: "${(data.reply || "").slice(0, 80)}"` });
       } else {
         setTestResult({
           ok: false,
@@ -333,8 +333,7 @@ export default function AdminPage() {
                       Providers are defined only by the server env var{" "}
                       <code className="font-mono text-xs text-foreground">
                         AI_PROVIDERS_JSON
-                      </code>{" "}
-                      — the admin panel never writes to it.
+                      </code>{" "}, the admin panel never writes to it.
                     </li>
                     <li className="flex gap-2">
                       <span className="text-primary">▸</span>
@@ -510,7 +509,7 @@ export default function AdminPage() {
 
       <div className="mt-10 flex items-center justify-between border-t border-border/60 pt-4">
         <p className="font-mono text-[11px] text-muted-foreground">
-          Panel is read-only for configuration — providers are env-driven.
+          Panel is read-only for configuration, providers are env-driven.
         </p>
         <Trash2 className="h-4 w-4 text-muted-foreground/40" aria-hidden />
       </div>

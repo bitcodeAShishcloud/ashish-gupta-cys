@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Script from "next/script";
 import {
   ArrowRight,
   Award,
@@ -51,8 +52,20 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-[1120px] px-5">
       {/* ── Hero ── */}
-      <section className="flex min-h-[calc(100vh-72px)] flex-col justify-center py-16">
-        <div className="grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
+      <section className="relative flex min-h-[calc(100vh-72px)] flex-col justify-center overflow-hidden py-16">
+        {/* cursor-reactive mesh, hero only, decorative, fades at edges */}
+        <canvas
+          id="hero-mesh"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 h-full w-full opacity-0"
+          style={{
+            maskImage:
+              "linear-gradient(to bottom, transparent 0%, #000 8%, #000 58%, transparent 100%)",
+            WebkitMaskImage:
+              "linear-gradient(to bottom, transparent 0%, #000 8%, #000 58%, transparent 100%)",
+          }}
+        />
+        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
           <div>
             <div className="animate-fade-in-up flex flex-wrap items-center gap-3">
               <Badge variant="success" className="font-mono">
@@ -126,6 +139,7 @@ export default function HomePage() {
 
           <HeroCard />
         </div>
+        <Script src="/hero-mesh.js" strategy="afterInteractive" />
       </section>
 
       {/* ── About + Education ── */}
@@ -273,14 +287,13 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* ── Freelance work — strongest proof of shipping ── */}
+      {/* ── Freelance work, strongest proof of shipping ── */}
       <section id="freelance" className="scroll-mt-24 py-16">
         <Reveal>
           <SectionLabel>{"freelance work"}</SectionLabel>
           <h2 className="font-display text-3xl font-bold">Freelance Work</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Client properties I designed, built, and shipped end-to-end, solo —
-            2025–present. Each one has a full technical case study on the{" "}
+            Client properties I designed, built and shipped end-to-end solo, 2025-present. Each one has a full technical case study on the{" "}
             <Link href="/blog" className="text-primary hover:underline">
               blog
             </Link>
@@ -293,7 +306,7 @@ export default function HomePage() {
                   <CardContent className="p-4 sm:p-5">
                     <BrowserFrame
                       src={proj.image ?? `/blog-images/${proj.caseStudy}.webp`}
-                      alt={`${proj.name} — live website screenshot`}
+                      alt={`${proj.name}, live website screenshot`}
                       url={proj.live.replace(/^https?:\/\//, "")}
                       width={proj.thumbW ?? THUMB_W}
                       height={proj.thumbH ?? THUMB_H}
@@ -338,7 +351,7 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* ── Internships — vertical timeline ── */}
+      {/* ── Internships, vertical timeline ── */}
       <section id="experience" className="scroll-mt-24 py-16">
         <Reveal>
           <SectionLabel>{"experience"}</SectionLabel>

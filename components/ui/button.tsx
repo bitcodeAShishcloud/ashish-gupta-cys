@@ -9,9 +9,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "grad-btn text-white shadow-[0_0_20px_hsl(var(--primary)/0.35)] hover:shadow-[0_0_28px_hsl(var(--primary)/0.55)] hover:brightness-110",
+          "grad-btn text-[#05070A] shadow-[0_0_20px_hsl(0_0%_100%/0.25)] hover:shadow-[0_0_28px_hsl(0_0%_100%/0.4)] hover:brightness-105",
         gradient:
-          "grad-btn text-white shadow-[0_0_20px_hsl(var(--primary)/0.35)] hover:brightness-110",
+          "grad-btn text-[#05070A] shadow-[0_0_20px_hsl(0_0%_100%/0.25)] hover:brightness-105",
         destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         outline:
           "border border-primary/40 bg-background/40 text-primary shadow-sm backdrop-blur-sm hover:bg-primary/10 hover:border-primary/70",

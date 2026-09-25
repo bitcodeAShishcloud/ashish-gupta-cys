@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Menu, X, Terminal } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -59,7 +59,7 @@ export function Navbar() {
     };
   }, [open]);
 
-  // Scrollspy — only meaningful on the home page (where the #sections live).
+  // Scrollspy, only meaningful on the home page (where the #sections live).
   useEffect(() => {
     if (pathname !== "/") {
       setActiveSection(null);
@@ -93,9 +93,13 @@ export function Navbar() {
           href="/"
           className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight"
         >
-          <span className="grad-btn inline-flex h-8 w-8 items-center justify-center rounded-lg shadow-[0_0_14px_hsl(var(--primary)/0.35)]">
-            <Terminal className="h-5 w-5 text-white" />
-          </span>
+          <img
+            src="/favicon.webp"
+            alt="Ashish Gupta logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 rounded-lg object-cover"
+          />
           <span>
             Ashish<span className="text-primary">_</span>
             <span className="grad-text">Gupta</span>

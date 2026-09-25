@@ -34,11 +34,11 @@ const jetBrainsMono = localFont({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Ashish Gupta — Cyber Security Portfolio",
+    default: "Ashish Gupta | Cyber Security Portfolio",
     template: "%s | Ashish Gupta",
   },
   description:
-    "Portfolio of Ashish Gupta, a 3rd-year B.Tech Cyber Security student at NIET — projects, blog writeups, skills and an AI chat assistant. Ethical hacking, network defense and digital forensics.",
+    "Portfolio of Ashish Gupta, a 3rd-year B.Tech Cyber Security student at NIET. Projects, blog writeups, skills and an AI chat assistant. Ethical hacking, network defense and digital forensics.",
   keywords: [
     "Ashish Gupta",
     "cyber security portfolio",
@@ -52,30 +52,30 @@ export const metadata: Metadata = {
   authors: [{ name: "Ashish Gupta" }],
   creator: "Ashish Gupta",
   category: "technology",
-  applicationName: "Ashish Gupta — Portfolio",
+  applicationName: "Ashish Gupta Portfolio",
   icons: { icon: "/favicon.webp" },
   openGraph: {
     type: "website",
     locale: "en_US",
     url: SITE_URL,
-    siteName: "Ashish Gupta — Cyber Security",
-    title: "Ashish Gupta — Cyber Security Portfolio",
+    siteName: "Ashish Gupta | Cyber Security",
+    title: "Ashish Gupta | Cyber Security Portfolio",
     description:
-      "3rd-year B.Tech Cyber Security student at NIET — projects, writeups, skills and an AI chat assistant.",
+      "3rd-year B.Tech Cyber Security student at NIET. Projects, writeups, skills and an AI chat assistant.",
     images: [
       {
         url: "/assets/og-image.webp",
         width: 1200,
         height: 630,
-        alt: "Ashish Gupta — Cyber Security Portfolio",
+        alt: "Ashish Gupta | Cyber Security Portfolio",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ashish Gupta — Cyber Security Portfolio",
+    title: "Ashish Gupta | Cyber Security Portfolio",
     description:
-      "3rd-year B.Tech Cyber Security student at NIET — projects, writeups, skills and an AI chat assistant.",
+      "3rd-year B.Tech Cyber Security student at NIET. Projects, writeups, skills and an AI chat assistant.",
     images: ["/assets/og-image.webp"],
   },
   robots: {
@@ -92,7 +92,7 @@ export const viewport: Viewport = {
   themeColor: "#05070A",
 };
 
-/* Person JSON-LD — inert data for search engines; allowed by the page CSP
+/* Person JSON-LD, inert data for search engines; allowed by the page CSP
    (script-src 'unsafe-inline'), same as Next's own inline flight payload. */
 const personJsonLd = `{"@context":"https://schema.org","@type":"Person","name":"Ashish Gupta","jobTitle":"Cyber Security Student","url":"https://www.ashishcys.cyou","sameAs":["https://github.com/bitcodeAShishcloud","https://www.linkedin.com/in/ashish-gupta-037973259/"],"alumniOf":{"@type":"CollegeOrUniversity","name":"NIET, Greater Noida"}}`;
 

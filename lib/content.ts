@@ -7,7 +7,7 @@ export interface BlogPost {
   date: string;
   readTime: string;
   image?: string;
-  /** Intrinsic image dimensions — used to reserve exact layout boxes (zero CLS). */
+  /** Intrinsic image dimensions, used to reserve exact layout boxes (zero CLS). */
   imageWidth?: number;
   imageHeight?: number;
   content: string; // markdown
@@ -18,7 +18,7 @@ export const BLOG_POSTS: BlogPost[] = [
     id: "building-news-aggregator",
     title: "How I Built a Full-Stack News Aggregator with PHP and MySQL",
     excerpt:
-      "A walkthrough of my News Aggregator project — pulling articles from NewsAPI, storing them in MySQL, and serving a clean feed with user accounts.",
+      "A walkthrough of my News Aggregator project, pulling articles from NewsAPI, storing them in MySQL, and serving a clean feed with user accounts.",
     category: "Projects",
     tags: ["PHP", "MySQL", "JavaScript", "API"],
     date: "2026-05-08",
@@ -27,16 +27,16 @@ export const BLOG_POSTS: BlogPost[] = [
     imageWidth: 1024,
     imageHeight: 1024,
     content: `
-One of the projects I'm most proud of is my **News Aggregator** — a full-stack web application that fetches the latest technology news from NewsAPI, stores articles in a MySQL database, and presents them in a clean, browsable feed with user authentication.
+One of the projects I'm most proud of is my **News Aggregator**, a full-stack web application that fetches the latest technology news from NewsAPI, stores articles in a MySQL database, and presents them in a clean, browsable feed with user authentication.
 
 ## Why I Built It
 I wanted a single place to read tech news without jumping between dozens of websites. I also wanted to practice building a proper full-stack application with a real database, user accounts, and API integration.
 
 ## Tech Stack
-- **Backend** — PHP for server-side logic and API communication.
-- **Database** — MySQL for storing fetched articles, user accounts, and preferences.
-- **Frontend** — HTML, CSS, and JavaScript for a responsive user interface.
-- **API** — NewsAPI for pulling the latest articles in real time.
+- **Backend**, PHP for server-side logic and API communication.
+- **Database**, MySQL for storing fetched articles, user accounts, and preferences.
+- **Frontend**, HTML, CSS, and JavaScript for a responsive user interface.
+- **API**, NewsAPI for pulling the latest articles in real time.
 
 ## How It Works
 ### 1. Fetching Articles
@@ -61,9 +61,9 @@ Users can register and log in. Passwords are hashed with \`password_hash()\` and
 The homepage pulls articles from the database sorted by date and renders them as cards. JavaScript handles lazy loading and smooth interactions without full page reloads.
 
 ## Challenges Faced
-- **Rate limits** — NewsAPI's free tier has a request cap. I implemented caching so articles are only fetched every 15 minutes.
-- **Duplicate prevention** — Used \`INSERT IGNORE\` and unique constraints on article URLs to avoid storing the same article twice.
-- **Responsive design** — Making the card layout look good on both desktop and mobile took several iterations.
+- **Rate limits**, NewsAPI's free tier has a request cap. I implemented caching so articles are only fetched every 15 minutes.
+- **Duplicate prevention**, Used \`INSERT IGNORE\` and unique constraints on article URLs to avoid storing the same article twice.
+- **Responsive design**, Making the card layout look good on both desktop and mobile took several iterations.
 
 ## What I Learned
 This project taught me how to work with third-party APIs, design database schemas, handle user authentication securely, and build a responsive frontend. It was my first real full-stack project and gave me confidence to tackle bigger challenges.
@@ -73,7 +73,7 @@ This project taught me how to work with third-party APIs, design database schema
     id: "live-compiler-pro-real-time-collaboration",
     title: "Live Compiler Pro: Building a Real-Time Code Editor with WebRTC",
     excerpt:
-      "Behind the scenes of Live Compiler Pro — real-time collab rooms, live chat with photo sharing, and WebRTC-based code editing in the browser.",
+      "Behind the scenes of Live Compiler Pro, real-time collab rooms, live chat with photo sharing, and WebRTC-based code editing in the browser.",
     category: "Projects",
     tags: ["JavaScript", "Node.js", "Socket.io", "WebRTC"],
     date: "2026-05-05",
@@ -82,35 +82,35 @@ This project taught me how to work with third-party APIs, design database schema
     imageWidth: 2560,
     imageHeight: 1600,
     content: `
-**Live Compiler Pro** is a browser-based IDE at [live-code-hxft.onrender.com](https://live-code-hxft.onrender.com/) that supports multi-language editing, live preview, a built-in console, and real-time collaboration — ideal for pair programming, demos, and teaching.
+**Live Compiler Pro** is a browser-based IDE at [live-code-hxft.onrender.com](https://live-code-hxft.onrender.com/) that supports multi-language editing, live preview, a built-in console, and real-time collaboration, ideal for pair programming, demos, and teaching.
 
 ## The Idea
-During college, I often wanted to code with friends remotely. Existing tools were either too heavy or required installations. I wanted something lightweight that works right in the browser — open the app, share a room code, and start coding together.
+During college, I often wanted to code with friends remotely. Existing tools were either too heavy or required installations. I wanted something lightweight that works right in the browser, open the app, share a room code, and start coding together.
 
 ## Core Features
-- **Multi-language editor** — HTML, CSS, JavaScript, Python, JSON, and Markdown with syntax highlighting.
-- **Live preview** — Run code manually or switch to Auto Run for instant HTML/CSS/JS updates.
-- **Built-in console** — View logs, warnings, and errors; run JavaScript from the console input.
-- **Files & export** — Create files, import from disk, rename tabs, and export as ZIP or individual files.
-- **Theme toggle** — Dark and light modes for comfortable long sessions.
-- **Code snippets** — Quick templates to bootstrap common patterns.
+- **Multi-language editor**, HTML, CSS, JavaScript, Python, JSON, and Markdown with syntax highlighting.
+- **Live preview**, Run code manually or switch to Auto Run for instant HTML/CSS/JS updates.
+- **Built-in console**, View logs, warnings, and errors; run JavaScript from the console input.
+- **Files & export**, Create files, import from disk, rename tabs, and export as ZIP or individual files.
+- **Theme toggle**, Dark and light modes for comfortable long sessions.
+- **Code snippets**, Quick templates to bootstrap common patterns.
 
 ## Live Collaboration (Collab)
-The **Collab** button in the header opens the **Live Collaboration** panel — the heart of real-time pair programming in Live Compiler Pro. You can code together with classmates or teammates without installing anything extra.
+The **Collab** button in the header opens the **Live Collaboration** panel, the heart of real-time pair programming in Live Compiler Pro. You can code together with classmates or teammates without installing anything extra.
 
 ### Two ways to collaborate
-- **Anywhere (P2P)** — Connect with others over the internet using peer-to-peer networking. Best when you and your partner are on different networks or cities. The host sees a status badge (*Connected* / *Host*) and a shareable room code.
-- **Same Browser** — Mirror code across tabs in the same browser with **Tab Sync**. Handy for testing responsive layouts or comparing two versions side by side without a network room.
+- **Anywhere (P2P)**, Connect with others over the internet using peer-to-peer networking. Best when you and your partner are on different networks or cities. The host sees a status badge (*Connected* / *Host*) and a shareable room code.
+- **Same Browser**, Mirror code across tabs in the same browser with **Tab Sync**. Handy for testing responsive layouts or comparing two versions side by side without a network room.
 
 ### How a live room works
 1. Click **Collab** in the toolbar, then choose a username (shown to others in the room).
-2. **Create & Join Room** — you become the host and receive a **12-character room code** (for example \`HGAH1QTS29ST\`).
-3. Share the code via **Copy invite & share** — teammates paste it under **Join a room** and click **Join**.
+2. **Create & Join Room**, you become the host and receive a **12-character room code** (for example \`HGAH1QTS29ST\`).
+3. Share the code via **Copy invite & share**, teammates paste it under **Join a room** and click **Join**.
 4. Everyone edits the same workspace in real time while the **Chat** sidebar stays open for live discussion.
 5. Hosts can **Reconnect** if the session drops or **Leave Room** to end their participation.
 
 ### Live Chat inside Collab rooms
-Collaboration is not just shared code — you also get a built-in **Chat** panel on the left so you never have to switch to WhatsApp or Discord mid-debug. On [Live Compiler Pro](https://live-code-hxft.onrender.com/), chat is tied directly to the active room: text and images stay in the same thread as your live coding session.
+Collaboration is not just shared code, you also get a built-in **Chat** panel on the left so you never have to switch to WhatsApp or Discord mid-debug. On [Live Compiler Pro](https://live-code-hxft.onrender.com/), chat is tied directly to the active room: text and images stay in the same thread as your live coding session.
 
 ## Architecture
 ### Backend
@@ -135,9 +135,9 @@ io.on('connection', (socket) => {
 The editor uses a code editor component with syntax highlighting. Changes are captured on every input event and emitted through Socket.io. Incoming updates are applied without disrupting the local user's cursor position.
 
 ## Challenges
-- **Conflict resolution** — When two users edit the same line simultaneously, changes can clash. I implemented a simple last-write-wins strategy which works well for small teams.
-- **Cursor management** — Applying remote changes without jumping the local cursor was tricky. I track cursor offsets before and after applying updates.
-- **Room management** — Each collaboration session gets a unique room ID. Users join by appending it to the URL.
+- **Conflict resolution**, When two users edit the same line simultaneously, changes can clash. I implemented a simple last-write-wins strategy which works well for small teams.
+- **Cursor management**, Applying remote changes without jumping the local cursor was tricky. I track cursor offsets before and after applying updates.
+- **Room management**, Each collaboration session gets a unique room ID. Users join by appending it to the URL.
 
 ## What I Learned
 This project deepened my understanding of WebSockets, real-time event architectures, and the challenges of collaborative editing. It also taught me how to structure a Node.js application for scalability.
@@ -147,7 +147,7 @@ This project deepened my understanding of WebSockets, real-time event architectu
     id: "files-shorter-google-drive-uploader",
     title: "Files Shorter: A Client-Side File Organizer for Google Drive",
     excerpt:
-      "How I built a zero-server file uploader that organizes uploads into Google Drive folders by subject — using just HTML and JavaScript.",
+      "How I built a zero-server file uploader that organizes uploads into Google Drive folders by subject, using just HTML and JavaScript.",
     category: "Projects",
     tags: ["Google Drive API", "JavaScript", "HTML", "Serverless"],
     date: "2026-05-01",
@@ -194,9 +194,9 @@ function uploadFile(file, folderId) {
 \`\`\`
 
 ## Design Decisions
-- **No backend** — Everything runs in the browser. The Google API client handles authentication via OAuth2.
-- **Predefined folders** — Subject folders are created in advance on Drive. The app maps subject names to folder IDs.
-- **Simple UI** — A clean, minimal interface that anyone can use without instructions.
+- **No backend**, Everything runs in the browser. The Google API client handles authentication via OAuth2.
+- **Predefined folders**, Subject folders are created in advance on Drive. The app maps subject names to folder IDs.
+- **Simple UI**, A clean, minimal interface that anyone can use without instructions.
 
 ## What I Learned
 Working with the Google Drive API taught me about OAuth2 flows, multipart file uploads, and the importance of keeping things simple. The entire app is under 200 lines of JavaScript.
@@ -206,7 +206,7 @@ Working with the Google Drive API taught me about OAuth2 flows, multipart file u
     id: "security-showcase-xss-prevention-demo",
     title: "Security Showcase: Demonstrating XSS Prevention in the Browser",
     excerpt:
-      "A deep dive into my Security Showcase project — a hands-on demo of DOM-based XSS attacks and the defense techniques that stop them.",
+      "A deep dive into my Security Showcase project, a hands-on demo of DOM-based XSS attacks and the defense techniques that stop them.",
     category: "Projects",
     tags: ["XSS Prevention", "JavaScript", "Frontend Security", "CSP"],
     date: "2026-04-25",
@@ -219,8 +219,8 @@ My **Security Showcase** project is a frontend-only demonstration of common DOM-
 
 ## What It Demonstrates
 The app has two modes:
-- **Vulnerable Mode** — Shows how unsafe DOM manipulation (like using \`innerHTML\` with user input) creates XSS vulnerabilities.
-- **Protected Mode** — Demonstrates the same functionality with proper defenses in place, showing that security doesn't have to break usability.
+- **Vulnerable Mode**, Shows how unsafe DOM manipulation (like using \`innerHTML\` with user input) creates XSS vulnerabilities.
+- **Protected Mode**, Demonstrates the same functionality with proper defenses in place, showing that security doesn't have to break usability.
 
 ## Defense Layers Implemented
 ### 1. Safe DOM Rendering
@@ -265,13 +265,13 @@ This project forced me to truly understand how browsers parse and execute script
     date: "2026-04-20",
     readTime: "6 min read",
     content: `
-The **Banking Shopping System** is a desktop application I built in Python that combines banking operations with a shopping experience. Users can create accounts, deposit and withdraw funds, browse products, and make purchases — all with security features baked in from the start.
+The **Banking Shopping System** is a desktop application I built in Python that combines banking operations with a shopping experience. Users can create accounts, deposit and withdraw funds, browse products, and make purchases, all with security features baked in from the start.
 
 ## Core Features
-- **User Authentication** — Account creation with hashed passwords and secure login.
-- **Banking Operations** — Deposit, withdraw, check balance, and view transaction history.
-- **Shopping System** — Browse an inventory catalog, add items to cart, and checkout using account balance.
-- **Transaction Logging** — Every financial operation is logged with timestamps for audit trails.
+- **User Authentication**, Account creation with hashed passwords and secure login.
+- **Banking Operations**, Deposit, withdraw, check balance, and view transaction history.
+- **Shopping System**, Browse an inventory catalog, add items to cart, and checkout using account balance.
+- **Transaction Logging**, Every financial operation is logged with timestamps for audit trails.
 
 ## Security Implementation
 ### Password Hashing
@@ -307,18 +307,18 @@ def withdraw(account, amount):
 Each transaction is recorded with a unique ID, timestamp, type (deposit/withdraw/purchase), and amount. This creates a complete audit trail that can be reviewed at any time.
 
 ## Architecture
-- **auth.py** — Handles user registration, login, and password management.
-- **banking.py** — Manages accounts, deposits, withdrawals, and balance inquiries.
-- **shop.py** — Handles the product catalog, cart, and checkout flow.
-- **main.py** — The entry point with a menu-driven interface.
+- **auth.py**, Handles user registration, login, and password management.
+- **banking.py**, Manages accounts, deposits, withdrawals, and balance inquiries.
+- **shop.py**, Handles the product catalog, cart, and checkout flow.
+- **main.py**, The entry point with a menu-driven interface.
 
 ## Challenges
-- **Data persistence** — Without a database, I used JSON files to store account data. This required careful file handling to prevent corruption during concurrent writes.
-- **Menu flow** — Designing an intuitive CLI menu that guides users through banking and shopping without confusion took multiple iterations.
-- **Edge cases** — Handling scenarios like insufficient funds during checkout, empty cart submissions, and invalid product IDs required thorough testing.
+- **Data persistence**, Without a database, I used JSON files to store account data. This required careful file handling to prevent corruption during concurrent writes.
+- **Menu flow**, Designing an intuitive CLI menu that guides users through banking and shopping without confusion took multiple iterations.
+- **Edge cases**, Handling scenarios like insufficient funds during checkout, empty cart submissions, and invalid product IDs required thorough testing.
 
 ## What I Learned
-This was my first significant Python project. It taught me about modular code design, secure data handling, and the importance of thinking about edge cases and error handling from the beginning — not as an afterthought.
+This was my first significant Python project. It taught me about modular code design, secure data handling, and the importance of thinking about edge cases and error handling from the beginning, not as an afterthought.
 `,
   },
   {
@@ -335,15 +335,15 @@ Cross-Site Scripting (XSS) remains one of the most common web application vulner
 
 ## What is XSS?
 XSS occurs when an application includes untrusted data in a web page without proper validation or escaping. There are three main types:
-- **Stored XSS** — The malicious script is permanently stored on the target server (e.g., in a database).
-- **Reflected XSS** — The script is reflected off a web server in error messages, search results, or any response that includes input from a user.
-- **DOM-based XSS** — The vulnerability exists entirely in client-side code. The attack payload is executed by modifying the DOM in the victim's browser.
+- **Stored XSS**, The malicious script is permanently stored on the target server (e.g., in a database).
+- **Reflected XSS**, The script is reflected off a web server in error messages, search results, or any response that includes input from a user.
+- **DOM-based XSS**, The vulnerability exists entirely in client-side code. The attack payload is executed by modifying the DOM in the victim's browser.
 
 ## A Simple Example
 Consider a search page that displays the user's query:
 
 \`\`\`js
-// Vulnerable code — DO NOT USE
+// Vulnerable code, DO NOT USE
 document.getElementById('results').innerHTML =
     'You searched for: ' + userInput;
 \`\`\`
@@ -380,7 +380,7 @@ element.innerHTML = clean;
 \`\`\`
 
 ## Key Takeaways
-- Never trust user input — always validate and sanitize.
+- Never trust user input, always validate and sanitize.
 - Prefer \`textContent\` over \`innerHTML\`.
 - Implement Content Security Policy headers.
 - Use established sanitization libraries when rendering HTML.
@@ -391,7 +391,7 @@ element.innerHTML = clean;
     id: "network-traffic-analysis-wireshark",
     title: "A Student's Guide to Network Traffic Analysis with Wireshark",
     excerpt:
-      "Learn how to capture, filter, and analyze network packets using Wireshark — the essential skill for any aspiring cybersecurity professional.",
+      "Learn how to capture, filter, and analyze network packets using Wireshark, the essential skill for any aspiring cybersecurity professional.",
     category: "Network Security",
     tags: ["Wireshark", "Packet Analysis", "Networking"],
     date: "2026-05-15",
@@ -411,9 +411,9 @@ When you launch Wireshark, you'll see a list of network interfaces. Select the o
 
 ## Understanding the Interface
 Wireshark's main window is divided into three panes:
-- **Packet List** — A summary of each captured packet (time, source, destination, protocol, info).
-- **Packet Details** — A tree-view breakdown of the selected packet's protocol layers.
-- **Packet Bytes** — The raw hexadecimal and ASCII data of the selected packet.
+- **Packet List**, A summary of each captured packet (time, source, destination, protocol, info).
+- **Packet Details**, A tree-view breakdown of the selected packet's protocol layers.
+- **Packet Bytes**, The raw hexadecimal and ASCII data of the selected packet.
 
 ## Essential Display Filters
 Display filters let you narrow down the packets you see. Here are some commonly used ones:
@@ -449,7 +449,7 @@ You can save your capture as a \`.pcap\` or \`.pcapng\` file for later analysis 
 ## Tips for Beginners
 - Always capture on your own network or with explicit permission.
 - Use capture filters to reduce file size when monitoring high-traffic networks.
-- Learn the OSI model — it makes understanding packet layers much easier.
+- Learn the OSI model, it makes understanding packet layers much easier.
 - Practice with sample captures from **wiki.wireshark.org/SampleCaptures**.
 `,
   },
@@ -466,10 +466,10 @@ You can save your capture as a \`.pcap\` or \`.pcapng\` file for later analysis 
 One of the best ways to learn cybersecurity is by building your own home lab. A virtual cyber range gives you a safe, isolated environment to practice offensive and defensive techniques without risking real systems or breaking any laws.
 
 ## What You'll Need
-- **Hardware** — A computer with at least 8 GB RAM and 100 GB free disk space. 16 GB RAM is recommended.
-- **Hypervisor** — VirtualBox (free) or VMware Workstation Player (free for personal use).
-- **Attacker VM** — Kali Linux or Parrot Security OS.
-- **Target VMs** — Intentionally vulnerable machines like Metasploitable 2, DVWA, or OWASP WebGoat.
+- **Hardware**, A computer with at least 8 GB RAM and 100 GB free disk space. 16 GB RAM is recommended.
+- **Hypervisor**, VirtualBox (free) or VMware Workstation Player (free for personal use).
+- **Attacker VM**, Kali Linux or Parrot Security OS.
+- **Target VMs**, Intentionally vulnerable machines like Metasploitable 2, DVWA, or OWASP WebGoat.
 
 ## Step 1: Install VirtualBox
 Download VirtualBox from **virtualbox.org** and install it. Also install the Extension Pack for USB support and other features.
@@ -484,7 +484,7 @@ File → Import Appliance → Select the .ova file → Import
 Default credentials are \`kali / kali\`. Change the password immediately after first login.
 
 ## Step 3: Set Up a Target Machine
-Download Metasploitable 2 — a deliberately vulnerable Linux VM. Extract the archive and create a new VM in VirtualBox pointing to the extracted \`.vmdk\` disk file.
+Download Metasploitable 2-a deliberately vulnerable Linux VM. Extract the archive and create a new VM in VirtualBox pointing to the extracted \`.vmdk\` disk file.
 
 ## Step 4: Network Configuration
 This is the most important step. You want your VMs to communicate with each other but **not** with the outside world:
@@ -502,10 +502,10 @@ ping 192.168.56.101
 
 ## Step 5: Start Practicing
 With your lab running, try these beginner exercises:
-- **Nmap scanning** — Discover open ports and services on the target.
-- **Metasploit** — Use the framework to exploit known vulnerabilities on Metasploitable.
-- **Web app testing** — Set up DVWA on the target and practice SQL injection, XSS, and file upload attacks.
-- **Wireshark** — Capture and analyze the traffic between your attacker and target.
+- **Nmap scanning**, Discover open ports and services on the target.
+- **Metasploit**, Use the framework to exploit known vulnerabilities on Metasploitable.
+- **Web app testing**, Set up DVWA on the target and practice SQL injection, XSS, and file upload attacks.
+- **Wireshark**, Capture and analyze the traffic between your attacker and target.
 
 ## Safety Reminders
 - Never connect vulnerable VMs to your real network or the internet.
@@ -518,7 +518,7 @@ With your lab running, try these beginner exercises:
     id: "freelance-sri-prayag-classes",
     title: "Case Study: Building a PWA Coaching Platform Without a Framework",
     excerpt:
-      "The Sri Prayag Classes coaching PWA — installable app shell, offline-first service worker, deep course taxonomy, and a Cloudflare edge in front of a custom domain.",
+      "The Sri Prayag Classes coaching PWA, installable app shell, offline-first service worker, deep course taxonomy, and a Cloudflare edge in front of a custom domain.",
     category: "Freelance",
     tags: ["PWA", "Service Worker", "Vanilla JS", "Cloudflare"],
     date: "2026-09-19",
@@ -527,16 +527,16 @@ With your lab running, try these beginner exercises:
     imageWidth: 1280,
     imageHeight: 900,
     content: `
-In 2025 I took on the web presence for **Sri Prayag Classes** as a solo delivery — architecture, frontend, and the full deploy pipeline. The result, [sriprayagclasses.com](https://sriprayagclasses.com/), is a **progressive web app**: installable on a phone, openable offline, and deep-linkable straight into a specific course.
+In 2025 I took on the web presence for **Sri Prayag Classes** as a solo delivery, architecture, frontend, and the full deploy pipeline. The result, [sriprayagclasses.com](https://sriprayagclasses.com/), is a **progressive web app**: installable on a phone, openable offline, and deep-linkable straight into a specific course.
 
 ## Why No Framework
-The target device is a mid-range Android on 3G, and the person maintaining the codebase after me is not a developer. A framework runtime — 60–90 KB of min+gzip just to bootstrap React or Vue — is a cost I did not want to push through the app shell. So the frontend is **vanilla JavaScript composed as ES modules**: small purpose-built modules (banner, main, modal) with no build step and no transpile. The module graph stays tiny, and the code remains legible to a different kind of maintainer.
+The target device is a mid-range Android on 3G, and the person maintaining the codebase after me is not a developer. A framework runtime, 60-90 KB of min+gzip just to bootstrap React or Vue, is a cost I did not want to push through the app shell. So the frontend is **vanilla JavaScript composed as ES modules**: small purpose-built modules (banner, main, modal) with no build step and no transpile. The module graph stays tiny, and the code remains legible to a different kind of maintainer.
 
 ## The PWA Layer
 Two artifacts carry the weight:
 
-- **Web app manifest** — \`display: standalone\`, \`theme_color\`, and the 192/512 icon set. This is what makes the app installable to the home screen with its own splash and standalone viewport.
-- **Service worker** — the offline brain. Its fetch handler routes by resource type:
+- **Web app manifest**, \`display: standalone\`, \`theme_color\`, and the 192/512 icon set. This is what makes the app installable to the home screen with its own splash and standalone viewport.
+- **Service worker**, the offline brain. Its fetch handler routes by resource type:
 
 \`\`\`js
 // navigate requests (real URLs): network-first, fall back to cache
@@ -545,14 +545,14 @@ Two artifacts carry the weight:
 // course-catalog updates propagate.
 \`\`\`
 
-**Network-first for routes, cache-first for static assets** — the whole offline strategy in one line.
+**Network-first for routes, cache-first for static assets**, the whole offline strategy in one line.
 
 ## Deep Course Taxonomy
-The catalog is not one list. It is a set of deep routes: \`/courses/jee-advanced\`, \`/courses/neet-ug\`, and so on — each with its own head, metadata, and CTA. The routes are real URLs (not hash fragments), which is exactly what lets the service worker's navigation handler intercept and serve them offline.
+The catalog is not one list. It is a set of deep routes: \`/courses/jee-advanced\`, \`/courses/neet-ug\`, and so on, each with its own head, metadata, and CTA. The routes are real URLs (not hash fragments), which is exactly what lets the service worker's navigation handler intercept and serve them offline.
 
 ## Conversion and Retention Surfaces
-- **Student sign-in** at \`/signin\` — the portal gates study material behind a client-managed session.
-- **WhatsApp deep links** (\`wa.me\`) on every course page — the conversion channel that actually works in this market: one tap exits to the messaging app with the enrollment message pre-filled.
+- **Student sign-in** at \`/signin\`, the portal gates study material behind a client-managed session.
+- **WhatsApp deep links** (\`wa.me\`) on every course page, the conversion channel that actually works in this market: one tap exits to the messaging app with the enrollment message pre-filled.
 
 ## The Edge
 The site sits behind **Cloudflare** on a custom domain: TLS termination at the edge, CDN-cached static assets, and PWA assets tagged as long-lived immutable URLs, so the service worker's cache is filled with byte-stable content.
@@ -562,17 +562,17 @@ The targets I set for the build:
 - LCP under 2.5 s on a mid-range phone over throttled 3G.
 - JS payload kept under ~30 KB total.
 - WebP images, hero carrying \`fetchpriority="high"\`.
-- Near-zero CLS — every image gets a fixed aspect-ratio box.
+- Near-zero CLS, every image gets a fixed aspect-ratio box.
 
 ## What I Learned
-Shipping a PWA without a framework forced me to think about *where* each byte runs. A service worker is not a cache — it is a routing and fallback policy. Get that right and the offline story mostly takes care of itself.
+Shipping a PWA without a framework forced me to think about *where* each byte runs. A service worker is not a cache, it is a routing and fallback policy. Get that right and the offline story mostly takes care of itself.
 `,
   },
   {
     id: "freelance-gupta-dental-care",
     title: "Case Study: A Local-SEO-Driven Clinic Website with a Real Booking Funnel",
     excerpt:
-      "The Gupta Dental Care build — Bootstrap 5 grid, IntersectionObserver scroll reveals, a symptom-to-booking funnel, and schema.org local-business markup aimed at Kushinagar.",
+      "The Gupta Dental Care build, Bootstrap 5 grid, IntersectionObserver scroll reveals, a symptom-to-booking funnel, and schema.org local-business markup aimed at Kushinagar.",
     category: "Freelance",
     tags: ["Bootstrap 5", "Local SEO", "Core Web Vitals", "IntersectionObserver"],
     date: "2026-09-14",
@@ -584,9 +584,9 @@ Shipping a PWA without a framework forced me to think about *where* each byte ru
 Building a web presence for a **dental clinic** is a different beast from building an app: the user is a patient, and the site's job is to convert concern into an appointment. For [guptadentalcare.cyou](https://guptadentalcare.cyou/), I designed the site as a **conversion funnel**, not a brochure.
 
 ## Funnel Architecture
-- **Home** — outcome-led hero, services grid, social proof (testimonials), and a persistent "Book Appointment" CTA.
-- **Symptom pages** (\`symptoms.html\`) — content pages that target the searches patients actually type. One canonical URL per condition, each with a CTA back into booking.
-- **Booking** (\`booking.html\`) — a single-purpose conversion page: name, phone, preferred time. Minimal fields, no login, no multi-step wizard.
+- **Home**, outcome-led hero, services grid, social proof (testimonials), and a persistent "Book Appointment" CTA.
+- **Symptom pages** (\`symptoms.html\`), content pages that target the searches patients actually type. One canonical URL per condition, each with a CTA back into booking.
+- **Booking** (\`booking.html\`), a single-purpose conversion page: name, phone, preferred time. Minimal fields, no login, no multi-step wizard.
 
 The principle: every page has a *job to do*, and the navigation hierarchy encodes that.
 
@@ -609,20 +609,20 @@ const io = new IntersectionObserver(
 );
 \`\`\`
 
-- **Once-semantics** — unobserving after reveal means no re-trigger on scroll-back and no work spent on off-screen elements.
+- **Once-semantics**, unobserving after reveal means no re-trigger on scroll-back and no work spent on off-screen elements.
 - The **-10% bottom rootMargin** reveals elements slightly *before* they hit the viewport, so nothing pops in at the last moment.
 
 ## The Local-SEO Layer
 This is where a clinic site actually wins or loses:
 
-- **On-page** — geo-qualified keywords in title/meta; the H1 carries service + city.
-- **Structured data** — \`schema.org\` **LocalBusiness / Dentist** JSON-LD: address, geo coordinates, opening hours, phone. That markup is what earns rich results (hours, phone) in the local pack.
-- **NAP consistency** — Name, Address, Phone in one canonical shape across the footer, the schema, and the booking page.
+- **On-page**, geo-qualified keywords in title/meta; the H1 carries service + city.
+- **Structured data**, \`schema.org\` **LocalBusiness / Dentist** JSON-LD: address, geo coordinates, opening hours, phone. That markup is what earns rich results (hours, phone) in the local pack.
+- **NAP consistency**, Name, Address, Phone in one canonical shape across the footer, the schema, and the booking page.
 
 ## Core Web Vitals
-- **LCP** — hero is a WebP with \`fetchpriority="high"\` (or a text LCP with zero blocking requests).
-- **CLS** — every image box has a fixed aspect-ratio, so the page never reflows mid-load.
-- **TBT** — all interactivity is under 2 KB of inline JS: no framework, no third-party runtime.
+- **LCP**, hero is a WebP with \`fetchpriority="high"\` (or a text LCP with zero blocking requests).
+- **CLS**, every image box has a fixed aspect-ratio, so the page never reflows mid-load.
+- **TBT**, all interactivity is under 2 KB of inline JS: no framework, no third-party runtime.
 
 ## What I Learned
 A clinic site is an SEO and funnel exercise wearing a design skin. The schema layer and the booking funnel do more for the client than any animation.
@@ -644,44 +644,44 @@ A clinic site is an SEO and funnel exercise wearing a design skin. The schema la
 The [Kashyap Tutorial](https://kashyap-tutorial.vercel.app/) portal (mirrored on a custom domain) is a **static multi-page application** on the Vercel edge. The "static" part is the architectural decision worth writing about.
 
 ## Why Static, and Why Multi-Page
-The data — course catalog, past results, faculty profiles — changes on a human timescale: days, not minutes. So I ship **pre-rendered pages**, not client-side-rendered routes:
+The data, course catalog, past results, faculty profiles, changes on a human timescale: days, not minutes. So I ship **pre-rendered pages**, not client-side-rendered routes:
 
-- **TTFB near zero** — pages are edge-cached; a request hits a CDN PoP near the user, not a server that has to generate a route.
-- **No hydration cost** — zero client-side route resolution, zero bundle download before paint.
-- **Atomic deploys** — one build, pushed to every edge PoP at once. Rollback means repointing at the previous build.
-- **Multi-page, not SPA** — each route is a real HTML document. A link from WhatsApp or Google lands on a fully-formed page, not a blank shell that flashes in its content.
+- **TTFB near zero**, pages are edge-cached; a request hits a CDN PoP near the user, not a server that has to generate a route.
+- **No hydration cost**, zero client-side route resolution, zero bundle download before paint.
+- **Atomic deploys**, one build, pushed to every edge PoP at once. Rollback means repointing at the previous build.
+- **Multi-page, not SPA**, each route is a real HTML document. A link from WhatsApp or Google lands on a fully-formed page, not a blank shell that flashes in its content.
 
 ## Route Map and Data Model
 The portal is a handful of real routes: the catalog, course detail pages, \`/results\`, and \`/demo-booking\`.
 
 The **results dataset** is the modeling piece: a table keyed by *(exam, year, name, score)*. Flat at export, indexed at build time so the results page can look up without shipping the full table to the client.
 
-**Faculty and results are social proof by design** — the highest-trust content in the domain is what goes at the top of the funnel.
+**Faculty and results are social proof by design**, the highest-trust content in the domain is what goes at the top of the funnel.
 
 ## The Demo-Booking Funnel
-A single-purpose form page: client-side validation on blur, field-level error states, phone normalization before submit, and an explicit success affordance. No login, no multi-step wizard — one screen, one action.
+A single-purpose form page: client-side validation on blur, field-level error states, phone normalization before submit, and an explicit success affordance. No login, no multi-step wizard, one screen, one action.
 
 ## Dual-Domain Strategy
 The same build is served on **both** the \`vercel.app\` URL **and** a custom domain:
 
 - DNS points the custom domain at the Vercel edge via CNAME.
 - The \`vercel.app\` URL stays live as a failover and a shareable link.
-- One deploy updates both domains — the custom domain is a pointer, not a copy of the build.
+- One deploy updates both domains, the custom domain is a pointer, not a copy of the build.
 
 ## Core Web Vitals
-- **LCP** — the first hero media is a WebP inside a fixed aspect-ratio box.
-- **CLS** — near zero by construction: static HTML, no client-side reflow after layout.
-- **TBT** — negligible JS budget, so total blocking time is effectively zero on any connection.
+- **LCP**, the first hero media is a WebP inside a fixed aspect-ratio box.
+- **CLS**, near zero by construction: static HTML, no client-side reflow after layout.
+- **TBT**, negligible JS budget, so total blocking time is effectively zero on any connection.
 
 ## What I Learned
-Static is a design constraint that forces you to make the data-modeling decisions up front. The payoff is the simplest possible runtime: no server, no state, no deploy drama — and Core Web Vitals you do not have to fight for.
+Static is a design constraint that forces you to make the data-modeling decisions up front. The payoff is the simplest possible runtime: no server, no state, no deploy drama, and Core Web Vitals you do not have to fight for.
 `,
   },
   {
     id: "freelance-infinity-classes",
     title: "Case Study: Institute Site with Mock-Test Performance Analytics",
     excerpt:
-      "The Infinity Classes build — a static multi-page institute site where a mock-test flow turns attempt data into topic-level weak-area diagnostics, served from the Vercel edge.",
+      "The Infinity Classes build, a static multi-page institute site where a mock-test flow turns attempt data into topic-level weak-area diagnostics, served from the Vercel edge.",
     category: "Freelance",
     tags: ["Vercel", "Static Site", "Data Analytics", "Accessibility"],
     date: "2026-09-05",
@@ -698,24 +698,24 @@ A handful of real routes: the catalog, course detail pages, \`/study-material\`,
 ## The Mock-Test Analytics Flow
 The interesting part is the diagnostic pipeline:
 
-1. **Input** — an attempt record: answers, time-per-question, topic tags per question, and the max score.
-2. **Client-side computation** — there is no backend analytics service. The browser does the math on the attempt JSON:
+1. **Input**, an attempt record: answers, time-per-question, topic tags per question, and the max score.
+2. **Client-side computation**, there is no backend analytics service. The browser does the math on the attempt JSON:
    - accuracy per topic (\`correct / attempted\`)
    - time-per-question against a par time
-   - **weak-area detection** — topics below a pass-accuracy threshold, ranked by their weight in the exam
-3. **Output** — per-topic performance, a prioritized weak-area list, and a suggested study order.
+   - **weak-area detection**, topics below a pass-accuracy threshold, ranked by their weight in the exam
+3. **Output**, per-topic performance, a prioritized weak-area list, and a suggested study order.
 
-Because the computation is local, the feature works offline once the page is cached, and attempt data never leaves the student's device — a privacy property that came for free. The institute markets this as **AI-powered performance analysis**; what ships is the deterministic analytics above, which does the diagnostic job without a model call.
+Because the computation is local, the feature works offline once the page is cached, and attempt data never leaves the student's device, a privacy property that came for free. The institute markets this as **AI-powered performance analysis**; what ships is the deterministic analytics above, which does the diagnostic job without a model call.
 
 ## Study-Material Distribution
 Notes and past papers are **static files** served from the edge: byte-stable, cache-immutable, zero origin load. The page that lists them is just an index.
 
 ## Performance and Accessibility Budget
-- **CWV** — WebP hero, fixed aspect-ratio boxes (CLS near zero), minimal inline JS (TBT near zero), LCP under 2.5 s on a throttled mid-range phone.
-- **A11y** — results rendered as semantic tables with proper \`scope\`, focus managed in the diagnostic panel, and all motion gated behind \`prefers-reduced-motion\`.
+- **CWV**, WebP hero, fixed aspect-ratio boxes (CLS near zero), minimal inline JS (TBT near zero), LCP under 2.5 s on a throttled mid-range phone.
+- **A11y**, results rendered as semantic tables with proper \`scope\`, focus managed in the diagnostic panel, and all motion gated behind \`prefers-reduced-motion\`.
 
 ## What I Learned
-Static architecture forces the data-modeling decisions — attempt schemas, topic tags — to the front, and pays back in the simplest runtime possible. And a small local computation beats a remote model call on both latency and privacy.
+Static architecture forces the data-modeling decisions, attempt schemas, topic tags, to the front, and pays back in the simplest runtime possible. And a small local computation beats a remote model call on both latency and privacy.
 `,
   },
 ];
@@ -729,7 +729,7 @@ export const PORTFOLIO = {
   name: "Ashish Gupta",
   role: "Cyber Security Student",
   tagline:
-    "Cyber Security student at NIET — building skills in network defense, ethical hacking, and digital forensics.",
+    "Cyber Security student at NIET, building skills in network defense, ethical hacking, and digital forensics.",
   stats: [
     { label: "Projects", value: "10+" },
     { label: "Internships", value: "2" },
@@ -756,7 +756,7 @@ export const PORTFOLIO = {
     {
       title: "Freelance Web Developer",
       org: "Self-employed",
-      year: "2025 – Present",
+      year: "2025-Present",
       desc: "Solo delivery of four production web properties for coaching institutes and a dental clinic: architecture and responsive frontends, forms and booking funnels, a PWA offline strategy, local-SEO schema, and the full deploy pipeline (Vercel edge + Cloudflare, custom DNS and TLS).",
       tech: ["Responsive Frontend", "PWA", "Vercel", "Cloudflare", "Local SEO"],
     },
@@ -807,7 +807,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Live Compiler Pro",
-      desc: "Powerful live code editor with real-time collaboration, chat, and WebRTC-based code sharing—perfect for pair programming and demos.",
+      desc: "Powerful live code editor with real-time collaboration, chat, and WebRTC-based code sharing-perfect for pair programming and demos.",
       tech: ["JavaScript", "Node.js", "Socket.io"],
       github: "https://github.com/bitcodeAShishcloud/live-code",
       live: "https://live-code-hxft.onrender.com/",
@@ -821,7 +821,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Files Shorter",
-      desc: "Client-side secure file uploader that organizes uploads into Google Drive folders by subject—easy to use, no server required.",
+      desc: "Client-side secure file uploader that organizes uploads into Google Drive folders by subject-easy to use, no server required.",
       tech: ["Google Drive", "JavaScript", "HTML"],
       github: "https://github.com/bitcodeAShishcloud/Files-Shorter",
       live: "https://bitcodeashishcloud.github.io/Files-Shorter/",
@@ -834,7 +834,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Sri Prayag Classes",
-      desc: "Coaching-institute PWA: installable app shell, offline-first service worker, deep course taxonomy (JEE/NEET), student sign-in portal, and WhatsApp enrollment CTAs — designed and shipped solo.",
+      desc: "Coaching-institute PWA: installable app shell, offline-first service worker, deep course taxonomy (JEE/NEET), student sign-in portal, and WhatsApp enrollment CTAs, designed and shipped solo.",
       tech: ["PWA", "Service Worker", "Vanilla JS", "Cloudflare"],
       live: "https://sriprayagclasses.com/",
       caseStudy: "freelance-sri-prayag-classes",

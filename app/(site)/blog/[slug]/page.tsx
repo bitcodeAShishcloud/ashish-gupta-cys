@@ -12,7 +12,7 @@ const SITE_URL = "https://www.ashishcys.cyou";
 
 /*
  * Server component: content is pre-rendered per slug (generateStaticParams),
- * so each post is a real HTML document — SEO, og tags and the reading
+ * so each post is a real HTML document, SEO, og tags and the reading
  * experience all work without waiting for the client bundle. Only the
  * markdown renderer is client (react-markdown), which keeps the page's
  * script payload small.
@@ -31,7 +31,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
         height: post.imageHeight ?? 675,
         alt: post.title,
       }
-    : { url: "/assets/og-image.webp", width: 1200, height: 630, alt: "Ashish Gupta — Cyber Security Portfolio" };
+    : { url: "/assets/og-image.webp", width: 1200, height: 630, alt: "Ashish Gupta, Cyber Security Portfolio" };
 
   return {
     title: post.title,
@@ -40,7 +40,7 @@ export function generateMetadata({ params }: { params: { slug: string } }): Meta
       type: "article",
       locale: "en_US",
       url: `/blog/${post.id}`,
-      siteName: "Ashish Gupta — Cyber Security",
+      siteName: "Ashish Gupta, Cyber Security",
       title: post.title,
       description: post.excerpt,
       images: [img],

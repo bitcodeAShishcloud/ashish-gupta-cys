@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
 /*
- * Root 404 — covers routes outside the (site) group (e.g. /admin/xyz),
+ * Root 404-covers routes outside the (site) group (e.g. /admin/xyz),
  * which would otherwise fall back to Next's bare default page.
  */
 export default function RootNotFound() {

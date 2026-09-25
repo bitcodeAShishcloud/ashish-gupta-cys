@@ -32,7 +32,7 @@ export default function AdminLoginPage() {
         setAnswer("");
       }
     } catch {
-      /* captcha unavailable — leave as is */
+      /* captcha unavailable, leave as is */
     }
   }
 
@@ -104,9 +104,13 @@ export default function AdminLoginPage() {
     <div className="flex flex-1 items-center justify-center px-5 py-10">
       <div className="w-full max-w-md animate-fade-in-up">
         <div className="mb-4 flex items-center gap-3">
-          <div className="grad-btn flex h-11 w-11 items-center justify-center rounded-lg shadow-[0_0_18px_hsl(var(--primary)/0.35)]">
-            <ShieldCheck className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src="/favicon.webp"
+            alt="Ashish Gupta logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 rounded-lg object-cover"
+          />
           <div>
             <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">
               {"restricted"}

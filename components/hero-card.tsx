@@ -2,7 +2,7 @@ import { FileText, Github, Linkedin, Mail } from "lucide-react";
 import { PORTFOLIO } from "@/lib/content";
 
 /*
- * Hero profile card — mirrors the reference's side-card look (glass panel,
+ * Hero profile card, mirrors the reference's side-card look (glass panel,
  * violet glow, chip + label header) but centered on Ashish's photo.
  * Server component: static links only, no interactivity.
  */
@@ -28,9 +28,13 @@ export function HeroCard() {
       <div className="glass relative w-full rounded-2xl border border-primary/20 p-5 shadow-[0_0_50px_hsl(var(--primary)/0.2)]">
         {/* header, same language as the reference card */}
         <div className="mb-4 flex items-center gap-2.5">
-          <span className="grad-btn flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold text-white shadow-[0_0_14px_hsl(var(--primary)/0.4)]">
-            &gt;_
-          </span>
+          <img
+            src="/favicon.webp"
+            alt="Ashish Gupta logo"
+            width={32}
+            height={32}
+            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          />
           <div>
             <p className="font-mono text-sm font-bold text-foreground">
               ashish <span className="text-primary">~</span> portfolio
@@ -41,7 +45,7 @@ export function HeroCard() {
           </div>
         </div>
 
-        {/* photo — circular avatar */}
+        {/* photo, circular avatar */}
         <div className="relative mx-auto h-40 w-40 overflow-hidden rounded-full border-2 border-primary/50 shadow-[0_0_30px_hsl(var(--primary)/0.4)] sm:h-44 sm:w-44">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img

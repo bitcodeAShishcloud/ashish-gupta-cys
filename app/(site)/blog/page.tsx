@@ -35,7 +35,7 @@ export default function BlogPage() {
       </p>
       <h1 className="mt-1 text-3xl font-bold sm:text-4xl">Blog & Writeups</h1>
       <p className="mt-2 max-w-2xl text-muted-foreground">
-        Notes from the lab — projects, security topics and hands-on guides.
+        Notes from the lab, projects, security topics and hands-on guides.
       </p>
 
       <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
