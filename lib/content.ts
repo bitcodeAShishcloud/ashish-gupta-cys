@@ -876,11 +876,10 @@ export const PORTFOLIO = {
   ],
   projects: [
     {
-      name: "Poppit AI",
+      name: "Fine-Tuning real model (Google Gemma 2B)",
       desc: "Fine-tuned Google Gemma 2B into a personal assistant with QLoRA (4-bit NF4, LoRA r=8 on attention projections), served through a FastAPI backend with a vanilla-JS chat UI and a like-based feedback loop.",
       tech: ["Gemma 2B", "QLoRA", "PEFT", "TRL", "PyTorch", "FastAPI"],
       github: "https://github.com/bitcodeAShishcloud/Poppit-Ai",
-      live: "https://bitcodeashishcloud.github.io/Poppit-Ai/ui/",
       caseStudy: "poppit-ai-gemma-2b-qlora",
       category: "GitHub",
     },
