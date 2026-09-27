@@ -5,7 +5,6 @@ import {
   Award,
   BadgeCheck,
   ExternalLink,
-  Github,
   GraduationCap,
   LayoutGrid,
   Mail,
@@ -21,6 +20,7 @@ import { Reveal } from "@/components/reveal";
 import { CountUp } from "@/components/count-up";
 import { HeroCard } from "@/components/hero-card";
 import { BrowserFrame } from "@/components/browser-frame";
+import { ProjectsSection } from "@/components/projects-section";
 
 /* All freelance screenshots ship at 1280×900. */
 const THUMB_W = 1280;
@@ -41,12 +41,6 @@ export default function HomePage() {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 3);
 
-  const personal = p.projects.filter((proj) => !proj.freelance);
-  const featured = ["Security Showcase", "Live Compiler Pro"];
-  const orderedProjects = [
-    ...personal.filter((x) => featured.includes(x.name)),
-    ...personal.filter((x) => !featured.includes(x.name)),
-  ];
   const freelance = p.projects.filter((proj) => proj.freelance);
 
   return (
@@ -126,14 +120,35 @@ export default function HomePage() {
               style={{ animationDelay: "240ms" }}
               aria-label="Portfolio stats"
             >
-              {p.stats.map((s) => (
-                <div key={s.label} className="grad-card rounded-xl p-3 text-center sm:p-4">
-                  <div className="font-mono text-xl font-bold text-foreground sm:text-2xl">
-                    <CountUp value={s.value} />
+              {p.stats.map((s) => {
+                const href =
+                  s.label === "Projects"
+                    ? "#projects"
+                    : s.label === "Internships"
+                      ? "#experience"
+                      : s.label === "Certifications"
+                        ? "#certifications"
+                        : null;
+                const cls =
+                  "grad-card block rounded-xl p-3 text-center transition-colors duration-200 hover:border-primary/50 sm:p-4";
+                const body = (
+                  <>
+                    <div className="font-mono text-xl font-bold text-foreground sm:text-2xl">
+                      <CountUp value={s.value} />
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
+                  </>
+                );
+                return href ? (
+                  <a key={s.label} href={href} aria-label={`Jump to ${s.label}`} className={cls}>
+                    {body}
+                  </a>
+                ) : (
+                  <div key={s.label} className={cls}>
+                    {body}
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -234,56 +249,12 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* ── Projects (featured: Security Showcase, Live Compiler Pro) ── */}
+      {/* ── Projects: count-card filters + grid ── */}
       <section id="projects" className="scroll-mt-24 py-16">
         <Reveal>
           <SectionLabel>{"projects"}</SectionLabel>
           <h2 className="mt-1 font-display text-3xl font-bold">Projects</h2>
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-            {orderedProjects.map((proj, i) => (
-              <Reveal key={proj.name} delay={(i % 2) * 80}>
-                <Card className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.12)]">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-semibold">{proj.name}</h3>
-                      <div className="flex flex-wrap gap-2">
-                        {proj.github ? (
-                          <a
-                            href={proj.github}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${proj.name} source code on GitHub`}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-border/70 px-3 font-mono text-xs text-muted-foreground transition-colors duration-200 hover:border-primary/50 hover:text-primary"
-                          >
-                            <Github className="h-3.5 w-3.5" aria-hidden /> GitHub
-                          </a>
-                        ) : null}
-                        {proj.live ? (
-                          <a
-                            href={proj.live}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${proj.name} live demo`}
-                            className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-border/70 px-3 font-mono text-xs text-muted-foreground transition-colors duration-200 hover:border-primary/50 hover:text-primary"
-                          >
-                            <ExternalLink className="h-3.5 w-3.5" aria-hidden /> Live
-                          </a>
-                        ) : null}
-                      </div>
-                    </div>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{proj.desc}</p>
-                    <div className="mt-4 flex flex-wrap gap-1.5">
-                      {proj.tech.map((t) => (
-                        <Badge key={t} variant="outline" className="font-mono text-[11px]">
-                          {t}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </Reveal>
-            ))}
-          </div>
+          <ProjectsSection projects={p.projects} />
         </Reveal>
       </section>
 

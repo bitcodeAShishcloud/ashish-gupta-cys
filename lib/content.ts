@@ -731,7 +731,7 @@ export const PORTFOLIO = {
   tagline:
     "Cyber Security student at NIET, building skills in network defense, ethical hacking, and digital forensics.",
   stats: [
-    { label: "Projects", value: "10+" },
+    { label: "Projects", value: "9" },
     { label: "Internships", value: "2" },
     { label: "Certifications", value: "2" },
   ],
@@ -800,6 +800,7 @@ export const PORTFOLIO = {
   projects: [
     {
       name: "Security Showcase",
+      category: "GitHub",
       desc: "A security-first frontend demo showing DOM-based XSS prevention techniques, safe DOM rendering, sanitization layers, and CSP enforcement.",
       tech: ["XSS Prevention", "JavaScript", "Frontend Security"],
       github: "https://github.com/bitcodeAShishcloud/security-showcase",
@@ -807,6 +808,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Live Compiler Pro",
+      category: "GitHub",
       desc: "Powerful live code editor with real-time collaboration, chat, and WebRTC-based code sharing-perfect for pair programming and demos.",
       tech: ["JavaScript", "Node.js", "Socket.io"],
       github: "https://github.com/bitcodeAShishcloud/live-code",
@@ -814,6 +816,7 @@ export const PORTFOLIO = {
     },
     {
       name: "News Aggregator",
+      category: "GitHub",
       desc: "A full-stack news aggregator that pulls latest technology articles via NewsAPI, stores them to MySQL and presents a clean feed with user accounts.",
       tech: ["PHP", "MySQL", "JavaScript"],
       github: "https://github.com/bitcodeAShishcloud/News-Aggregator",
@@ -821,6 +824,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Files Shorter",
+      category: "GitHub",
       desc: "Client-side secure file uploader that organizes uploads into Google Drive folders by subject-easy to use, no server required.",
       tech: ["Google Drive", "JavaScript", "HTML"],
       github: "https://github.com/bitcodeAShishcloud/Files-Shorter",
@@ -828,12 +832,14 @@ export const PORTFOLIO = {
     },
     {
       name: "Banking Shopping System",
+      category: "GitHub",
       desc: "A comprehensive banking and shopping desktop application built with Python, featuring secure transaction processing, user authentication, and inventory management.",
       tech: ["Python", "Desktop App", "Security"],
       github: "https://github.com/bitcodeAShishcloud/banking-shopping-system/",
     },
     {
       name: "Sri Prayag Classes",
+      category: "Freelancing",
       desc: "Coaching-institute PWA: installable app shell, offline-first service worker, deep course taxonomy (JEE/NEET), student sign-in portal, and WhatsApp enrollment CTAs, designed and shipped solo.",
       tech: ["PWA", "Service Worker", "Vanilla JS", "Cloudflare"],
       live: "https://sriprayagclasses.com/",
@@ -845,6 +851,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Gupta Dental Care",
+      category: "Freelancing",
       desc: "Clinic website as a conversion funnel: Bootstrap 5 layout, symptom-to-booking flow, IntersectionObserver scroll reveals, and schema.org local-business markup for Kushinagar.",
       tech: ["Bootstrap 5", "Local SEO", "Core Web Vitals", "WebP"],
       live: "https://guptadentalcare.cyou/",
@@ -856,6 +863,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Kashyap Tutorial",
+      category: "Freelancing",
       desc: "Course and results portal on the Vercel edge: static multi-page routes, exam-year-keyed results data model, demo-booking funnel, dual-domain vercel.app + custom CNAME setup.",
       tech: ["Vercel Edge", "Static Multi-page", "DNS/CNAME", "Core Web Vitals"],
       live: "https://kashyap-tutorial.vercel.app/",
@@ -867,6 +875,7 @@ export const PORTFOLIO = {
     },
     {
       name: "Infinity Classes",
+      category: "Freelancing",
       desc: "Institute site with mock-test performance analytics: static multi-page app, client-side weak-area diagnostics from attempt data, static study-material distribution, served from the Vercel edge.",
       tech: ["Vercel Edge", "Static Site", "Analytics UI", "Accessibility"],
       live: "https://infinity-classes-one.vercel.app/",

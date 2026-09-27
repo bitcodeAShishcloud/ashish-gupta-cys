@@ -234,7 +234,7 @@ export function ChatPanel() {
               {"secureai"}
             </p>
             <h1 className="mt-0.5 text-xl font-bold">
-              Hi {name}, I&apos;m Ashish&apos;s AI assistant
+              Hi {name}, what do you want to know?
             </h1>
             {modelInfo ? (
               <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] text-primary">
@@ -280,7 +280,7 @@ export function ChatPanel() {
             messages.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-primary/40 bg-gradient-to-br from-primary/25 via-primary/15 to-[hsl(var(--secondary)/0.35)] px-4 py-3 text-sm text-foreground shadow-[0_0_16px_hsl(var(--primary)/0.15)]">
+                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-white/15 bg-white/10 px-4 py-3 text-sm text-foreground">
                     {m.content}
                   </div>
                 </div>

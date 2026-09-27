@@ -2,9 +2,8 @@ import { FileText, Github, Linkedin, Mail } from "lucide-react";
 import { PORTFOLIO } from "@/lib/content";
 
 /*
- * Hero profile card, mirrors the reference's side-card look (glass panel,
- * violet glow, chip + label header) but centered on Ashish's photo.
- * Server component: static links only, no interactivity.
+ * Hero profile card, glass panel with a soft white glow and a mono chip
+ * header, centered on Ashish's photo. Server component: static links only.
  */
 export function HeroCard() {
   const p = PORTFOLIO;
@@ -20,7 +19,7 @@ export function HeroCard() {
       className="animate-fade-in-up relative mx-auto w-full max-w-sm lg:mx-0 lg:justify-self-end"
       style={{ animationDelay: "150ms" }}
     >
-      {/* violet corner glow (clamped on small screens) */}
+      {/* soft corner glow (clamped on small screens) */}
       <div
         aria-hidden
         className="pointer-events-none absolute -bottom-8 -left-8 h-36 w-36 rounded-full bg-primary/25 blur-3xl sm:-bottom-16 sm:-left-16 sm:h-56 sm:w-56 sm:bg-primary/30"
