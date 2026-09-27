@@ -15,6 +15,83 @@ export interface BlogPost {
 
 export const BLOG_POSTS: BlogPost[] = [
   {
+    id: "poppit-ai-gemma-2b-qlora",
+    title: "Fine-Tuning Gemma 2B with QLoRA: Building Poppit AI",
+    excerpt:
+      "How I turned Google's Gemma 2B into my own assistant: 4-bit NF4 quantization, LoRA on the attention projections, TRL's SFTTrainer, and a FastAPI + vanilla-JS chat stack around it.",
+    category: "Projects",
+    tags: ["QLoRA", "Gemma 2B", "PEFT", "PyTorch", "FastAPI"],
+    date: "2026-09-27",
+    readTime: "8 min read",
+    image: "/blog-images/poppit-ai.webp",
+    content: `
+**Poppit AI** is a conversational assistant I built end to end: a fine-tuned [Gemma 2B](https://huggingface.co/google/gemma-2b) served through a FastAPI backend, with a custom ChatGPT-style UI on top. The full source lives at [github.com/bitcodeAShishcloud/Poppit-Ai](https://github.com/bitcodeAShishcloud/Poppit-Ai) and the web UI is hosted on GitHub Pages.
+
+## Why fine-tune a 2B model
+I wanted to own the whole pipeline, not just call an API: pick a base model, shape its behavior with my own instruction-response data, quantize it so it fits in consumer VRAM, and wrap it in a server and UI I wrote myself. A 2B model is small enough that the fine-tuned adapter is only a few megabytes, and inference runs in around 4GB of VRAM.
+
+## The QLoRA pipeline
+QLoRA freezes the base model in 4-bit and trains small low-rank adapters on top. The setup in \`train.py\`:
+
+\`\`\`python
+bnb_config = BitsAndBytesConfig(
+    load_in_4bit=True,
+    bnb_4bit_quant_type="nf4",
+    bnb_4bit_compute_dtype=torch.float16,
+    bnb_4bit_use_double_quant=True,
+)
+
+lora_config = LoraConfig(
+    r=8,
+    lora_alpha=16,
+    lora_dropout=0.05,
+    target_modules=["q_proj", "v_proj"],
+    bias="none",
+    task_type="CAUSAL_LM",
+)
+\`\`\`
+
+NF4 with **double quantization** squeezes the base weights hard, and adapters on the query and value projections are enough to steer a 2B model. \`model.print_trainable_parameters()\` showed how few parameters were actually training, which is the whole point of the method.
+
+## Dataset and prompt format
+Training data is a JSON file of instruction-response pairs, formatted with the classic template before reaching the trainer:
+
+\`\`\`
+### Instruction:
+{question}
+
+### Response:
+{answer}
+\`\`\`
+
+Keeping the format identical between training and inference matters more than any hyperparameter. The inference script wraps every user prompt in the same template, otherwise the adapter behaves unpredictably.
+
+## Training configuration
+The trainer is TRL's \`SFTTrainer\`:
+
+- batch size 1 with gradient accumulation 4 (small-VRAM friendly)
+- learning rate 2e-4, 3 epochs
+- \`adamw_torch\`, checkpoints every 50 steps
+- AMP disabled and \`max_grad_norm\` set to 0, which worked around a gradient-scaling quirk on Windows
+
+Each checkpoint is tiny (the final adapter is on the order of 10MB), so experimenting across runs is cheap. A small dataset trains in tens of minutes on a modest GPU.
+
+## Inference and serving
+At runtime the adapter is mounted back onto the fp16 base with PEFT. Generation samples with temperature 0.7, top-p 0.9 and a repetition penalty of 1.2, capped at 150 new tokens. A FastAPI server exposes two endpoints:
+
+- \`POST /chat\` — the message in, the response out
+- \`POST /like\` — saves a liked instruction-response pair to \`like.json\`, which becomes training data for the next run
+
+That like-button feedback loop is my favorite part: the UI quietly feeds the next fine-tune.
+
+## The chat UI
+The frontend is vanilla JavaScript (no framework) with multi-session chat, pinning and search, auto-growing input with arrow-key history, code blocks with copy buttons, voice input via the Web Speech API, and encrypted localStorage persistence. It is deployed on GitHub Pages, so the only thing that needs a GPU is the backend.
+
+## What I learned
+Quantization math is the easy part; the hard parts are prompt-format discipline, dataset quality, and Windows-specific training quirks. And a feedback loop beats a bigger dataset: rows you know are good are worth more than rows you hope are good.
+`,
+  },
+  {
     id: "building-news-aggregator",
     title: "How I Built a Full-Stack News Aggregator with PHP and MySQL",
     excerpt:
@@ -731,7 +808,7 @@ export const PORTFOLIO = {
   tagline:
     "Cyber Security student at NIET, building skills in network defense, ethical hacking, and digital forensics.",
   stats: [
-    { label: "Projects", value: "9" },
+    { label: "Projects", value: "10" },
     { label: "Internships", value: "2" },
     { label: "Certifications", value: "2" },
   ],
@@ -798,6 +875,15 @@ export const PORTFOLIO = {
     },
   ],
   projects: [
+    {
+      name: "Poppit AI",
+      desc: "Fine-tuned Google Gemma 2B into a personal assistant with QLoRA (4-bit NF4, LoRA r=8 on attention projections), served through a FastAPI backend with a vanilla-JS chat UI and a like-based feedback loop.",
+      tech: ["Gemma 2B", "QLoRA", "PEFT", "TRL", "PyTorch", "FastAPI"],
+      github: "https://github.com/bitcodeAShishcloud/Poppit-Ai",
+      live: "https://bitcodeashishcloud.github.io/Poppit-Ai/ui/",
+      caseStudy: "poppit-ai-gemma-2b-qlora",
+      category: "GitHub",
+    },
     {
       name: "Security Showcase",
       category: "GitHub",
