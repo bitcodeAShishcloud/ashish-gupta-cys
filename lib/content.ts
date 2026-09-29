@@ -817,7 +817,7 @@ export const PORTFOLIO = {
     linkedin: "https://www.linkedin.com/in/ashish-gupta-037973259/",
     github: "https://github.com/bitcodeAShishcloud",
     resume:
-      "https://docs.google.com/document/d/1CyutTZwx5yiNymublFrvZl83Phl_J_4V5uztn3OJZJ0/edit?usp=sharing",
+      "https://docs.google.com/document/d/e/2PACX-1vRSxngFM1nfzOhgb7wWJaqsN7FS6lgv8Fdh0UUuuYAfLS4siboHQsTRL-bdKhMAl7VlqvKa9_uXfxyY/pub",
   },
   about:
     "I'm a dedicated 3rd-year Cyber Security student at NIET, Greater Noida, with a deep passion for protecting digital assets and understanding the intricacies of cyber threats. I specialize in network defense, ethical hacking, and digital forensics, and I combine Python and C++ with security expertise to build comprehensive solutions.",

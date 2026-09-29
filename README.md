@@ -8,7 +8,7 @@
 
 **🎓 B.Tech CSE (Cyber Security) | NIET Greater Noida | 3rd Year**
 
-[📧 Contact](mailto:agupta38160@gmail.com) • [💼 LinkedIn](https://www.linkedin.com/in/ashish-gupta-037973259/) • [🐙 GitHub](https://github.com/bitcodeAShishcloud) • [📄 Resume](https://docs.google.com/document/d/1CyutTZwx5yiNymublFrvZl83Phl_J_4V5uztn3OJZJ0/edit?usp=sharing)
+[📧 Contact](mailto:agupta38160@gmail.com) • [💼 LinkedIn](https://www.linkedin.com/in/ashish-gupta-037973259/) • [🐙 GitHub](https://github.com/bitcodeAShishcloud) • [📄 Resume](https://docs.google.com/document/d/e/2PACX-1vRSxngFM1nfzOhgb7wWJaqsN7FS6lgv8Fdh0UUuuYAfLS4siboHQsTRL-bdKhMAl7VlqvKa9_uXfxyY/pub)
 
 </div>
 
