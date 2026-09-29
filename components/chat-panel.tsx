@@ -56,7 +56,11 @@ function usageToday(): number {
   }
 }
 
-export function ChatPanel() {
+export function ChatPanel({
+  variant = "page",
+}: {
+  variant?: "page" | "widget";
+}) {
   const [name, setName] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -180,14 +184,29 @@ export function ChatPanel() {
   }
 
   if (!mounted) {
-    return <div className="mx-auto max-w-3xl px-5 py-16" />;
+    return variant === "widget" ? (
+      <div className="h-full" />
+    ) : (
+      <div className="mx-auto max-w-3xl px-5 py-16" />
+    );
   }
 
   // ── Name gate ──
   if (!name) {
     return (
-      <div className="flex h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-5 py-16">
-      <div className="grad-card w-full max-w-md rounded-xl p-8 text-center animate-fade-in-up">
+      <div
+        className={
+          variant === "widget"
+            ? "flex h-full items-center justify-center p-4"
+            : "flex h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-5 py-16"
+        }
+      >
+      <div
+        className={cn(
+          "grad-card w-full max-w-md rounded-xl text-center animate-fade-in-up",
+          variant === "widget" ? "p-6" : "p-8",
+        )}
+      >
         <img
           src="/favicon.webp"
           alt="Ashish Gupta logo"
@@ -198,7 +217,11 @@ export function ChatPanel() {
           <p className="section-label mt-5 font-mono text-xs uppercase tracking-widest text-primary">
             {"identity check"}
           </p>
-          <h1 className="mt-2 text-2xl font-bold">Who are you?</h1>
+          {variant === "widget" ? (
+            <h2 className="mt-2 text-xl font-bold">Who are you?</h2>
+          ) : (
+            <h1 className="mt-2 text-2xl font-bold">Who are you?</h1>
+          )}
           <p className="mt-2 text-sm text-muted-foreground">
             Tell me your name to start the conversation. Nothing is stored on a
             server, your chat lives only in this browser.
@@ -225,7 +248,13 @@ export function ChatPanel() {
 
   // ── Chat view: full-height app, messages scroll internally ──
   return (
-    <div className="flex h-[calc(100vh-72px)] flex-col overflow-hidden px-5 py-8">
+    <div
+      className={
+        variant === "widget"
+          ? "flex h-full flex-col overflow-hidden"
+          : "flex h-[calc(100vh-72px)] flex-col overflow-hidden px-5 py-8"
+      }
+    >
       <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
         {/* Header */}
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -233,9 +262,15 @@ export function ChatPanel() {
             <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">
               {"secureai"}
             </p>
-            <h1 className="mt-0.5 text-xl font-bold">
-              Hi {name}, what do you want to know?
-            </h1>
+            {variant === "widget" ? (
+              <h2 className="mt-0.5 text-base font-semibold leading-snug">
+                Hi {name}, what do you want to know?
+              </h2>
+            ) : (
+              <h1 className="mt-0.5 text-xl font-bold">
+                Hi {name}, what do you want to know?
+              </h1>
+            )}
             {modelInfo ? (
               <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] text-primary">
                 <Cpu className="h-3 w-3" /> {modelInfo}
@@ -248,7 +283,13 @@ export function ChatPanel() {
         </div>
 
         {/* Messages */}
-        <div ref={scrollRef} className="chat-scroll mt-6 min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
+        <div
+          ref={scrollRef}
+          className={cn(
+            "chat-scroll min-h-0 flex-1 space-y-5 overflow-y-auto pr-1",
+            variant === "widget" ? "mt-4" : "mt-6",
+          )}
+        >
           {messages.length === 0 ? (
             <div>
               <div className="glass rounded-xl p-5">
