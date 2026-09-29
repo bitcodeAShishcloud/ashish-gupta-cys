@@ -41,7 +41,7 @@ export function ChatWidget() {
         <div
           role="dialog"
           aria-label="Chat with Ashish's AI assistant"
-          className="animate-fade-in-up flex h-[min(560px,calc(100dvh-7rem))] w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border/60 bg-background shadow-[0_24px_64px_rgba(0,0,0,0.6)]"
+          className="animate-fade-in-up flex h-[min(560px,calc(100dvh-7rem))] w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-[0_30px_80px_rgba(0,0,0,0.65)]"
         >
           <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-border/60 px-3.5">
             <img
@@ -49,10 +49,10 @@ export function ChatWidget() {
               alt=""
               width={24}
               height={24}
-              className="h-6 w-6 rounded-full"
+              className="h-6 w-6 rounded-full ring-1 ring-white/10"
             />
-            <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-              AI Assistant
+            <span className="font-display text-sm font-semibold tracking-tight">
+              Ashish&apos;s AI
             </span>
             <div className="ml-auto flex items-center gap-1">
               <Link

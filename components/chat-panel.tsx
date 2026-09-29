@@ -1,14 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Cpu,
-  Send,
-  Sparkles,
-  Terminal,
-  Trash2,
-  User,
-} from "lucide-react";
+import { ArrowRight, ArrowUpRight, Send, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -197,54 +190,62 @@ export function ChatPanel({
       <div
         className={
           variant === "widget"
-            ? "flex h-full items-center justify-center p-4"
+            ? "flex h-full items-center justify-center p-5"
             : "flex h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-5 py-16"
         }
       >
-      <div
-        className={cn(
-          "grad-card w-full max-w-md rounded-xl text-center animate-fade-in-up",
-          variant === "widget" ? "p-6" : "p-8",
-        )}
-      >
-        <img
-          src="/favicon.webp"
-          alt="Ashish Gupta logo"
-          width={56}
-          height={56}
-          className="mx-auto h-14 w-14 rounded-full object-cover shadow-[0_0_24px_hsl(0_0%_100%/0.2)]"
-        />
-          <p className="section-label mt-5 font-mono text-xs uppercase tracking-widest text-primary">
-            {"identity check"}
-          </p>
+        <div className="w-full max-w-sm animate-fade-in-up rounded-2xl border border-border/80 bg-card/50 p-7 shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
+          <img
+            src="/favicon.webp"
+            alt="Ashish Gupta logo"
+            width={48}
+            height={48}
+            className="mx-auto h-12 w-12 rounded-full object-cover ring-1 ring-white/10"
+          />
           {variant === "widget" ? (
-            <h2 className="mt-2 text-xl font-bold">Who are you?</h2>
+            <h2 className="mt-5 text-center font-display text-xl font-bold tracking-tight">
+              Who are you?
+            </h2>
           ) : (
-            <h1 className="mt-2 text-2xl font-bold">Who are you?</h1>
+            <h1 className="mt-5 text-center font-display text-2xl font-bold tracking-tight">
+              Who are you?
+            </h1>
           )}
-          <p className="mt-2 text-sm text-muted-foreground">
-            Tell me your name to start the conversation. Nothing is stored on a
-            server, your chat lives only in this browser.
+          <p className="mx-auto mt-2 max-w-[17rem] text-center text-sm leading-relaxed text-muted-foreground">
+            Your name and this conversation stay in your browser. Nothing is
+            stored on a server.
           </p>
-          <div className="mt-6 flex gap-2">
+          <form
+            className="mt-6 flex gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              enterName();
+            }}
+          >
             <Input
               id="chat-name"
               value={nameInput}
               onChange={(e) => setNameInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && enterName()}
-              placeholder="Your name…"
+              placeholder="Your name"
               maxLength={40}
               autoFocus
+              className="h-11 flex-1 rounded-xl"
             />
-            <Button onClick={enterName} disabled={!nameInput.trim()}>
-              <User className="mr-2 h-4 w-4" />
+            <Button
+              type="submit"
+              disabled={!nameInput.trim()}
+              className="h-11 rounded-xl px-5"
+            >
               Start
+              <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
-          </div>
+          </form>
         </div>
       </div>
     );
   }
+
+  const sentCount = messages.filter((m) => m.role === "user").length;
 
   // ── Chat view: full-height app, messages scroll internally ──
   return (
@@ -257,29 +258,33 @@ export function ChatPanel({
     >
       <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
         {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">
-              {"secureai"}
-            </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             {variant === "widget" ? (
-              <h2 className="mt-0.5 text-base font-semibold leading-snug">
+              <h2 className="font-display text-base font-semibold leading-snug tracking-tight">
                 Hi {name}, what do you want to know?
               </h2>
             ) : (
-              <h1 className="mt-0.5 text-xl font-bold">
+              <h1 className="font-display text-xl font-bold tracking-tight">
                 Hi {name}, what do you want to know?
               </h1>
             )}
-            {modelInfo ? (
-              <span className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 font-mono text-[11px] text-primary">
-                <Cpu className="h-3 w-3" /> {modelInfo}
+            <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+              <span className="truncate">
+                {modelInfo ? modelInfo : "Ashish's AI assistant"}
               </span>
-            ) : null}
+            </p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setEraseOpen(true)}>
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Erase data
-          </Button>
+          <button
+            type="button"
+            onClick={() => setEraseOpen(true)}
+            aria-label="Erase chat data"
+            title="Erase chat data"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Messages */}
@@ -292,27 +297,20 @@ export function ChatPanel({
         >
           {messages.length === 0 ? (
             <div>
-              <div className="glass rounded-xl p-5">
-                <div className="flex items-center gap-3">
-                  <div className="grad-btn flex h-9 w-9 items-center justify-center rounded-lg font-mono text-sm font-bold text-[#05070A] shadow-[0_0_14px_hsl(0_0%_100%/0.3)]">
-                    &gt;_
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Ask me about Ashish&apos;s skills, projects, blog or
-                    anything in cybersecurity.
-                  </p>
-                </div>
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
+              <p className="text-xs font-medium text-muted-foreground">
+                Try asking
+              </p>
+              <div className="mt-3 overflow-hidden rounded-xl border border-border/80">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s}
+                    type="button"
                     onClick={() => send(s)}
                     disabled={sending || limited}
-                    className="rounded-full border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs text-primary transition hover:bg-primary/15 disabled:opacity-50"
+                    className="group flex w-full items-center justify-between gap-3 border-b border-border/60 px-4 py-3 text-left text-sm text-muted-foreground transition last:border-b-0 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
                   >
-                    <Sparkles className="mr-1 inline h-3 w-3" />
-                    {s}
+                    <span>{s}</span>
+                    <ArrowUpRight className="h-4 w-4 shrink-0 opacity-0 transition group-hover:opacity-60" />
                   </button>
                 ))}
               </div>
@@ -321,43 +319,41 @@ export function ChatPanel({
             messages.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[80%] rounded-2xl rounded-br-sm border border-white/15 bg-white/10 px-4 py-3 text-sm text-foreground">
+                  <div className="max-w-[80%] whitespace-pre-wrap rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm leading-relaxed">
                     {m.content}
                   </div>
                 </div>
               ) : (
-                <div key={i} className="flex items-start gap-3">
-                  <div className="grad-btn mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg font-mono text-xs font-bold text-[#05070A] shadow-[0_0_12px_hsl(0_0%_100%/0.25)]">
-                    &gt;_
-                  </div>
-                  <div className="markdown-body glass w-fit max-w-[85%] rounded-2xl rounded-tl-sm border border-border/60 px-4 py-3 text-sm">
-                    <Markdown>{m.content}</Markdown>
-                  </div>
+                <div key={i} className="max-w-[92%]">
+                  <Markdown>{m.content}</Markdown>
                 </div>
               ),
             )
           )}
 
           {sending ? (
-            <div className="flex items-center gap-3">
-              <div className="grad-btn flex h-8 w-8 items-center justify-center rounded-lg font-mono text-xs font-bold text-[#05070A] shadow-[0_0_12px_hsl(0_0%_100%/0.25)]">
-                &gt;_
-              </div>
-              <div className="glass flex items-center gap-1 rounded-2xl rounded-tl-sm px-4 py-3.5">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:0ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:150ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary [animation-delay:300ms]" />
-              </div>
+            <div
+              className="flex items-center gap-1.5"
+              aria-label="AI is typing"
+              role="status"
+            >
+              {[0, 1, 2].map((d) => (
+                <span
+                  key={d}
+                  className="h-1.5 w-1.5 animate-pulse rounded-full bg-muted-foreground/70"
+                  style={{ animationDelay: `${d * 160}ms` }}
+                />
+              ))}
             </div>
           ) : null}
 
           {error ? (
-            <div className="rounded-lg border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+            <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
               {error}
             </div>
           ) : null}
           {limited ? (
-            <div className="rounded-lg border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-warning">
+            <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
               Daily limit of {DAILY_LIMIT} messages reached. The counter
               resets tomorrow.
             </div>
@@ -366,7 +362,7 @@ export function ChatPanel({
 
         {/* Composer */}
         <div className="mt-4">
-          <div className="glass flex items-end gap-2 rounded-2xl border border-border/60 p-2.5">
+          <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -376,25 +372,34 @@ export function ChatPanel({
                   send(input);
                 }
               }}
-              placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
+              placeholder={
+                variant === "widget"
+                  ? "Ask anything…"
+                  : "Ask about projects, skills, certifications or security…"
+              }
               rows={1}
               maxLength={1000}
-              className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2 py-2 text-sm shadow-none focus-visible:ring-0"
+              className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
               disabled={limited}
             />
             <Button
               onClick={() => send(input)}
               disabled={!input.trim() || sending || limited}
-              className="h-11 w-11 shrink-0 rounded-xl p-0 animate-glow"
+              className="h-11 w-11 shrink-0 rounded-xl p-0"
               aria-label="Send message"
             >
-              {sending ? <Terminal className="h-5 w-5 animate-pulse" /> : <Send className="h-5 w-5" />}
+              <Send className="h-4 w-4" />
             </Button>
           </div>
-          <p className={cn("mt-2 text-center font-mono text-[11px]", limited ? "text-warning" : "text-muted-foreground")}>
+          <p
+            className={cn(
+              "mt-2 text-center text-[11px]",
+              limited ? "text-warning" : "text-muted-foreground",
+            )}
+          >
             {limited
               ? "Daily limit reached"
-              : `${messages.filter((m) => m.role === "user").length} sent today · limit ${DAILY_LIMIT} · data stays in your browser`}
+              : `${sentCount} of ${DAILY_LIMIT} sent today · stays on your device`}
           </p>
         </div>
       </div>
