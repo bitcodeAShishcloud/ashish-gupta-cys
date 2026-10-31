@@ -23,6 +23,15 @@
 - [x] **FEEL-02**: Chat visual details feel deliberate and handcrafted: message bubble treatment, spacing, and motion are tuned, not template-default
 - [x] **FEEL-03**: Site-wide obvious AI-generated tells (boilerplate phrasing in visible copy) are removed in a focused pass on the public pages
 
+### Image Generation
+
+- [x] **IMAGE-01**: Chat opens in text mode by default and a segmented switch at the top of the panel toggles between Chat and Image modes without losing the conversation
+- [x] **IMAGE-02**: In Image mode the visitor can choose an aspect ratio (9:16, 3:4, 1:1, 4:3, 16:9) and a style (Auto, Photo, Anime, 3D, Oil paint, Watercolor, Pixel art, Minimal) with the current selection visible, matching the provided reference design
+- [x] **IMAGE-03**: Submitting a prompt in Image mode renders the generated image inline as a card in the same conversation, with a download option and the prompt as caption
+- [x] **IMAGE-04**: Image generation uses the existing AI_PROVIDERS_JSON config and the same API key — the endpoint is /images/generations, either derived from the chat provider base URL or taken verbatim from an explicit image provider entry
+- [x] **IMAGE-05**: Image generations count toward the visitor's daily usage limit and respect server-side rate limiting
+- [x] **IMAGE-06**: Provider-returned image URLs are fetched server-side only (https, SSRF blocklist) and delivered to the browser as same-origin data; the API key never reaches the browser
+
 ## v2 Requirements
 
 ### Possible Future
@@ -52,12 +61,18 @@
 | FEEL-01 | Phase 2 | Complete |
 | FEEL-02 | Phase 2 | Complete |
 | FEEL-03 | Phase 2 | Complete |
+| IMAGE-01 | Phase 3 | Complete |
+| IMAGE-02 | Phase 3 | Complete |
+| IMAGE-03 | Phase 3 | Complete |
+| IMAGE-04 | Phase 3 | Complete |
+| IMAGE-05 | Phase 3 | Complete |
+| IMAGE-06 | Phase 3 | Complete |
 
 **Coverage:**
-- v1 requirements: 9 total
-- Mapped to phases: 9
+- v1 requirements: 15 total
+- Mapped to phases: 15
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-10-31*
-*Last updated: 2026-10-31 after Phase 1 + Phase 2 completion*
+*Last updated: 2026-11-01 after Phase 3 completion*

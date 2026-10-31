@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowRight, ArrowUpRight, Send, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowUpRight,
+  Download,
+  Image as ImageIcon,
+  MessageSquare,
+  Send,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -24,6 +33,10 @@ const DAILY_LIMIT = 30;
 interface Msg {
   role: "user" | "assistant";
   content: string;
+  /** "image" messages carry a generated picture (session-only) + settings. */
+  kind?: "text" | "image";
+  image?: string;
+  meta?: { prompt: string; aspect: string; style: string };
 }
 
 const SUGGESTIONS = [
@@ -32,6 +45,23 @@ const SUGGESTIONS = [
   "How do I get started in cybersecurity?",
   "Which certifications does Ashish have?",
 ];
+
+const IMAGE_SUGGESTIONS = [
+  "A hacker's desk at night, terminal glow",
+  "A snowy fox in the mountains",
+  "Portrait of a robot detective",
+  "Neon city skyline after rain",
+];
+
+const ASPECTS = [
+  { id: "9:16", size: "1024 × 1792", box: "h-3.5 w-2" },
+  { id: "3:4", size: "1024 × 1365", box: "h-3.5 w-2.5" },
+  { id: "1:1", size: "1024 × 1024", box: "h-3 w-3" },
+  { id: "4:3", size: "1365 × 1024", box: "h-2.5 w-3.5" },
+  { id: "16:9", size: "1792 × 1024", box: "h-2 w-3.5" },
+] as const;
+
+const STYLES = ["Auto", "Photo", "Anime", "3D", "Oil paint", "Watercolor", "Pixel art", "Minimal"];
 
 function todayKey(): string {
   const d = new Date();
@@ -49,6 +79,16 @@ function usageToday(): number {
   }
 }
 
+/* Image data URLs are ~1MB+; localStorage would choke on them, so history
+ * keeps an image message's settings but drops the picture itself. */
+function persistable(msgs: Msg[]): Msg[] {
+  return msgs.map((m) =>
+    m.kind === "image"
+      ? { role: m.role, content: m.content, kind: "image" as const, meta: m.meta }
+      : m,
+  );
+}
+
 export function ChatPanel({
   variant = "page",
 }: {
@@ -63,6 +103,10 @@ export function ChatPanel({
   const [eraseOpen, setEraseOpen] = useState(false);
   const [limited, setLimited] = useState(false);
   const [firstToken, setFirstToken] = useState(false);
+  const [mode, setMode] = useState<"chat" | "image">("chat");
+  const [aspect, setAspect] = useState<string>("16:9");
+  const [imgStyle, setImgStyle] = useState<string>("Auto");
+  const [generating, setGenerating] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -117,7 +161,7 @@ export function ChatPanel({
 
   async function send(text: string) {
     const message = text.trim();
-    if (!message || sending || limited) return;
+    if (!message || sending || generating || limited) return;
     setError(null);
     const history = [...messages, { role: "user" as const, content: message }];
     setMessages(history);
@@ -196,7 +240,7 @@ export function ChatPanel({
           USAGE_KEY,
           JSON.stringify({ date: todayKey(), count: next }),
         );
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(finalHistory.slice(-50)));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(persistable(finalHistory).slice(-50)));
         if (next >= DAILY_LIMIT) setLimited(true);
       } catch {
         /* ignore */
@@ -212,6 +256,56 @@ export function ChatPanel({
     } finally {
       setSending(false);
       setFirstToken(false);
+    }
+  }
+
+  async function generate() {
+    const prompt = input.trim();
+    if (!prompt || generating || sending || limited) return;
+    setError(null);
+    const userMsg: Msg = { role: "user", content: prompt };
+    const history = [...messages, userMsg];
+    setMessages(history);
+    setInput("");
+    setGenerating(true);
+    const meta = { prompt, aspect, style: imgStyle };
+    try {
+      const res = await fetch("/api/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, aspect, style: imgStyle }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || typeof data.image !== "string" || !data.image) {
+        const base = data.message || `Request failed (${res.status})`;
+        throw new Error(base + (data.detail ? `, ${data.detail}` : ""));
+      }
+      const imgMsg: Msg = {
+        role: "assistant",
+        content: "",
+        kind: "image",
+        image: data.image,
+        meta,
+      };
+      const finalHistory = [...history, imgMsg];
+      setMessages(finalHistory);
+      try {
+        const next = usageToday() + 1;
+        localStorage.setItem(USAGE_KEY, JSON.stringify({ date: todayKey(), count: next }));
+        localStorage.setItem(HISTORY_KEY, JSON.stringify(persistable(finalHistory).slice(-50)));
+        if (next >= DAILY_LIMIT) setLimited(true);
+      } catch {
+        /* ignore */
+      }
+    } catch (e) {
+      setMessages((prev) => {
+        const next = [...prev];
+        if (next[next.length - 1]?.role === "user") next.pop();
+        return next;
+      });
+      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+    } finally {
+      setGenerating(false);
     }
   }
 
@@ -341,6 +435,40 @@ export function ChatPanel({
           </button>
         </div>
 
+        {/* Mode switch */}
+        <div className="mt-3 flex justify-center">
+          <div className="flex rounded-full border border-white/10 bg-white/[0.03] p-1">
+            <button
+              type="button"
+              onClick={() => setMode("chat")}
+              aria-pressed={mode === "chat"}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition",
+                mode === "chat"
+                  ? "bg-white/10 text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              Chat
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("image")}
+              aria-pressed={mode === "image"}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition",
+                mode === "image"
+                  ? "bg-white/10 text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ImageIcon className="h-3.5 w-3.5" />
+              Image
+            </button>
+          </div>
+        </div>
+
         {/* Messages */}
         <div
           ref={scrollRef}
@@ -352,15 +480,17 @@ export function ChatPanel({
           {messages.length === 0 ? (
             <div>
               <p className="text-xs font-medium text-muted-foreground">
-                Not sure where to start?
+                {mode === "chat" ? "Not sure where to start?" : "Need an idea?"}
               </p>
               <div className="mt-3 overflow-hidden rounded-xl border border-border/80">
-                {SUGGESTIONS.map((s) => (
+                {(mode === "chat" ? SUGGESTIONS : IMAGE_SUGGESTIONS).map((s) => (
                   <button
                     key={s}
                     type="button"
-                    onClick={() => send(s)}
-                    disabled={sending || limited}
+                    onClick={() =>
+                      mode === "chat" ? send(s) : setInput(s)
+                    }
+                    disabled={sending || generating || limited}
                     className="group flex w-full items-center justify-between gap-3 border-b border-border/60 px-4 py-3 text-left text-sm text-muted-foreground transition last:border-b-0 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
                   >
                     <span>{s}</span>
@@ -375,6 +505,47 @@ export function ChatPanel({
                 <div key={i} className="flex justify-end">
                   <div className="max-w-[80%] whitespace-pre-wrap rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm leading-relaxed">
                     {m.content}
+                  </div>
+                </div>
+              ) : m.kind === "image" ? (
+                <div key={i} className="flex max-w-[92%] items-start gap-2.5">
+                  <img
+                    src="/favicon.webp"
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <figure className="overflow-hidden rounded-xl border border-border/80 bg-card/40">
+                      {m.image ? (
+                        <img
+                          src={m.image}
+                          alt={m.meta?.prompt || "Generated image"}
+                          className="w-full"
+                        />
+                      ) : (
+                        <div className="flex h-40 items-center justify-center px-4 text-center text-xs text-muted-foreground">
+                          Image not saved on reload — regenerate to see it again
+                        </div>
+                      )}
+                      <figcaption className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2">
+                        <span className="truncate text-[11px] text-muted-foreground">
+                          {m.meta?.prompt} · {m.meta?.aspect}
+                          {m.meta?.style && m.meta.style !== "Auto" ? ` · ${m.meta.style}` : ""}
+                        </span>
+                        {m.image ? (
+                          <a
+                            href={m.image}
+                            download="ashish-generated-image.png"
+                            aria-label="Download image"
+                            className="shrink-0 text-muted-foreground transition hover:text-foreground"
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </a>
+                        ) : null}
+                      </figcaption>
+                    </figure>
                   </div>
                 </div>
               ) : (
@@ -416,6 +587,28 @@ export function ChatPanel({
             />
           ) : null}
 
+          {generating ? (
+            <div
+              className="flex max-w-[92%] items-start gap-2.5"
+              role="status"
+              aria-label="Generating image"
+            >
+              <img
+                src="/favicon.webp"
+                alt=""
+                width={20}
+                height={20}
+                className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+              />
+              <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card/40">
+                <div className="h-56 w-full animate-pulse bg-white/[0.04]" />
+                <div className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
+                  Generating image… this can take a few seconds
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           {error ? (
             <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
               {error}
@@ -431,6 +624,61 @@ export function ChatPanel({
 
         {/* Composer */}
         <div className="mt-4">
+          {mode === "image" ? (
+            <div className="mb-3 space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-foreground">Aspect ratio</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {ASPECTS.find((a) => a.id === aspect)?.size}
+                  </p>
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  {ASPECTS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => setAspect(a.id)}
+                      aria-pressed={aspect === a.id}
+                      className={cn(
+                        "flex flex-1 flex-col items-center gap-1.5 rounded-lg border px-1 py-2 transition",
+                        aspect === a.id
+                          ? "border-success/70 bg-success/5 text-success"
+                          : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                      )}
+                    >
+                      <span className={cn("inline-block rounded-[3px] border-2 border-current", a.box)} />
+                      <span className="text-[10px] leading-none">{a.id}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-foreground">Style</p>
+                  <p className="text-[11px] text-muted-foreground">{imgStyle}</p>
+                </div>
+                <div className="mt-2 grid grid-cols-4 gap-1.5">
+                  {STYLES.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setImgStyle(s)}
+                      aria-pressed={imgStyle === s}
+                      className={cn(
+                        "rounded-lg border px-1 py-2 text-center text-[11px] transition",
+                        imgStyle === s
+                          ? "border-success/70 bg-success/5 text-success"
+                          : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
             <Textarea
               value={input}
@@ -438,27 +686,42 @@ export function ChatPanel({
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  send(input);
+                  if (mode === "chat") send(input);
+                  else generate();
                 }
               }}
               placeholder={
-                variant === "widget"
-                  ? "Type a message…"
-                  : "Type your question…"
+                mode === "chat"
+                  ? variant === "widget"
+                    ? "Type a message…"
+                    : "Type your question…"
+                  : "Describe the image you want…"
               }
               rows={1}
               maxLength={1000}
               className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
               disabled={limited}
             />
-            <Button
-              onClick={() => send(input)}
-              disabled={!input.trim() || sending || limited}
-              className="h-11 w-11 shrink-0 rounded-xl p-0"
-              aria-label="Send message"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+            {mode === "chat" ? (
+              <Button
+                onClick={() => send(input)}
+                disabled={!input.trim() || sending || generating || limited}
+                className="h-11 w-11 shrink-0 rounded-xl p-0"
+                aria-label="Send message"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            ) : (
+              <Button
+                onClick={() => generate()}
+                disabled={!input.trim() || generating || sending || limited}
+                className="h-11 shrink-0 rounded-xl px-4"
+                aria-label="Generate image"
+              >
+                <Sparkles className="mr-1.5 h-4 w-4" />
+                {generating ? "Painting…" : "Generate"}
+              </Button>
+            )}
           </div>
           <p
             className={cn(

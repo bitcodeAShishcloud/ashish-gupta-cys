@@ -26,6 +26,8 @@ export interface ProviderConfig {
   responseField?: string;
   contextWindow?: number;
   maxOutput?: number;
+  /** "image" marks an image-generation endpoint; entries whose baseUrl contains /images/ are inferred as image providers. */
+  type?: string;
 }
 
 export interface ProviderRegistry {
@@ -53,7 +55,222 @@ export function loadProviders(): ProviderRegistry {
 
 export function getActiveProvider(): ProviderConfig | null {
   const reg = loadProviders();
-  return reg.providers.find((p) => p.id === reg.activeId) ?? reg.providers[0] ?? null;
+  const chat = reg.providers.find((p) => p.id === reg.activeId && !isImageProvider(p));
+  if (chat) return chat;
+  return reg.providers.find((p) => !isImageProvider(p)) ?? null;
+}
+
+/* ── Image generation ── */
+export function isImageProvider(p: ProviderConfig): boolean {
+  return p.type === "image" || /\/images\//.test(p.baseUrl);
+}
+
+/**
+ * Resolve the image-generation target. An explicit image provider entry
+ * (type:"image" or a baseUrl that already contains /images/) is used
+ * verbatim — its baseUrl IS the full request URL. Otherwise the active
+ * chat provider is reused with the same key: its base URL's
+ * /chat/completions suffix is swapped for /images/generations, or
+ * /images/generations is appended.
+ */
+export function resolveImageTarget(): { provider: ProviderConfig; url: string } | null {
+  const reg = loadProviders();
+  const explicit = reg.providers.find((p) => isImageProvider(p) && p.apiKey);
+  if (explicit) {
+    return { provider: explicit, url: normalizeBaseUrl(explicit.baseUrl) };
+  }
+  const active = getActiveProvider();
+  if (!active || !active.apiKey) return null;
+  const base = normalizeBaseUrl(active.baseUrl);
+  const url = base.endsWith("/chat/completions")
+    ? base.replace(/\/chat\/completions$/, "/images/generations")
+    : `${base}/images/generations`;
+  return { provider: active, url };
+}
+
+export interface ImageResult {
+  ok: boolean;
+  dataUrl?: string;
+  status?: number;
+  detail?: string;
+}
+
+function toDataUrl(bytes: Buffer, contentType: string): string {
+  const type = /image\//.test(contentType) ? contentType : "image/png";
+  return `data:${type};base64,${bytes.toString("base64")}`;
+}
+
+/* Fetch a provider-returned image URL server-side. https + SSRF blocklist;
+ * the AI_ALLOWED_HOSTS whitelist is intentionally NOT applied here — image
+ * CDNs legitimately live on other hosts. */
+async function fetchImageDataUrl(rawUrl: string): Promise<ImageResult> {
+  const urlError = validateProviderUrl(rawUrl);
+  if (urlError) return { ok: false, status: 502, detail: urlError };
+  try {
+    const res = await fetch(rawUrl, {
+      signal: AbortSignal.timeout(60_000),
+      headers: { Accept: "image/*" },
+    });
+    if (!res.ok) return { ok: false, status: 502, detail: `Image download failed (HTTP ${res.status}).` };
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length === 0) return { ok: false, status: 502, detail: "Image download was empty." };
+    return { ok: true, dataUrl: toDataUrl(buf, res.headers.get("content-type") || "image/png") };
+  } catch (err) {
+    const e = err as { name?: string; message?: string };
+    if (e.name === "TimeoutError") return { ok: false, status: 504, detail: "Image download timed out." };
+    return { ok: false, status: 502, detail: e.message };
+  }
+}
+
+export async function generateImage(
+  target: { provider: ProviderConfig; url: string },
+  prompt: string,
+  size: string,
+  opts: { timeoutMs?: number } = {},
+): Promise<ImageResult> {
+  const { provider, url } = target;
+  const c = providerDefaults(provider);
+
+  const urlError = validateProviderUrl(url);
+  if (urlError) return { ok: false, status: 503, detail: urlError };
+  if (!hostIsAllowed(new URL(url).hostname.toLowerCase())) {
+    return {
+      ok: false,
+      status: 503,
+      detail: `Provider host "${new URL(url).hostname}" is not in the AI_ALLOWED_HOSTS whitelist.`,
+    };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 120000);
+
+  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({ model: provider.model, prompt, n: 1, size }),
+    });
+
+    const text = await res.text();
+    let data: unknown = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      const anyErr = data as { error?: { message?: string }; message?: string; msg?: string };
+      const detail = String(
+        anyErr?.error?.message || anyErr?.message || anyErr?.msg || text || `HTTP ${res.status}`,
+      ).slice(0, 300);
+      return { ok: false, status: res.status, detail };
+    }
+
+    /* Async job gateways answer 202 {id, status:"processing"} — poll
+     * GET {url}/{id} until the job succeeds and data shows up. */
+    const body = data as {
+      id?: unknown;
+      status?: unknown;
+      object?: unknown;
+      data?: unknown[];
+    } | null;
+    const jobShaped =
+      body &&
+      typeof body === "object" &&
+      !Array.isArray(body.data) &&
+      typeof body.id === "string" &&
+      (res.status === 202 ||
+        body.object === "image.generation.job" ||
+        typeof body.status === "string");
+    if (jobShaped) {
+      const jobId = body.id as string;
+      const pollUrl = `${normalizeBaseUrl(url)}/${jobId}`;
+      const deadline = Date.now() + (opts.timeoutMs ?? 120000) - 3000;
+      let jobData: { data?: unknown[] } | null = null;
+      for (;;) {
+        if (Date.now() >= deadline) {
+          return { ok: false, status: 504, detail: "Image generation timed out." };
+        }
+        await new Promise((r) => setTimeout(r, 3500));
+        try {
+          const pollRes = await fetch(pollUrl, { headers, signal: controller.signal });
+          const pollText = await pollRes.text();
+          let pollJson: Record<string, unknown> = {};
+          try {
+            pollJson = JSON.parse(pollText) as Record<string, unknown>;
+          } catch {
+            continue;
+          }
+          if (!pollRes.ok) {
+            const anyErr = pollJson as { error?: { message?: string }; message?: string };
+            return {
+              ok: false,
+              status: 502,
+              detail: String(anyErr?.error?.message || anyErr?.message || pollText || `HTTP ${pollRes.status}`).slice(0, 300),
+            };
+          }
+          const st = String(pollJson.status ?? "").toLowerCase();
+          if (Array.isArray(pollJson.data) && pollJson.data.length > 0) {
+            jobData = pollJson as { data: unknown[] };
+            break;
+          }
+          if (st === "failed" || st === "error" || st === "cancelled" || st === "canceled") {
+            return { ok: false, status: 502, detail: "Image generation failed." };
+          }
+          if (st === "succeeded" || st === "completed" || st === "complete") {
+            jobData = pollJson as { data: unknown[] };
+            break;
+          }
+        } catch (err) {
+          const e = err as { name?: string };
+          if (e.name === "AbortError") return { ok: false, status: 504, detail: "Image generation timed out." };
+          /* transient poll error — keep trying until the deadline */
+        }
+      }
+      if (!jobData || !Array.isArray(jobData.data)) {
+        return { ok: false, status: 504, detail: "Image generation timed out." };
+      }
+      data = jobData;
+    }
+
+    // OpenAI shape: { data: [{ url | b64_json }] }; aggregator fallbacks below.
+    const first = (data as { data?: unknown[] })?.data;
+    const item = (Array.isArray(first) ? first[0] : data) as Record<string, unknown> | undefined;
+    const candidates = [
+      item?.url,
+      item?.image_url,
+      (item?.image_url as { url?: unknown })?.url,
+      item?.image,
+      item?.b64_json,
+      item?.base64,
+      typeof data === "string" ? data : undefined,
+    ];
+    const found = candidates.find((v) => typeof v === "string" && v);
+
+    if (typeof found !== "string" || !found) {
+      const keys = data && typeof data === "object" ? Object.keys(data as object).join(", ") : "";
+      return {
+        ok: false,
+        status: 502,
+        detail: `Unrecognized image response shape${keys ? ` (keys: ${keys})` : ""}.`,
+      };
+    }
+
+    if (/^data:image\//i.test(found)) return { ok: true, dataUrl: found };
+    if (/^https?:\/\//i.test(found)) return fetchImageDataUrl(found);
+    // Bare base64 payload
+    return { ok: true, dataUrl: toDataUrl(Buffer.from(found, "base64"), "image/png") };
+  } catch (err) {
+    const e = err as { name?: string; message?: string };
+    if (e.name === "AbortError") return { ok: false, status: 504, detail: "Image provider timed out." };
+    return { ok: false, status: 502, detail: e.message };
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 /* ── Outbound URL safety: only https to public hosts ── */
