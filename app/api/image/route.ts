@@ -2,10 +2,12 @@
 // Generates one image via the AI_PROVIDERS_JSON config (same key as chat).
 // The endpoint is /images/generations — derived from the active chat
 // provider's base URL, or taken verbatim from an explicit type:"image"
-// provider entry. Provider-returned image URLs are downloaded server-side
-// (https + SSRF blocklist) and delivered as a same-origin data URL, because
-// the site CSP only allows img-src 'self' data:. The API key never reaches
-// the browser.
+// provider entry (including its async-job polling flow). The response
+// returns the provider's image URL (or inline base64) for the BROWSER to
+// load directly — the server never fetches provider-returned URLs, so there
+// is no server-side SSRF surface. The CSP must allow the image host via
+// AI_IMAGE_CSP_HOSTS (see next.config.mjs). The API key never reaches the
+// browser.
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
@@ -92,5 +94,5 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ image: result.dataUrl, size, style });
+  return NextResponse.json({ image: result.url ?? result.dataUrl, size, style });
 }

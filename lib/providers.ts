@@ -90,6 +90,9 @@ export function resolveImageTarget(): { provider: ProviderConfig; url: string } 
 
 export interface ImageResult {
   ok: boolean;
+  /** Provider CDN URL — rendered directly by the browser (CSP must allow the host). */
+  url?: string;
+  /** Inline base64 payload when the provider returns b64 instead of a URL. */
   dataUrl?: string;
   status?: number;
   detail?: string;
@@ -98,47 +101,6 @@ export interface ImageResult {
 function toDataUrl(bytes: Buffer, contentType: string): string {
   const type = /image\//.test(contentType) ? contentType : "image/png";
   return `data:${type};base64,${bytes.toString("base64")}`;
-}
-
-/* Fetch a provider-returned image URL server-side. https + SSRF blocklist,
- * then a strictly explicit positive allowlist: the URL's host MUST be listed
- * in AI_IMAGE_HOSTS (comma-separated, set by the site owner alongside
- * AI_ALLOWED_HOSTS). No inference, no fallbacks — an unlisted host is
- * rejected with instructions. */
-function imageHostAllowed(hostname: string): boolean {
-  const host = hostname.toLowerCase();
-  const allowed = (process.env.AI_IMAGE_HOSTS || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  return allowed.includes(host);
-}
-
-async function fetchImageDataUrl(rawUrl: string): Promise<ImageResult> {
-  const urlError = validateProviderUrl(rawUrl);
-  if (urlError) return { ok: false, status: 502, detail: urlError };
-  const host = new URL(rawUrl).hostname.toLowerCase();
-  if (!imageHostAllowed(host)) {
-    return {
-      ok: false,
-      status: 502,
-      detail: `Image host "${host}" is not affiliated with the configured providers. Add it to AI_IMAGE_HOSTS to allow it.`,
-    };
-  }
-  try {
-    const res = await fetch(rawUrl, {
-      signal: AbortSignal.timeout(60_000),
-      headers: { Accept: "image/*" },
-    });
-    if (!res.ok) return { ok: false, status: 502, detail: `Image download failed (HTTP ${res.status}).` };
-    const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length === 0) return { ok: false, status: 502, detail: "Image download was empty." };
-    return { ok: true, dataUrl: toDataUrl(buf, res.headers.get("content-type") || "image/png") };
-  } catch (err) {
-    const e = err as { name?: string; message?: string };
-    if (e.name === "TimeoutError") return { ok: false, status: 504, detail: "Image download timed out." };
-    return { ok: false, status: 502, detail: e.message };
-  }
 }
 
 export async function generateImage(
@@ -280,7 +242,7 @@ export async function generateImage(
     }
 
     if (/^data:image\//i.test(found)) return { ok: true, dataUrl: found };
-    if (/^https?:\/\//i.test(found)) return fetchImageDataUrl(found);
+    if (/^https?:\/\//i.test(found)) return { ok: true, url: found };
     // Bare base64 payload
     return { ok: true, dataUrl: toDataUrl(Buffer.from(found, "base64"), "image/png") };
   } catch (err) {

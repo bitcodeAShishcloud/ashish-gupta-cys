@@ -80,11 +80,12 @@ function usageToday(): number {
   }
 }
 
-/* Image data URLs are ~1MB+; localStorage would choke on them, so history
- * keeps an image message's settings but drops the picture itself. */
+/* Provider CDN URLs are small and survive reloads — keep them in history.
+ * Only inline base64 payloads (~1MB+) get stripped to avoid choking
+ * localStorage. */
 function persistable(msgs: Msg[]): Msg[] {
   return msgs.map((m) =>
-    m.kind === "image"
+    m.kind === "image" && m.image && m.image.startsWith("data:")
       ? { role: m.role, content: m.content, kind: "image" as const, meta: m.meta }
       : m,
   );
@@ -577,6 +578,8 @@ export function ChatPanel({
                         {m.image ? (
                           <a
                             href={m.image}
+                            target="_blank"
+                            rel="noopener noreferrer"
                             download="ashish-generated-image.png"
                             aria-label="Download image"
                             className="shrink-0 text-muted-foreground transition hover:text-foreground"

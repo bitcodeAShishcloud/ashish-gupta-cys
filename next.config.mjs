@@ -48,6 +48,26 @@ const SECURITY_HEADERS = [
   },
 ];
 
+/*
+ * Image hosts the browser may load directly (provider CDNs) are appended to
+ * img-src from AI_IMAGE_CSP_HOSTS. Built inside headers() so .env.local is
+ * guaranteed to be loaded by the time we read it.
+ */
+function buildSecurityHeaders() {
+  const imageHosts = (process.env.AI_IMAGE_CSP_HOSTS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((h) => `https://${h}`)
+    .join(" ");
+  const csp = imageHosts
+    ? CSP.replace("img-src 'self' data:", `img-src 'self' data: ${imageHosts}`)
+    : CSP;
+  return SECURITY_HEADERS.map((h) =>
+    h.key === "Content-Security-Policy" ? { key: h.key, value: csp } : h,
+  );
+}
+
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -55,7 +75,7 @@ const nextConfig = {
     return [
       {
         source: "/:path*",
-        headers: SECURITY_HEADERS,
+        headers: buildSecurityHeaders(),
       },
     ];
   },
