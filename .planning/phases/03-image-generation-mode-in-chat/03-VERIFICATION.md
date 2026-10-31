@@ -33,4 +33,11 @@ verified_at: 2026-11-01
 ## Config Notes (env only, gitignored)
 
 - `.env.local` now has two entries: `p1` (chat, untouched) + `img1` (type:"image", baseUrl `https://api.xkiro.com/v1/images/generations`, model `sensenova/sensenova-u1.5-lite`, key as provided by the owner). The key the owner pasted into chat should be rotated when convenient.
+- `AI_IMAGE_HOSTS=cdn.xkiro.com` required for server-side image download (strict positive allowlist).
 - Zero-config path (no image entry): derives `/images/generations` from the chat provider — works only if the chat model is image-capable; otherwise the gateway error surfaces cleanly.
+
+## Addendum (2026-11-01, later same day)
+
+- **SSRF hardening (Mimosa-driven):** `fetchImageDataUrl` now requires an explicit `AI_IMAGE_HOSTS` allowlist match (no heuristics). First push attempt was blocked by the Mimosa push hook on this exact sink; hardened and re-verified (live generation still returns a data URL). Rescan reports the residual env→fetch taint as an **advisory** finding (proof gap: needs human confirmation) — the flow is gated by owner-set env config by design, same trust model as `callProvider`.
+- **Composer redesign to reference spec:** user supplied exact reference screenshots; image composer is now a single bar — textarea on top, chips row below (aspect chip with shape glyph, style chip, model chip "Sensenova U1.5 Lite" via `GET /api/image`), "Enter to generate · Shift + Enter for a new line" hint, and a round green ArrowUp generate button. Aspect/style chips open popover panels above the composer (header row + resolved values + green-selected grid), click-outside closes. Verified in browser: default chip states, active green chip states, popover render.
+- User self-tested image generation through the UI (11/30 counter, 9:16 + Photo metadata persisted).

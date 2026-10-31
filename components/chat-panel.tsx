@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   ArrowRight,
+  ArrowUp,
   ArrowUpRight,
   Download,
   Image as ImageIcon,
@@ -107,7 +108,10 @@ export function ChatPanel({
   const [aspect, setAspect] = useState<string>("16:9");
   const [imgStyle, setImgStyle] = useState<string>("Auto");
   const [generating, setGenerating] = useState(false);
+  const [openPanel, setOpenPanel] = useState<"aspect" | "style" | null>(null);
+  const [imageModel, setImageModel] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const composerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -147,6 +151,42 @@ export function ChatPanel({
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
+
+  // Model chip: fetch once when Image mode first opens (name only, no key).
+  useEffect(() => {
+    if (mode !== "image" || imageModel) return;
+    let alive = true;
+    fetch("/api/image")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!alive) return;
+        const raw = typeof d.model === "string" ? d.model : "";
+        const tail = raw.includes("/") ? raw.split("/").pop() || "" : raw;
+        const pretty = tail
+          .replace(/[-_]+/g, " ")
+          .split(" ")
+          .filter(Boolean)
+          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+          .join(" ");
+        setImageModel(pretty || null);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [mode, imageModel]);
+
+  // Close picker popovers when clicking outside the composer.
+  useEffect(() => {
+    if (!openPanel) return;
+    const onDown = (e: MouseEvent) => {
+      if (composerRef.current && !composerRef.current.contains(e.target as Node)) {
+        setOpenPanel(null);
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [openPanel]);
 
   function enterName() {
     const n = nameInput.trim().slice(0, 40);
@@ -624,9 +664,9 @@ export function ChatPanel({
 
         {/* Composer */}
         <div className="mt-4">
-          {mode === "image" ? (
-            <div className="mb-3 space-y-3 rounded-2xl border border-white/10 bg-white/[0.02] p-3">
-              <div>
+          <div ref={composerRef} className="relative">
+            {openPanel === "aspect" ? (
+              <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-foreground">Aspect ratio</p>
                   <p className="text-[11px] text-muted-foreground">
@@ -638,7 +678,10 @@ export function ChatPanel({
                     <button
                       key={a.id}
                       type="button"
-                      onClick={() => setAspect(a.id)}
+                      onClick={() => {
+                        setAspect(a.id);
+                        setOpenPanel(null);
+                      }}
                       aria-pressed={aspect === a.id}
                       className={cn(
                         "flex flex-1 flex-col items-center gap-1.5 rounded-lg border px-1 py-2 transition",
@@ -653,7 +696,9 @@ export function ChatPanel({
                   ))}
                 </div>
               </div>
-              <div>
+            ) : null}
+            {openPanel === "style" ? (
+              <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-foreground">Style</p>
                   <p className="text-[11px] text-muted-foreground">{imgStyle}</p>
@@ -663,7 +708,10 @@ export function ChatPanel({
                     <button
                       key={s}
                       type="button"
-                      onClick={() => setImgStyle(s)}
+                      onClick={() => {
+                        setImgStyle(s);
+                        setOpenPanel(null);
+                      }}
                       aria-pressed={imgStyle === s}
                       className={cn(
                         "rounded-lg border px-1 py-2 text-center text-[11px] transition",
@@ -677,50 +725,107 @@ export function ChatPanel({
                   ))}
                 </div>
               </div>
-            </div>
-          ) : null}
-          <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  if (mode === "chat") send(input);
-                  else generate();
-                }
-              }}
-              placeholder={
-                mode === "chat"
-                  ? variant === "widget"
-                    ? "Type a message…"
-                    : "Type your question…"
-                  : "Describe the image you want…"
-              }
-              rows={1}
-              maxLength={1000}
-              className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
-              disabled={limited}
-            />
+            ) : null}
+
             {mode === "chat" ? (
-              <Button
-                onClick={() => send(input)}
-                disabled={!input.trim() || sending || generating || limited}
-                className="h-11 w-11 shrink-0 rounded-xl p-0"
-                aria-label="Send message"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send(input);
+                    }
+                  }}
+                  placeholder={
+                    variant === "widget" ? "Type a message…" : "Type your question…"
+                  }
+                  rows={1}
+                  maxLength={1000}
+                  className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
+                  disabled={limited}
+                />
+                <Button
+                  onClick={() => send(input)}
+                  disabled={!input.trim() || sending || generating || limited}
+                  className="h-11 w-11 shrink-0 rounded-xl p-0"
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             ) : (
-              <Button
-                onClick={() => generate()}
-                disabled={!input.trim() || generating || sending || limited}
-                className="h-11 shrink-0 rounded-xl px-4"
-                aria-label="Generate image"
-              >
-                <Sparkles className="mr-1.5 h-4 w-4" />
-                {generating ? "Painting…" : "Generate"}
-              </Button>
+              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      generate();
+                    }
+                  }}
+                  placeholder="Describe the image you want…"
+                  rows={1}
+                  maxLength={1000}
+                  className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
+                  disabled={limited}
+                />
+                <div className="flex items-center gap-1.5 px-1 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setOpenPanel(openPanel === "aspect" ? null : "aspect")}
+                    aria-expanded={openPanel === "aspect"}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] transition",
+                      openPanel === "aspect" || aspect !== "16:9"
+                        ? "border-success/60 bg-success/5 text-success"
+                        : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block rounded-[2px] border-[1.5px] border-current",
+                        ASPECTS.find((a) => a.id === aspect)?.box,
+                      )}
+                    />
+                    {aspect}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenPanel(openPanel === "style" ? null : "style")}
+                    aria-expanded={openPanel === "style"}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] transition",
+                      openPanel === "style" || imgStyle !== "Auto"
+                        ? "border-success/60 bg-success/5 text-success"
+                        : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                    )}
+                  >
+                    <ImageIcon className="h-3.5 w-3.5" />
+                    {imgStyle}
+                  </button>
+                  {imageModel ? (
+                    <span className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2 py-1.5 text-[11px] text-muted-foreground">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      {imageModel}
+                    </span>
+                  ) : null}
+                  <span className="ml-auto hidden pr-1 text-[10px] text-muted-foreground lg:block">
+                    Enter to generate · Shift + Enter for a new line
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => generate()}
+                    disabled={!input.trim() || generating || sending || limited}
+                    aria-label="Generate image"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-[#05070A] transition hover:brightness-110 disabled:opacity-40"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
           <p

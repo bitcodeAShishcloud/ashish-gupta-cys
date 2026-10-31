@@ -100,12 +100,31 @@ function toDataUrl(bytes: Buffer, contentType: string): string {
   return `data:${type};base64,${bytes.toString("base64")}`;
 }
 
-/* Fetch a provider-returned image URL server-side. https + SSRF blocklist;
- * the AI_ALLOWED_HOSTS whitelist is intentionally NOT applied here — image
- * CDNs legitimately live on other hosts. */
+/* Fetch a provider-returned image URL server-side. https + SSRF blocklist,
+ * then a strictly explicit positive allowlist: the URL's host MUST be listed
+ * in AI_IMAGE_HOSTS (comma-separated, set by the site owner alongside
+ * AI_ALLOWED_HOSTS). No inference, no fallbacks — an unlisted host is
+ * rejected with instructions. */
+function imageHostAllowed(hostname: string): boolean {
+  const host = hostname.toLowerCase();
+  const allowed = (process.env.AI_IMAGE_HOSTS || "")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  return allowed.includes(host);
+}
+
 async function fetchImageDataUrl(rawUrl: string): Promise<ImageResult> {
   const urlError = validateProviderUrl(rawUrl);
   if (urlError) return { ok: false, status: 502, detail: urlError };
+  const host = new URL(rawUrl).hostname.toLowerCase();
+  if (!imageHostAllowed(host)) {
+    return {
+      ok: false,
+      status: 502,
+      detail: `Image host "${host}" is not affiliated with the configured providers. Add it to AI_IMAGE_HOSTS to allow it.`,
+    };
+  }
   try {
     const res = await fetch(rawUrl, {
       signal: AbortSignal.timeout(60_000),
