@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Maximize2, MessageCircle, X } from "lucide-react";
+import { Maximize2, X } from "lucide-react";
 
 /*
  * Floating chat bubble: bottom-right FAB that opens the AI chat in place.
@@ -89,7 +89,14 @@ export function ChatWidget() {
         {open ? (
           <X className="h-5 w-5" />
         ) : (
-          <MessageCircle className="h-5 w-5" />
+          <img
+            src="/ai-icon.svg"
+            alt=""
+            width={24}
+            height={24}
+            className="h-6 w-6"
+            draggable={false}
+          />
         )}
       </button>
     </div>
