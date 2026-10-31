@@ -37,6 +37,19 @@ const STYLES = new Set([
   "Minimal",
 ]);
 
+/* Same fragments used for the style preview thumbnails — a chosen style must
+ * render like its preview. */
+const STYLE_PROMPTS: Record<string, string> = {
+  Auto: "",
+  Photo: "photorealistic photograph, natural lighting, sharp focus",
+  Anime: "anime illustration, cel shading, vibrant colors, clean line art",
+  "3D": "3D render, soft studio lighting, subsurface materials, high detail",
+  "Oil paint": "oil painting, visible brush strokes, rich texture, canvas",
+  Watercolor: "watercolor painting, soft color washes, paper texture",
+  "Pixel art": "pixel art, 16-bit retro style, crisp square pixels",
+  Minimal: "minimalist flat illustration, simple shapes, limited color palette",
+};
+
 export async function POST(req: NextRequest) {
   if (!rateLimit("image:" + clientIp(req), RATE_LIMIT)) {
     return NextResponse.json(
@@ -62,7 +75,8 @@ export async function POST(req: NextRequest) {
     );
   }
   const style = STYLES.has(String(body.style ?? "")) ? String(body.style) : "Auto";
-  const styledPrompt = style === "Auto" ? prompt : `${prompt}, in ${style} style`;
+  const styleFragment = STYLE_PROMPTS[style] || "";
+  const styledPrompt = styleFragment ? `${prompt}, ${styleFragment}` : prompt;
 
   const target = resolveImageTarget();
   if (!target) {

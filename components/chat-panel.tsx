@@ -5,6 +5,7 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
+  Check,
   Download,
   Image as ImageIcon,
   MessageSquare,
@@ -64,7 +65,16 @@ const ASPECTS = [
   { id: "16:9", size: "1792 × 1024", box: "h-2 w-3.5" },
 ] as const;
 
-const STYLES = ["Auto", "Photo", "Anime", "3D", "Oil paint", "Watercolor", "Pixel art", "Minimal"];
+const STYLES = [
+  { name: "Auto", preview: "/style-previews/auto.webp" },
+  { name: "Photo", preview: "/style-previews/photo.webp" },
+  { name: "Anime", preview: "/style-previews/anime.webp" },
+  { name: "3D", preview: "/style-previews/3d.webp" },
+  { name: "Oil paint", preview: "/style-previews/oil-paint.webp" },
+  { name: "Watercolor", preview: "/style-previews/watercolor.webp" },
+  { name: "Pixel art", preview: "/style-previews/pixel-art.webp" },
+  { name: "Minimal", preview: "/style-previews/minimal.webp" },
+];
 
 /* Fixed render box for an image/generating card, shaped by the aspect ratio
  * (long side capped so 9:16 stays a tall card instead of eating the page). */
@@ -735,31 +745,52 @@ export function ChatPanel({
               </div>
             ) : null}
             {openPanel === "style" ? (
-              <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
+              <div className="absolute bottom-full left-0 z-20 mb-2 w-80 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-foreground">Style</p>
                   <p className="text-[11px] text-muted-foreground">{imgStyle}</p>
                 </div>
                 <div className="mt-2 grid grid-cols-4 gap-1.5">
-                  {STYLES.map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      onClick={() => {
-                        setImgStyle(s);
-                        setOpenPanel(null);
-                      }}
-                      aria-pressed={imgStyle === s}
-                      className={cn(
-                        "rounded-lg border px-1 py-2 text-center text-[11px] transition",
-                        imgStyle === s
-                          ? "border-success/70 bg-success/5 text-success"
-                          : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
-                      )}
-                    >
-                      {s}
-                    </button>
-                  ))}
+                  {STYLES.map((s) => {
+                    const selected = imgStyle === s.name;
+                    return (
+                      <button
+                        key={s.name}
+                        type="button"
+                        onClick={() => {
+                          setImgStyle(s.name);
+                          setOpenPanel(null);
+                        }}
+                        aria-pressed={selected}
+                        className={cn(
+                          "group relative overflow-hidden rounded-lg border transition",
+                          selected
+                            ? "border-success ring-1 ring-success/50"
+                            : "border-border/60 hover:border-white/25",
+                        )}
+                      >
+                        <img
+                          src={s.preview}
+                          alt={s.name + " style preview"}
+                          className="aspect-square w-full object-cover"
+                          draggable={false}
+                        />
+                        {selected ? (
+                          <span className="absolute left-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-success text-[#05070A]">
+                            <Check className="h-3 w-3" />
+                          </span>
+                        ) : null}
+                        <span
+                          className={cn(
+                            "block py-1 text-center text-[10px] leading-none",
+                            selected ? "text-success" : "text-muted-foreground",
+                          )}
+                        >
+                          {s.name}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             ) : null}
