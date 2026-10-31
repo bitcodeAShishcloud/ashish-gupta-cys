@@ -7,21 +7,21 @@
 
 ### Chat Streaming
 
-- [ ] **CHAT-01**: Visitor sees the assistant's reply appear progressively (token-by-token) instead of waiting for the full response
-- [ ] **CHAT-02**: While streaming, the reply text itself shows progress — no separate waiting-dots animation once the first tokens arrive
-- [ ] **CHAT-03**: If the provider cannot stream, the chat still works: the full reply arrives and renders normally (graceful fallback)
-- [ ] **CHAT-04**: Existing chat behaviors keep working during streaming: name gate, daily limit (30), erase-data, history persistence after the reply completes
+- [x] **CHAT-01**: Visitor sees the assistant's reply appear progressively (token-by-token) instead of waiting for the full response
+- [x] **CHAT-02**: While streaming, the reply text itself shows progress — no separate waiting-dots animation once the first tokens arrive
+- [x] **CHAT-03**: If the provider cannot stream, the chat still works: the full reply arrives and renders normally (graceful fallback)
+- [x] **CHAT-04**: Existing chat behaviors keep working during streaming: name gate, daily limit (30), erase-data, history persistence after the reply completes
 
 ### Chat Presentation
 
-- [ ] **PRES-01**: The chat UI does not display the model name or provider name anywhere in the public experience (page chat and floating widget)
-- [ ] **PRES-02**: The admin console keeps its provider/model visibility (admin-only concern, unchanged)
+- [x] **PRES-01**: The chat UI does not display the model name or provider name anywhere in the public experience (page chat and floating widget)
+- [x] **PRES-02**: The admin console keeps its provider/model visibility (admin-only concern, unchanged)
 
 ### Handcrafted Feel
 
-- [ ] **FEEL-01**: Chat microcopy (greeting, suggestions, empty state, limit/counter lines) reads in a natural human voice — no generic AI-assistant phrasing
-- [ ] **FEEL-02**: Chat visual details feel deliberate and handcrafted: message bubble treatment, spacing, and motion are tuned, not template-default
-- [ ] **FEEL-03**: Site-wide obvious AI-generated tells (boilerplate phrasing in visible copy) are removed in a focused pass on the public pages
+- [x] **FEEL-01**: Chat microcopy (greeting, suggestions, empty state, limit/counter lines) reads in a natural human voice — no generic AI-assistant phrasing
+- [x] **FEEL-02**: Chat visual details feel deliberate and handcrafted: message bubble treatment, spacing, and motion are tuned, not template-default
+- [x] **FEEL-03**: Site-wide obvious AI-generated tells (boilerplate phrasing in visible copy) are removed in a focused pass on the public pages
 
 ## v2 Requirements
 
@@ -43,15 +43,15 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CHAT-01 | Phase 1 | Pending |
-| CHAT-02 | Phase 1 | Pending |
-| CHAT-03 | Phase 1 | Pending |
-| CHAT-04 | Phase 1 | Pending |
-| PRES-01 | Phase 1 | Pending |
-| PRES-02 | Phase 1 | Pending |
-| FEEL-01 | Phase 2 | Pending |
-| FEEL-02 | Phase 2 | Pending |
-| FEEL-03 | Phase 2 | Pending |
+| CHAT-01 | Phase 1 | Complete |
+| CHAT-02 | Phase 1 | Complete |
+| CHAT-03 | Phase 1 | Complete |
+| CHAT-04 | Phase 1 | Complete |
+| PRES-01 | Phase 1 | Complete |
+| PRES-02 | Phase 1 | Complete |
+| FEEL-01 | Phase 2 | Complete |
+| FEEL-02 | Phase 2 | Complete |
+| FEEL-03 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
@@ -60,4 +60,4 @@
 
 ---
 *Requirements defined: 2026-10-31*
-*Last updated: 2026-10-31 after initial definition*
+*Last updated: 2026-10-31 after Phase 1 + Phase 2 completion*
