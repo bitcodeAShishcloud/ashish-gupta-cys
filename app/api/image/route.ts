@@ -37,17 +37,18 @@ const STYLES = new Set([
   "Minimal",
 ]);
 
-/* Same fragments used for the style preview thumbnails — a chosen style must
- * render like its preview. */
+/* Style LEADS the prompt — image models weight early tokens most, and these
+ * same sentences generate the picker's preview thumbnails, so output matches
+ * the preview the visitor picked. */
 const STYLE_PROMPTS: Record<string, string> = {
   Auto: "",
-  Photo: "photorealistic photograph, natural lighting, sharp focus",
-  Anime: "anime illustration, cel shading, vibrant colors, clean line art",
-  "3D": "3D render, soft studio lighting, subsurface materials, high detail",
-  "Oil paint": "oil painting, visible brush strokes, rich texture, canvas",
-  Watercolor: "watercolor painting, soft color washes, paper texture",
-  "Pixel art": "pixel art, 16-bit retro style, crisp square pixels",
-  Minimal: "minimalist flat illustration, simple shapes, limited color palette",
+  Photo: "Photorealistic photograph, shot on a real camera. {prompt} Natural lighting, sharp focus, true-to-life colors.",
+  Anime: "Anime style illustration. {prompt} Cel shading, vibrant colors, clean line art, expressive eyes.",
+  "3D": "3D render. {prompt} Soft studio lighting, subsurface materials, glossy highlights, high detail, octane render quality.",
+  "Oil paint": "Oil painting on canvas. {prompt} Thick visible brush strokes, rich paint texture, classical composition.",
+  Watercolor: "Watercolor painting on paper. {prompt} Soft color washes, delicate gradients, paper texture, bleeding pigments.",
+  "Pixel art": "Pixel art, 16-bit retro game sprite. {prompt} Crisp square pixels, limited palette, no anti-aliasing.",
+  Minimal: "Minimalist flat illustration. {prompt} Simple geometric shapes, limited color palette, generous negative space, clean vector look.",
 };
 
 export async function POST(req: NextRequest) {
@@ -76,7 +77,9 @@ export async function POST(req: NextRequest) {
   }
   const style = STYLES.has(String(body.style ?? "")) ? String(body.style) : "Auto";
   const styleFragment = STYLE_PROMPTS[style] || "";
-  const styledPrompt = styleFragment ? `${prompt}, ${styleFragment}` : prompt;
+  const styledPrompt = styleFragment
+    ? styleFragment.replace("{prompt}", prompt)
+    : prompt;
 
   const target = resolveImageTarget();
   if (!target) {
