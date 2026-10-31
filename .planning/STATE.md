@@ -16,7 +16,7 @@ See: .planning/PROJECT.md (updated 2026-10-31)
 |-------|------|--------|
 | 1 | Streaming Chat + De-branded Presentation | Complete (verified, c619fc1) |
 | 2 | Handcrafted Feel Polish Pass | Complete (verified, 29a6e6f) |
-| 3 | Image Generation Mode in Chat | Complete (verified 2026-11-01) |
+| 3 | Image Generation Mode in Chat | Complete + pushed (4ec1b0c) |
 
 ## Next Actions
 
@@ -26,6 +26,7 @@ See: .planning/PROJECT.md (updated 2026-10-31)
 
 - Subagent spawning via the model provider was blocked earlier in this session — all planning/execution ran inline
 - The API key the owner pasted into chat should be rotated when convenient (it is configured only in gitignored `.env.local`)
+- Image delivery is client-direct: route returns the provider CDN URL, browser loads it (CSP `img-src` gains the host via `AI_IMAGE_CSP_HOSTS` env) — zero server-side fetch of provider URLs, per Mimosa push-gate requirement; Vercel needs `AI_IMAGE_CSP_HOSTS=cdn.xkiro.com` in project env
 - `npm run build` must not run while `next dev` is active on the same `.next`
 
 ## Key Learnings
