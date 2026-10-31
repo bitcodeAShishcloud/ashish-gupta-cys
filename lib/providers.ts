@@ -261,6 +261,18 @@ export async function generateImage(
   }
 }
 
+/* ── Image CDN host ── */
+/* Default is the current provider's CDN (xkiro); AI_IMAGE_CSP_HOSTS overrides
+ * it (comma-separated) when the provider changes. next.config.mjs mirrors the
+ * same default for the CSP header — keep the two in sync. */
+export function imageCdnHost(): string {
+  const first = (process.env.AI_IMAGE_CSP_HOSTS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)[0];
+  return first || "cdn.xkiro.com";
+}
+
 /* ── Outbound URL safety: only https to public hosts ── */
 export function validateProviderUrl(rawUrl: string): string | null {
   let url: URL;

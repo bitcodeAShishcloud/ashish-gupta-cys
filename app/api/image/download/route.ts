@@ -7,6 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { clientIp, rateLimit } from "@/lib/chat-http";
+import { imageCdnHost } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
 
@@ -26,19 +27,8 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const host = (process.env.AI_IMAGE_CSP_HOSTS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean)[0];
-  if (!host) {
-    return NextResponse.json(
-      { error: "not_configured", message: "Image host is not configured on the server." },
-      { status: 503 },
-    );
-  }
-
-  // The provider CDN serves every job at this fixed path shape.
-  const url = `https://${host}/ai-image-generator/${encodeURIComponent(id)}/0.png`;
+  // Host comes from env with a code default — never from the request.
+  const url = `https://${imageCdnHost()}/ai-image-generator/${encodeURIComponent(id)}/0.png`;
 
   try {
     const upstream = await fetch(url, {

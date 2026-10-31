@@ -51,10 +51,11 @@ const SECURITY_HEADERS = [
 /*
  * Image hosts the browser may load directly (provider CDNs) are appended to
  * img-src from AI_IMAGE_CSP_HOSTS. Built inside headers() so .env.local is
- * guaranteed to be loaded by the time we read it.
+ * guaranteed to be loaded by the time we read it. The default mirrors
+ * imageCdnHost() in lib/providers.ts — keep the two in sync.
  */
 function buildSecurityHeaders() {
-  const imageHosts = (process.env.AI_IMAGE_CSP_HOSTS || "")
+  const imageHosts = (process.env.AI_IMAGE_CSP_HOSTS || "cdn.xkiro.com")
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean)
