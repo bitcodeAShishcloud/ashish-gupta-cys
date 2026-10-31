@@ -27,10 +27,10 @@ interface Msg {
 }
 
 const SUGGESTIONS = [
-  "Tell me about Ashish",
-  "What can you do?",
-  "Cybersecurity tips for beginners",
-  "Explain a recent project of Ashish",
+  "What is Ashish good at?",
+  "How was Poppit AI built?",
+  "How do I get started in cybersecurity?",
+  "Which certifications does Ashish have?",
 ];
 
 function todayKey(): string {
@@ -260,16 +260,16 @@ export function ChatPanel({
           />
           {variant === "widget" ? (
             <h2 className="mt-5 text-center font-display text-xl font-bold tracking-tight">
-              Who are you?
+              What should I call you?
             </h2>
           ) : (
             <h1 className="mt-5 text-center font-display text-2xl font-bold tracking-tight">
-              Who are you?
+              What should I call you?
             </h1>
           )}
           <p className="mx-auto mt-2 max-w-[17rem] text-center text-sm leading-relaxed text-muted-foreground">
-            Your name and this conversation stay in your browser. Nothing is
-            stored on a server.
+            Just a nickname is fine. Your name and this conversation stay in
+            your browser — nothing is stored on a server.
           </p>
           <form
             className="mt-6 flex gap-2"
@@ -292,7 +292,7 @@ export function ChatPanel({
               disabled={!nameInput.trim()}
               className="h-11 rounded-xl px-5"
             >
-              Start
+              Let&apos;s go
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           </form>
@@ -318,23 +318,23 @@ export function ChatPanel({
           <div className="min-w-0">
             {variant === "widget" ? (
               <h2 className="font-display text-base font-semibold leading-snug tracking-tight">
-                Hi {name}, what do you want to know?
+                Hey {name} — what are you curious about?
               </h2>
             ) : (
               <h1 className="font-display text-xl font-bold tracking-tight">
-                Hi {name}, what do you want to know?
+                Hey {name} — what are you curious about?
               </h1>
             )}
             <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
-              <span className="truncate">Ashish's AI assistant</span>
+              <span className="truncate">online · replies instantly</span>
             </p>
           </div>
           <button
             type="button"
             onClick={() => setEraseOpen(true)}
-            aria-label="Erase chat data"
-            title="Erase chat data"
+            aria-label="Clear chat"
+            title="Clear chat"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
           >
             <Trash2 className="h-4 w-4" />
@@ -352,7 +352,7 @@ export function ChatPanel({
           {messages.length === 0 ? (
             <div>
               <p className="text-xs font-medium text-muted-foreground">
-                Try asking
+                Not sure where to start?
               </p>
               <div className="mt-3 overflow-hidden rounded-xl border border-border/80">
                 {SUGGESTIONS.map((s) => (
@@ -378,8 +378,17 @@ export function ChatPanel({
                   </div>
                 </div>
               ) : (
-                <div key={i} className="max-w-[92%]">
-                  <Markdown>{m.content}</Markdown>
+                <div key={i} className="flex max-w-[92%] items-start gap-2.5">
+                  <img
+                    src="/favicon.webp"
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <Markdown>{m.content}</Markdown>
+                  </div>
                 </div>
               ),
             )
@@ -434,8 +443,8 @@ export function ChatPanel({
               }}
               placeholder={
                 variant === "widget"
-                  ? "Ask anything…"
-                  : "Ask about projects, skills, certifications or security…"
+                  ? "Type a message…"
+                  : "Type your question…"
               }
               rows={1}
               maxLength={1000}
@@ -458,8 +467,8 @@ export function ChatPanel({
             )}
           >
             {limited
-              ? "Daily limit reached"
-              : `${sentCount} of ${DAILY_LIMIT} sent today · stays on your device`}
+              ? "Daily limit reached — resets tomorrow"
+              : `${sentCount}/30 today · stays on your device`}
           </p>
         </div>
       </div>
@@ -467,7 +476,7 @@ export function ChatPanel({
       <Dialog open={eraseOpen} onOpenChange={setEraseOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Erase all local data?</DialogTitle>
+            <DialogTitle>Clear this chat?</DialogTitle>
             <DialogDescription>
               This removes your name, chat history and usage counters from this
               browser. It cannot be undone.
@@ -478,7 +487,7 @@ export function ChatPanel({
               Cancel
             </Button>
             <Button variant="destructive" onClick={eraseData}>
-              <Trash2 className="mr-2 h-4 w-4" /> Erase data
+              <Trash2 className="mr-2 h-4 w-4" /> Clear it
             </Button>
           </DialogFooter>
         </DialogContent>

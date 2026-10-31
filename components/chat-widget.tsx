@@ -40,7 +40,7 @@ export function ChatWidget() {
       {open ? (
         <div
           role="dialog"
-          aria-label="Chat with Ashish's AI assistant"
+          aria-label="Ask Ashish anything"
           className="animate-fade-in-up flex h-[min(560px,calc(100dvh-7rem))] w-[min(400px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-border/70 bg-background shadow-[0_30px_80px_rgba(0,0,0,0.65)]"
         >
           <div className="flex h-12 shrink-0 items-center gap-2.5 border-b border-border/60 px-3.5">
@@ -52,7 +52,7 @@ export function ChatWidget() {
               className="h-6 w-6 rounded-full ring-1 ring-white/10"
             />
             <span className="font-display text-sm font-semibold tracking-tight">
-              Ashish&apos;s AI
+              Ask Ashish
             </span>
             <div className="ml-auto flex items-center gap-1">
               <Link

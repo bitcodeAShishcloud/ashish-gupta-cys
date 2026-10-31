@@ -110,7 +110,7 @@ export default function HomePage() {
               </Button>
               <Button asChild variant="ghost">
                 <Link href="/chat">
-                  <Terminal className="mr-2 h-4 w-4" /> Ask the AI
+                  <Terminal className="mr-2 h-4 w-4" /> Ask Ashish
                 </Link>
               </Button>
             </div>
@@ -456,8 +456,8 @@ export default function HomePage() {
               Want to collaborate or have a question?
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-              Reach out by email, connect on LinkedIn, or ask the AI assistant
-              about my work and skills.
+              Reach out by email, connect on LinkedIn, or ask me anything
+              through the chat — projects, skills, security, all fair game.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Button asChild className="grad-btn">
@@ -476,7 +476,7 @@ export default function HomePage() {
               </Button>
               <Button asChild variant="ghost">
                 <Link href="/chat">
-                  <Terminal className="mr-2 h-4 w-4" aria-hidden /> Chat with AI
+                  <Terminal className="mr-2 h-4 w-4" aria-hidden /> Ask Ashish
                 </Link>
               </Button>
             </div>
