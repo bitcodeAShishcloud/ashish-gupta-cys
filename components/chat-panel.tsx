@@ -9,7 +9,6 @@ import {
   Image as ImageIcon,
   MessageSquare,
   Send,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -110,7 +109,7 @@ export function ChatPanel({
   const [imgStyle, setImgStyle] = useState<string>("Auto");
   const [generating, setGenerating] = useState(false);
   const [openPanel, setOpenPanel] = useState<"aspect" | "style" | null>(null);
-  const [imageModel, setImageModel] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -153,30 +152,6 @@ export function ChatPanel({
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messages, sending]);
 
-  // Model chip: fetch once when Image mode first opens (name only, no key).
-  useEffect(() => {
-    if (mode !== "image" || imageModel) return;
-    let alive = true;
-    fetch("/api/image")
-      .then((r) => r.json())
-      .then((d) => {
-        if (!alive) return;
-        const raw = typeof d.model === "string" ? d.model : "";
-        const tail = raw.includes("/") ? raw.split("/").pop() || "" : raw;
-        const pretty = tail
-          .replace(/[-_]+/g, " ")
-          .split(" ")
-          .filter(Boolean)
-          .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-          .join(" ");
-        setImageModel(pretty || null);
-      })
-      .catch(() => {});
-    return () => {
-      alive = false;
-    };
-  }, [mode, imageModel]);
-
   // Close picker popovers when clicking outside the composer.
   useEffect(() => {
     if (!openPanel) return;
@@ -188,6 +163,18 @@ export function ChatPanel({
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
   }, [openPanel]);
+
+  /* The provider job API reports no percentage — ease toward 90% while
+   * polling so the bar moves smoothly, and it's replaced by "done" state
+   * the moment the response lands. */
+  useEffect(() => {
+    if (!generating) return;
+    setProgress((p) => (p === 0 ? 1 : p));
+    const t = setInterval(() => {
+      setProgress((p) => (p < 90 ? Math.min(90, p + Math.max(0.2, (90 - p) * 0.015)) : p));
+    }, 200);
+    return () => clearInterval(t);
+  }, [generating]);
 
   function enterName() {
     const n = nameInput.trim().slice(0, 40);
@@ -309,6 +296,7 @@ export function ChatPanel({
     setMessages(history);
     setInput("");
     setGenerating(true);
+    setProgress(0);
     const meta = { prompt, aspect, style: imgStyle };
     try {
       const res = await fetch("/api/image", {
@@ -644,9 +632,19 @@ export function ChatPanel({
                 className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
               />
               <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card/40">
-                <div className="h-56 w-full animate-pulse bg-white/[0.04]" />
+                <div className="flex items-center justify-between px-3 pt-2.5 text-[11px] text-muted-foreground">
+                  <span>Generating image…</span>
+                  <span className="font-mono tabular-nums">{Math.round(progress)}%</span>
+                </div>
+                <div className="mx-3 mb-2.5 mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-success transition-[width] duration-200 ease-out"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
                 <div className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
-                  Generating image… this can take a few seconds
+                  {aspect}
+                  {imgStyle !== "Auto" ? ` · ${imgStyle}` : ""} · usually takes a few seconds
                 </div>
               </div>
             </div>
@@ -809,12 +807,6 @@ export function ChatPanel({
                     <ImageIcon className="h-3.5 w-3.5" />
                     {imgStyle}
                   </button>
-                  {imageModel ? (
-                    <span className="flex items-center gap-1.5 rounded-lg border border-border/60 px-2 py-1.5 text-[11px] text-muted-foreground">
-                      <Sparkles className="h-3.5 w-3.5 text-primary" />
-                      {imageModel}
-                    </span>
-                  ) : null}
                   <span className="ml-auto hidden pr-1 text-[10px] text-muted-foreground lg:block">
                     Enter to generate · Shift + Enter for a new line
                   </span>

@@ -37,12 +37,6 @@ const STYLES = new Set([
   "Minimal",
 ]);
 
-// GET /api/image — model name for the composer chip (name only, no key material).
-export async function GET() {
-  const target = resolveImageTarget();
-  return NextResponse.json({ model: target ? target.provider.model : null });
-}
-
 export async function POST(req: NextRequest) {
   if (!rateLimit("image:" + clientIp(req), RATE_LIMIT)) {
     return NextResponse.json(
