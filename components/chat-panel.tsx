@@ -59,9 +59,9 @@ const IMAGE_SUGGESTIONS = [
 
 const ASPECTS = [
   { id: "9:16", size: "1024 × 1792", box: "h-3.5 w-2" },
-  { id: "3:4", size: "1024 × 1365", box: "h-3.5 w-2.5" },
+  { id: "3:4", size: "1024 × 1536", box: "h-3.5 w-2.5" },
   { id: "1:1", size: "1024 × 1024", box: "h-3 w-3" },
-  { id: "4:3", size: "1365 × 1024", box: "h-2.5 w-3.5" },
+  { id: "4:3", size: "1536 × 1024", box: "h-2.5 w-3.5" },
   { id: "16:9", size: "1792 × 1024", box: "h-2 w-3.5" },
 ] as const;
 

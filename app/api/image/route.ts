@@ -18,11 +18,13 @@ const MAX_PROMPT = 1000;
 
 export const dynamic = "force-dynamic";
 
+/* Only sizes the gateway actually supports (it rejects anything else).
+ * 3:4/4:3 have no exact match — nearest portrait/landscape wins. */
 const ASPECT_SIZES: Record<string, string> = {
   "9:16": "1024x1792",
-  "3:4": "1024x1365",
+  "3:4": "1024x1536",
   "1:1": "1024x1024",
-  "4:3": "1365x1024",
+  "4:3": "1536x1024",
   "16:9": "1792x1024",
 };
 
