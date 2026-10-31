@@ -66,6 +66,15 @@ const ASPECTS = [
 
 const STYLES = ["Auto", "Photo", "Anime", "3D", "Oil paint", "Watercolor", "Pixel art", "Minimal"];
 
+/* Fixed render box for an image/generating card, shaped by the aspect ratio
+ * (long side capped so 9:16 stays a tall card instead of eating the page). */
+function aspectBox(aspect: string, variant: "page" | "widget") {
+  const [rw, rh] = aspect.split(":").map(Number);
+  const long = variant === "widget" ? 250 : 340;
+  const s = long / Math.max(rw || 1, rh || 1);
+  return { width: Math.round(rw * s), height: Math.round(rh * s) };
+}
+
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -561,20 +570,23 @@ export function ChatPanel({
                     className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
                   />
                   <div className="min-w-0 flex-1">
-                    <figure className="overflow-hidden rounded-xl border border-border/80 bg-card/40">
+                    <figure
+                      className="relative inline-block overflow-hidden rounded-xl border border-border/80 bg-card/40 align-top"
+                      style={aspectBox(m.meta?.aspect || "1:1", variant)}
+                    >
                       {m.image ? (
                         <img
                           src={m.image}
                           alt={m.meta?.prompt || "Generated image"}
-                          className="w-full"
+                          className="absolute inset-0 h-full w-full object-cover"
                         />
                       ) : (
-                        <div className="flex h-40 items-center justify-center px-4 text-center text-xs text-muted-foreground">
+                        <div className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-muted-foreground">
                           Image not saved on reload — regenerate to see it again
                         </div>
                       )}
-                      <figcaption className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2">
-                        <span className="truncate text-[11px] text-muted-foreground">
+                      <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2.5 pb-2 pt-7">
+                        <span className="truncate text-[11px] text-white/75">
                           {m.meta?.prompt} · {m.meta?.aspect}
                           {m.meta?.style && m.meta.style !== "Auto" ? ` · ${m.meta.style}` : ""}
                         </span>
@@ -592,7 +604,7 @@ export function ChatPanel({
                               : { target: "_blank", rel: "noopener noreferrer" })}
                             download={m.jobId ? `ashish-image-${m.jobId}.png` : undefined}
                             aria-label="Download image"
-                            className="shrink-0 text-muted-foreground transition hover:text-foreground"
+                            className="shrink-0 text-white/70 transition hover:text-white"
                           >
                             <Download className="h-3.5 w-3.5" />
                           </a>
@@ -653,20 +665,22 @@ export function ChatPanel({
                 height={20}
                 className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
               />
-              <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border/80 bg-card/40">
-                <div className="flex items-center justify-between px-3 pt-2.5 text-[11px] text-muted-foreground">
-                  <span>Generating image…</span>
-                  <span className="font-mono tabular-nums">{Math.round(progress)}%</span>
-                </div>
-                <div className="mx-3 mb-2.5 mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
-                  <div
-                    className="h-full rounded-full bg-success transition-[width] duration-200 ease-out"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <div className="border-t border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
-                  {aspect}
-                  {imgStyle !== "Auto" ? ` · ${imgStyle}` : ""} · usually takes a few seconds
+              <div
+                className="relative overflow-hidden rounded-xl border border-border/80 bg-card/40"
+                style={aspectBox(aspect, variant)}
+              >
+                <div className="absolute inset-0 animate-pulse bg-white/[0.03]" />
+                <div className="absolute inset-x-0 bottom-0 p-3">
+                  <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>Generating image…</span>
+                    <span className="font-mono tabular-nums">{Math.round(progress)}%</span>
+                  </div>
+                  <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full rounded-full bg-success transition-[width] duration-200 ease-out"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
                 </div>
               </div>
             </div>
