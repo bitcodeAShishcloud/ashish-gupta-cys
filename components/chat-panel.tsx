@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils";
 
 const NAME_KEY = "chat_user_name";
 const HISTORY_KEY = "chat_history_v1";
+const IMAGE_HISTORY_KEY = "chat_image_history_v1";
 const USAGE_KEY = "chat_usage";
 const DAILY_LIMIT = 30;
 
@@ -97,7 +98,8 @@ export function ChatPanel({
 }) {
   const [name, setName] = useState<string | null>(null);
   const [nameInput, setNameInput] = useState("");
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const [chatHistory, setChatHistory] = useState<Msg[]>([]);
+  const [imageHistory, setImageHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -118,26 +120,32 @@ export function ChatPanel({
     setMounted(true);
   }, []);
 
-  // Load name + history once, on the client only.
+  // Load name + histories once, on the client only. The old shared history
+  // key is split: image entries move to the image history, the rest stay chat.
   useEffect(() => {
     try {
       const n = localStorage.getItem(NAME_KEY);
       if (n) {
         setName(n);
-        const raw = localStorage.getItem(HISTORY_KEY);
-        if (raw) {
-          const parsed = JSON.parse(raw);
+        const valid = (m: Msg) =>
+          m &&
+          (m.role === "user" || m.role === "assistant") &&
+          typeof m.content === "string";
+        const rawChat = localStorage.getItem(HISTORY_KEY);
+        if (rawChat) {
+          const parsed = JSON.parse(rawChat);
           if (Array.isArray(parsed)) {
-            setMessages(
-              parsed
-                .filter(
-                  (m: Msg) =>
-                    m &&
-                    (m.role === "user" || m.role === "assistant") &&
-                    typeof m.content === "string",
-                )
-                .slice(-24),
-            );
+            const all = parsed.filter(valid);
+            const imgs = all.filter((m: Msg) => m.kind === "image");
+            setChatHistory(all.filter((m: Msg) => m.kind !== "image").slice(-24));
+            if (imgs.length) setImageHistory(imgs.slice(-24));
+          }
+        }
+        const rawImg = localStorage.getItem(IMAGE_HISTORY_KEY);
+        if (rawImg) {
+          const parsed = JSON.parse(rawImg);
+          if (Array.isArray(parsed)) {
+            setImageHistory(parsed.filter(valid).slice(-24));
           }
         }
       }
@@ -150,7 +158,7 @@ export function ChatPanel({
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [messages, sending]);
+  }, [chatHistory, imageHistory, sending, generating, mode]);
 
   // Close picker popovers when clicking outside the composer.
   useEffect(() => {
@@ -191,8 +199,8 @@ export function ChatPanel({
     const message = text.trim();
     if (!message || sending || generating || limited) return;
     setError(null);
-    const history = [...messages, { role: "user" as const, content: message }];
-    setMessages(history);
+    const history = [...chatHistory, { role: "user" as const, content: message }];
+    setChatHistory(history);
     setInput("");
     setSending(true);
     setFirstToken(false);
@@ -202,7 +210,7 @@ export function ChatPanel({
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, history: messages.slice(-24) }),
+        body: JSON.stringify({ message, history: chatHistory.slice(-24) }),
       });
       if (!res.ok || !res.body) {
         const data = await res.json().catch(() => ({}));
@@ -213,7 +221,7 @@ export function ChatPanel({
       // Same-origin SSE: {"delta"} chunks build the reply live, {"done"} ends
       // the stream. A streamed message is added once and mutated in place.
       assistantAdded = true;
-      setMessages((prev) => [...prev, { role: "assistant" as const, content: "" }]);
+      setChatHistory((prev) => [...prev, { role: "assistant" as const, content: "" }]);
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = "";
@@ -237,7 +245,7 @@ export function ChatPanel({
             if (typeof evt.delta === "string" && evt.delta) {
               full += evt.delta;
               setFirstToken(true);
-              setMessages((prev) => {
+              setChatHistory((prev) => {
                 const next = [...prev];
                 const last = next.length - 1;
                 if (next[last]?.role === "assistant") {
@@ -261,7 +269,7 @@ export function ChatPanel({
         ...history,
         { role: "assistant" as const, content: full.trim() || "…" },
       ];
-      setMessages(finalHistory);
+      setChatHistory(finalHistory);
       try {
         const next = usageToday() + 1;
         localStorage.setItem(
@@ -274,7 +282,7 @@ export function ChatPanel({
         /* ignore */
       }
     } catch (e) {
-      setMessages((prev) => {
+      setChatHistory((prev) => {
         const next = [...prev];
         if (assistantAdded && next[next.length - 1]?.role === "assistant") next.pop();
         if (next[next.length - 1]?.role === "user") next.pop();
@@ -292,8 +300,8 @@ export function ChatPanel({
     if (!prompt || generating || sending || limited) return;
     setError(null);
     const userMsg: Msg = { role: "user", content: prompt };
-    const history = [...messages, userMsg];
-    setMessages(history);
+    const history = [...imageHistory, userMsg];
+    setImageHistory(history);
     setInput("");
     setGenerating(true);
     setProgress(0);
@@ -317,17 +325,17 @@ export function ChatPanel({
         meta,
       };
       const finalHistory = [...history, imgMsg];
-      setMessages(finalHistory);
+      setImageHistory(finalHistory);
       try {
         const next = usageToday() + 1;
         localStorage.setItem(USAGE_KEY, JSON.stringify({ date: todayKey(), count: next }));
-        localStorage.setItem(HISTORY_KEY, JSON.stringify(persistable(finalHistory).slice(-50)));
+        localStorage.setItem(IMAGE_HISTORY_KEY, JSON.stringify(persistable(finalHistory).slice(-50)));
         if (next >= DAILY_LIMIT) setLimited(true);
       } catch {
         /* ignore */
       }
     } catch (e) {
-      setMessages((prev) => {
+      setImageHistory((prev) => {
         const next = [...prev];
         if (next[next.length - 1]?.role === "user") next.pop();
         return next;
@@ -342,11 +350,13 @@ export function ChatPanel({
     try {
       localStorage.removeItem(NAME_KEY);
       localStorage.removeItem(HISTORY_KEY);
+      localStorage.removeItem(IMAGE_HISTORY_KEY);
       localStorage.removeItem(USAGE_KEY);
     } catch {
       /* ignore */
     }
-    setMessages([]);
+    setChatHistory([]);
+    setImageHistory([]);
     setName(null);
     setNameInput("");
     setLimited(false);
@@ -424,7 +434,9 @@ export function ChatPanel({
     );
   }
 
-  const sentCount = messages.filter((m) => m.role === "user").length;
+  // Each mode renders its own thread: chat messages under Chat, image
+  // generations under Image. The daily budget is shared between them.
+  const visible = mode === "chat" ? chatHistory : imageHistory;
 
   // ── Chat view: full-height app, messages scroll internally ──
   return (
@@ -506,7 +518,7 @@ export function ChatPanel({
             variant === "widget" ? "mt-4" : "mt-6",
           )}
         >
-          {messages.length === 0 ? (
+          {visible.length === 0 ? (
             <div>
               <p className="text-xs font-medium text-muted-foreground">
                 {mode === "chat" ? "Not sure where to start?" : "Need an idea?"}
@@ -529,7 +541,7 @@ export function ChatPanel({
               </div>
             </div>
           ) : (
-            messages.map((m, i) =>
+            visible.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
                   <div className="max-w-[80%] whitespace-pre-wrap rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm leading-relaxed">
@@ -831,7 +843,7 @@ export function ChatPanel({
           >
             {limited
               ? "Daily limit reached — resets tomorrow"
-              : `${sentCount}/30 today · stays on your device`}
+              : `${usageToday()}/30 today · stays on your device`}
           </p>
         </div>
       </div>
