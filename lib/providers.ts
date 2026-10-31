@@ -94,6 +94,8 @@ export interface ImageResult {
   url?: string;
   /** Inline base64 payload when the provider returns b64 instead of a URL. */
   dataUrl?: string;
+  /** Async-job id, when the provider used one — enables the download route. */
+  jobId?: string;
   status?: number;
   detail?: string;
 }
@@ -159,6 +161,7 @@ export async function generateImage(
       object?: unknown;
       data?: unknown[];
     } | null;
+    let resolvedJobId: string | undefined;
     const jobShaped =
       body &&
       typeof body === "object" &&
@@ -169,10 +172,10 @@ export async function generateImage(
         typeof body.status === "string");
     if (jobShaped) {
       const jobId = body.id as string;
+      resolvedJobId = jobId;
       const pollUrl = `${normalizeBaseUrl(url)}/${jobId}`;
       const deadline = Date.now() + (opts.timeoutMs ?? 120000) - 3000;
-      let jobData: { data?: unknown[] } | null = null;
-      for (;;) {
+      let jobData: { data?: unknown[] } | null = null;      for (;;) {
         if (Date.now() >= deadline) {
           return { ok: false, status: 504, detail: "Image generation timed out." };
         }
@@ -241,10 +244,14 @@ export async function generateImage(
       };
     }
 
-    if (/^data:image\//i.test(found)) return { ok: true, dataUrl: found };
-    if (/^https?:\/\//i.test(found)) return { ok: true, url: found };
+    if (/^data:image\//i.test(found)) return { ok: true, dataUrl: found, jobId: resolvedJobId };
+    if (/^https?:\/\//i.test(found)) return { ok: true, url: found, jobId: resolvedJobId };
     // Bare base64 payload
-    return { ok: true, dataUrl: toDataUrl(Buffer.from(found, "base64"), "image/png") };
+    return {
+      ok: true,
+      dataUrl: toDataUrl(Buffer.from(found, "base64"), "image/png"),
+      jobId: resolvedJobId,
+    };
   } catch (err) {
     const e = err as { name?: string; message?: string };
     if (e.name === "AbortError") return { ok: false, status: 504, detail: "Image provider timed out." };

@@ -34,9 +34,11 @@ const DAILY_LIMIT = 30;
 interface Msg {
   role: "user" | "assistant";
   content: string;
-  /** "image" messages carry a generated picture (session-only) + settings. */
+  /** "image" messages carry the generated picture + settings. URL images
+   * persist in history; the jobId enables same-origin downloads. */
   kind?: "text" | "image";
   image?: string;
+  jobId?: string;
   meta?: { prompt: string; aspect: string; style: string };
 }
 
@@ -322,6 +324,7 @@ export function ChatPanel({
         content: "",
         kind: "image",
         image: data.image,
+        jobId: typeof data.jobId === "string" && data.jobId ? data.jobId : undefined,
         meta,
       };
       const finalHistory = [...history, imgMsg];
@@ -577,10 +580,17 @@ export function ChatPanel({
                         </span>
                         {m.image ? (
                           <a
-                            href={m.image}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            download="ashish-generated-image.png"
+                            // Same-origin proxy forces a real download; legacy
+                            // entries without a jobId still open the CDN URL.
+                            href={
+                              m.jobId
+                                ? `/api/image/download?id=${encodeURIComponent(m.jobId)}`
+                                : m.image
+                            }
+                            {...(m.jobId
+                              ? {}
+                              : { target: "_blank", rel: "noopener noreferrer" })}
+                            download={m.jobId ? `ashish-image-${m.jobId}.png` : undefined}
                             aria-label="Download image"
                             className="shrink-0 text-muted-foreground transition hover:text-foreground"
                           >

@@ -88,5 +88,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return NextResponse.json({ image: result.url ?? result.dataUrl, size, style });
+  return NextResponse.json({
+    image: result.url ?? result.dataUrl,
+    jobId: result.jobId ?? null,
+    size,
+    style,
+  });
 }
