@@ -1,9 +1,12 @@
 // POST /api/chat  { message: string, history?: [{role, content}] }
-// Proxies to the active OpenAI-compatible provider. No user data is stored
-// server-side: no cookies, no database — chat history lives only in the
-// visitor's browser. The provider API key never leaves the server.
-// The outbound destination is pinned by the server env var AI_PROVIDERS_JSON
-// and gated by validateProviderUrl + the AI_ALLOWED_HOSTS whitelist.
+// Streams the reply as same-origin SSE: `data: {"delta": "..."}` chunks
+// terminated by `data: {"done": true}`. No user data is stored server-side:
+// no cookies, no database — chat history lives only in the visitor's browser.
+// The provider API key never leaves the server. The outbound destination is
+// pinned by AI_PROVIDERS_JSON and gated by validateProviderUrl +
+// AI_ALLOWED_HOSTS. If the provider cannot stream, the buffered reply is
+// emitted as a single delta so the client contract never changes. The model
+// and provider identity are intentionally never sent to the browser.
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
@@ -12,6 +15,7 @@ import {
   validateProviderUrl,
   trimToContext,
   callProvider,
+  streamProvider,
   providerDefaults,
 } from "@/lib/providers";
 
@@ -31,6 +35,16 @@ Guidelines:
 - Reply in the language the user writes in.`;
 
 export const dynamic = "force-dynamic";
+
+const SSE_HEADERS = {
+  "Content-Type": "text/event-stream; charset=utf-8",
+  "Cache-Control": "no-cache, no-transform",
+  "X-Accel-Buffering": "no",
+} as const;
+
+function sseEvent(obj: Record<string, unknown>): Uint8Array {
+  return new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`);
+}
 
 export async function POST(req: NextRequest) {
   if (!rateLimit("chat:" + clientIp(req), RATE_LIMIT)) {
@@ -93,22 +107,83 @@ export async function POST(req: NextRequest) {
     return out.slice(0, 300);
   };
 
-  const result = await callProvider(provider, upstream);
-  if (!result.ok) {
-    const detail = redact(result.detail);
-    return NextResponse.json(
-      {
-        error: "upstream_error",
-        message: "The AI provider failed to respond. Try again shortly.",
-        detail,
-      },
-      { status: 502 },
+  // Preferred path: proxy the provider's own SSE stream token by token.
+  const streamed = await streamProvider(provider, upstream);
+  if (streamed.ok && streamed.stream) {
+    const upstreamBody = streamed.stream;
+    return new Response(
+      new ReadableStream<Uint8Array>({
+        async start(controller) {
+          const reader = upstreamBody.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let sentChars = 0;
+          const push = (obj: Record<string, unknown>) => controller.enqueue(sseEvent(obj));
+          try {
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split("\n");
+              buffer = lines.pop() ?? "";
+              for (const line of lines) {
+                const trimmed = line.trim();
+                if (!trimmed.startsWith("data:")) continue;
+                const payload = trimmed.slice(5).trim();
+                if (!payload || payload === "[DONE]") continue;
+                try {
+                  const chunk = JSON.parse(payload) as {
+                    choices?: {
+                      delta?: { content?: unknown };
+                      message?: { content?: unknown };
+                    }[];
+                  };
+                  const piece =
+                    chunk.choices?.[0]?.delta?.content ??
+                    chunk.choices?.[0]?.message?.content;
+                  if (typeof piece === "string" && piece) {
+                    sentChars += piece.length;
+                    push({ delta: piece });
+                  }
+                } catch {
+                  /* keep-alive comment or partial line — skip */
+                }
+              }
+            }
+          } catch (err) {
+            push({ error: redact(err instanceof Error ? err.message : "stream interrupted") });
+          } finally {
+            if (sentChars === 0) {
+              push({ error: redact("The AI provider returned an empty response.") });
+            }
+            push({ done: true });
+            controller.close();
+            streamed.dispose?.();
+          }
+        },
+        cancel() {
+          streamed.dispose?.();
+        },
+      }),
+      { headers: SSE_HEADERS },
     );
   }
 
-  return NextResponse.json({
-    reply: result.reply,
-    model: provider.model,
-    provider: provider.name,
+  // Fallback: provider rejected streaming or answered non-SSE — buffer the
+  // full reply and emit it as one delta so the client contract is uniform.
+  const result = await callProvider(provider, upstream);
+  const buffered = new ReadableStream<Uint8Array>({
+    start(controller) {
+      if (!result.ok) {
+        controller.enqueue(
+          sseEvent({ error: redact(result.detail || "The AI provider failed to respond.") }),
+        );
+      } else {
+        controller.enqueue(sseEvent({ delta: result.reply ?? "" }));
+      }
+      controller.enqueue(sseEvent({ done: true }));
+      controller.close();
+    },
   });
+  return new Response(buffered, { headers: SSE_HEADERS });
 }

@@ -201,6 +201,117 @@ export interface ProviderCallResult {
   detail?: string;
 }
 
+/* ── Streaming provider call: same gates, SSE body back ── */
+export interface ProviderStreamResult {
+  ok: boolean;
+  stream?: ReadableStream<Uint8Array>;
+  status?: number;
+  detail?: string;
+  /** Upstream answered but ignored stream:true (non-SSE body) — caller should fall back to buffered callProvider. */
+  notStreamable?: boolean;
+  /** Clears the stream-wide abort timer. Must be called when the route finishes reading. */
+  dispose?: () => void;
+}
+
+export async function streamProvider(
+  provider: ProviderConfig,
+  messages: { role: string; content: string }[],
+  opts: { timeoutMs?: number; validatedUrl?: string } = {},
+): Promise<ProviderStreamResult> {
+  const c = providerDefaults(provider);
+  let url = opts.validatedUrl;
+  if (!url) {
+    const baseErr = validateProviderUrl(provider.baseUrl);
+    if (baseErr) return { ok: false, status: 503, detail: baseErr };
+    url = normalizeBaseUrl(provider.baseUrl) + c.endpoint;
+  }
+
+  const targetHost = new URL(url).hostname.toLowerCase();
+  if (!hostIsAllowed(targetHost)) {
+    return {
+      ok: false,
+      status: 503,
+      detail: `Provider host "${targetHost}" is not in the AI_ALLOWED_HOSTS whitelist.`,
+    };
+  }
+
+  // The abort timer covers the whole stream (headers + body), not just the
+  // handshake — dispose() clears it once the route is done reading.
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 120000);
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: "text/event-stream",
+  };
+  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
+  try {
+    if (/openrouter\.ai$/i.test(new URL(url).hostname)) {
+      headers["HTTP-Referer"] = process.env.PUBLIC_SITE_URL || "https://localhost";
+      headers["X-Title"] = "Ashish Gupta Portfolio Chat";
+    }
+  } catch {
+    /* url is already validated */
+  }
+
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: provider.model,
+        messages,
+        temperature: 0.7,
+        max_tokens: c.maxOutput,
+        stream: true,
+      }),
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      let data: unknown = null;
+      try {
+        data = text ? JSON.parse(text) : null;
+      } catch {
+        data = null;
+      }
+      const anyErr = data as { error?: { message?: string }; message?: string; msg?: string };
+      const detail = String(
+        anyErr?.error?.message || anyErr?.message || anyErr?.msg || text || `HTTP ${res.status}`,
+      ).slice(0, 300);
+      return { ok: false, status: res.status, detail };
+    }
+
+    if (!res.body) return { ok: false, status: 502, detail: "Provider returned an empty body." };
+
+    const ctype = (res.headers.get("content-type") || "").toLowerCase();
+    if (!ctype.includes("text/event-stream")) {
+      // Provider ignored stream:true and answered JSON — let the route buffer instead.
+      try {
+        await res.body.cancel();
+      } catch {
+        /* ignore */
+      }
+      clearTimeout(timer);
+      return { ok: false, status: 502, detail: "Provider did not stream.", notStreamable: true };
+    }
+
+    return {
+      ok: true,
+      stream: res.body,
+      dispose: () => clearTimeout(timer),
+    };
+  } catch (err) {
+    clearTimeout(timer);
+    const e = err as { name?: string; message?: string };
+    if (e.name === "AbortError") {
+      return { ok: false, status: 504, detail: "Provider timed out." };
+    }
+    return { ok: false, status: 502, detail: e.message };
+  }
+}
+
 export async function callProvider(
   provider: ProviderConfig,
   messages: { role: string; content: string }[],

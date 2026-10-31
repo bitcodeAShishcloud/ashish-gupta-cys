@@ -60,9 +60,9 @@ export function ChatPanel({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [modelInfo, setModelInfo] = useState<string | null>(null);
   const [eraseOpen, setEraseOpen] = useState(false);
   const [limited, setLimited] = useState(false);
+  const [firstToken, setFirstToken] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -123,23 +123,73 @@ export function ChatPanel({
     setMessages(history);
     setInput("");
     setSending(true);
+    setFirstToken(false);
+    let assistantAdded = false;
+    let full = "";
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message, history: messages.slice(-24) }),
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
         const base = data.message || `Request failed (${res.status})`;
         throw new Error(base + (data.detail ? `, ${data.detail}` : ""));
       }
-      const reply: string = String(data.reply || "").trim() || "…";
-      const finalHistory = [...history, { role: "assistant" as const, content: reply }];
-      setMessages(finalHistory);
-      if (data.model || data.provider) {
-        setModelInfo(`${data.model || ""}${data.provider ? ` @ ${data.provider}` : ""}`.trim());
+
+      // Same-origin SSE: {"delta"} chunks build the reply live, {"done"} ends
+      // the stream. A streamed message is added once and mutated in place.
+      assistantAdded = true;
+      setMessages((prev) => [...prev, { role: "assistant" as const, content: "" }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let streamError: string | null = null;
+      let finished = false;
+      while (!finished) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const events = buf.split("\n\n");
+        buf = events.pop() ?? "";
+        for (const ev of events) {
+          const line = ev.trim();
+          if (!line.startsWith("data:")) continue;
+          try {
+            const evt = JSON.parse(line.slice(5).trim()) as {
+              delta?: string;
+              error?: string;
+              done?: boolean;
+            };
+            if (typeof evt.delta === "string" && evt.delta) {
+              full += evt.delta;
+              setFirstToken(true);
+              setMessages((prev) => {
+                const next = [...prev];
+                const last = next.length - 1;
+                if (next[last]?.role === "assistant") {
+                  next[last] = { role: "assistant", content: full };
+                }
+                return next;
+              });
+            } else if (evt.error) {
+              streamError = String(evt.error);
+            } else if (evt.done) {
+              finished = true;
+            }
+          } catch {
+            /* partial event — the next read completes it */
+          }
+        }
       }
+      if (streamError) throw new Error(streamError);
+
+      const finalHistory = [
+        ...history,
+        { role: "assistant" as const, content: full.trim() || "…" },
+      ];
+      setMessages(finalHistory);
       try {
         const next = usageToday() + 1;
         localStorage.setItem(
@@ -152,10 +202,16 @@ export function ChatPanel({
         /* ignore */
       }
     } catch (e) {
-      setMessages((prev) => prev.slice(0, -1)); // drop the pending user msg
+      setMessages((prev) => {
+        const next = [...prev];
+        if (assistantAdded && next[next.length - 1]?.role === "assistant") next.pop();
+        if (next[next.length - 1]?.role === "user") next.pop();
+        return next;
+      });
       setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
     } finally {
       setSending(false);
+      setFirstToken(false);
     }
   }
 
@@ -170,8 +226,8 @@ export function ChatPanel({
     setMessages([]);
     setName(null);
     setNameInput("");
-    setModelInfo(null);
     setLimited(false);
+    setFirstToken(false);
     setError(null);
     setEraseOpen(false);
   }
@@ -271,9 +327,7 @@ export function ChatPanel({
             )}
             <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
               <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
-              <span className="truncate">
-                {modelInfo ? modelInfo : "Ashish's AI assistant"}
-              </span>
+              <span className="truncate">Ashish's AI assistant</span>
             </p>
           </div>
           <button
@@ -331,7 +385,7 @@ export function ChatPanel({
             )
           )}
 
-          {sending ? (
+          {sending && !firstToken ? (
             <div
               className="flex items-center gap-1.5"
               aria-label="AI is typing"
@@ -345,6 +399,12 @@ export function ChatPanel({
                 />
               ))}
             </div>
+          ) : null}
+          {sending && firstToken ? (
+            <span
+              className="inline-block h-3.5 w-[2px] animate-pulse rounded-full bg-primary/80 align-middle"
+              aria-hidden="true"
+            />
           ) : null}
 
           {error ? (
