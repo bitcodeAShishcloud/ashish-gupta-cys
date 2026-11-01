@@ -1,7 +1,7 @@
 ---
 phase: 3
 status: passed
-verified_at: 2026-11-01
+verified_at: 2026-11-02
 ---
 
 # Phase 3 Verification: Image Generation Mode in Chat
@@ -41,3 +41,17 @@ verified_at: 2026-11-01
 - **SSRF hardening (Mimosa-driven):** `fetchImageDataUrl` now requires an explicit `AI_IMAGE_HOSTS` allowlist match (no heuristics). First push attempt was blocked by the Mimosa push hook on this exact sink; hardened and re-verified (live generation still returns a data URL). Rescan reports the residual env→fetch taint as an **advisory** finding (proof gap: needs human confirmation) — the flow is gated by owner-set env config by design, same trust model as `callProvider`.
 - **Composer redesign to reference spec:** user supplied exact reference screenshots; image composer is now a single bar — textarea on top, chips row below (aspect chip with shape glyph, style chip, model chip "Sensenova U1.5 Lite" via `GET /api/image`), "Enter to generate · Shift + Enter for a new line" hint, and a round green ArrowUp generate button. Aspect/style chips open popover panels above the composer (header row + resolved values + green-selected grid), click-outside closes. Verified in browser: default chip states, active green chip states, popover render.
 - User self-tested image generation through the UI (11/30 counter, 9:16 + Photo metadata persisted).
+
+## Final Addendum (2026-11-02 — covers all post-audit changes)
+
+Changes landed after the first verification, each live-verified in this session:
+
+- **SSRF sink removed entirely** (`fb4577c`, `4ec1b0c`): no server-side fetch of provider URLs; browser renders CDN URLs directly; CSP `img-src` gains the host via `AI_IMAGE_CSP_HOSTS`/code default. Download goes through `/api/image/download?id=<uuid>` (env-pinned host, strict UUID validation, `Content-Disposition: attachment`) — verified 200 + attachment header locally and on production.
+- **Stale duplicate route removed** (`eeae93f`): `(site)/chat` vs `chat` parallel-path build failure on Vercel resolved; production build passes.
+- **Dribbble-style composer + aspect boxes** (`c88b093`): chips + popovers verified in browser; aspect sizes remapped to gateway-supported set (1024x1536 / 1536x1024) after provider rejection.
+- **Style picker thumbnails** (`0fd9df3`, `da38ba1`): 8 generated fox previews (public/style-previews/*.webp); leading-clause style prompts — output style visibly matches preview (user's Minimal generation confirmed flat-style render).
+- **Progress bar** (`51de0a7`): eased 0-90% bar captured live at 11%/54%/61%.
+- **Separate chat/image histories** (`38488b3`): verified — no cross-mode leak, migration from shared key works.
+- **Model chip hidden** (`51de0a7`) per user request.
+
+All Phase 3 deliverables (CHAT-01..04, PRES-01..02, IMAGE-01..06 equivalents) verified on localhost AND production (www.ashishcys.cyou).

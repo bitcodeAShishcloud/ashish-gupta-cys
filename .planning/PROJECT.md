@@ -1,5 +1,16 @@
 # Ashish Gupta Cyber Security Portfolio (v2)
 
+## Current State
+
+**Shipped:** v0.0.0.0.1 — Human-feel streaming chat (2026-11-02). Streaming chat (same-origin SSE), image-generation mode (aspect/style pickers, client-direct CDN rendering, same-origin downloads), Dribbble-reference chat UI, standalone app-like /chat page, site-wide design-language consistency, security review passed (0 open threats). All visitor data browser-only.
+
+## Next Milestone Goals
+
+Not decided yet — start with `/gsd-new-milestone`. Candidate directions from the UI audit + backlog: cancel button + popover Escape handling, per-mode error memory, automated test coverage for the security-critical `lib/` functions, CI pipeline.
+
+<details>
+<summary>Previous planning (pre-v0.0.0.0.1)</summary>
+
 ## What This Is
 
 Personal portfolio for Ashish Gupta (B.Tech CSE Cyber Security, NIET) built as a Next.js 14 App Router app: portfolio home, markdown blog, an AI chat assistant (server-side proxy to an OpenAI-compatible provider), and a secured admin console for provider management. Visitors interact; nothing about them is stored server-side.
@@ -77,4 +88,6 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-31 after initialization*
+*Last updated: 2026-11-02 after v0.0.0.0.1 milestone completion*
+
+</details>
