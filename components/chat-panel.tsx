@@ -5,12 +5,19 @@ import {
   ArrowRight,
   ArrowUp,
   ArrowUpRight,
+  BadgeCheck,
+  Bot,
   Check,
+  Cpu,
   Download,
   Image as ImageIcon,
   MessageSquare,
+  Monitor,
+  Palette,
   Send,
+  ShieldCheck,
   Trash2,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,17 +51,17 @@ interface Msg {
 }
 
 const SUGGESTIONS = [
-  "What is Ashish good at?",
-  "How was Poppit AI built?",
-  "How do I get started in cybersecurity?",
-  "Which certifications does Ashish have?",
+  { icon: User, text: "What is Ashish good at?" },
+  { icon: Cpu, text: "How was Poppit AI built?" },
+  { icon: ShieldCheck, text: "How do I get started in cybersecurity?" },
+  { icon: BadgeCheck, text: "Which certifications does Ashish have?" },
 ];
 
 const IMAGE_SUGGESTIONS = [
-  "A hacker's desk at night, terminal glow",
-  "A snowy fox in the mountains",
-  "Portrait of a robot detective",
-  "Neon city skyline after rain",
+  { icon: Monitor, text: "A hacker's desk at night, terminal glow" },
+  { icon: ImageIcon, text: "A red fox in a snowy forest" },
+  { icon: Palette, text: "A neon city skyline after rain" },
+  { icon: Bot, text: "A robot detective's office" },
 ];
 
 const ASPECTS = [
@@ -403,7 +410,7 @@ export function ChatPanel({
         className={
           variant === "widget"
             ? "flex h-full items-center justify-center p-5"
-            : "flex h-[calc(100vh-72px)] items-center justify-center overflow-hidden px-5 py-16"
+            : "flex h-[calc(100vh-56px)] items-center justify-center overflow-hidden px-5 py-16"
         }
       >
         <div className="w-full max-w-sm animate-fade-in-up rounded-2xl border border-border/80 bg-card/50 p-7 shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
@@ -467,7 +474,7 @@ export function ChatPanel({
       className={
         variant === "widget"
           ? "flex h-full flex-col overflow-hidden"
-          : "flex h-[calc(100vh-72px)] flex-col overflow-hidden px-5 py-8"
+          : "flex h-[calc(100vh-56px)] flex-col overflow-hidden px-5 py-6"
       }
     >
       <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
@@ -548,15 +555,30 @@ export function ChatPanel({
         >
           {visible.length === 0 ? (
             <div className="flex min-h-full flex-col">
-              {/* Claude-style hero: greeting centered in the open space */}
+              {/* Sorin-style hero: glowing orb + accented greeting */}
               <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
+                <div className="relative mb-6 h-20 w-20">
+                  <div
+                    className="absolute inset-0 rounded-full bg-primary/30 blur-2xl"
+                    aria-hidden
+                  />
+                  <img
+                    src="/favicon.webp"
+                    alt=""
+                    width={80}
+                    height={80}
+                    className="relative h-20 w-20 rounded-full object-cover ring-1 ring-white/10 shadow-[0_0_45px_hsl(var(--primary)/0.45)]"
+                  />
+                </div>
                 {variant === "widget" ? (
-                  <h2 className="font-display text-2xl font-bold tracking-tight">
-                    Hey {name}, what do you want to know?
+                  <h2 className="font-display text-xl font-bold tracking-tight">
+                    Hey, I&apos;m <span className="text-primary">{name}</span>.
+                    How can I help you today?
                   </h2>
                 ) : (
-                  <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
-                    Hey {name}, what do you want to know?
+                  <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                    Hey, I&apos;m <span className="text-primary">{name}</span>.
+                    How can I help you today?
                   </h1>
                 )}
                 <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
@@ -565,7 +587,7 @@ export function ChatPanel({
                 </p>
               </div>
               {(error || limited) ? (
-                <div className="space-y-2 pb-2">
+                <div className="space-y-2 pb-3">
                   {error ? (
                     <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
                       {error}
@@ -579,22 +601,22 @@ export function ChatPanel({
                   ) : null}
                 </div>
               ) : null}
-              {/* Suggestion cards hug the composer */}
-              <div className="grid grid-cols-1 gap-2 pb-1 sm:grid-cols-2">
+              {/* Capability pills, Dribbble-reference style */}
+              <div className="flex flex-wrap items-center justify-center gap-2 pb-3">
                 {(mode === "chat" ? SUGGESTIONS : IMAGE_SUGGESTIONS).map((s) => (
                   <button
-                    key={s}
+                    key={s.text}
                     type="button"
                     onClick={() =>
                       mode === "chat"
-                        ? send(s)
-                        : (setInput(s), textareaRef.current?.focus())
+                        ? send(s.text)
+                        : (setInput(s.text), textareaRef.current?.focus())
                     }
                     disabled={sending || generating || limited}
-                    className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/30 px-3.5 py-3 text-left text-sm text-muted-foreground transition hover:border-white/20 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
+                    className="group flex items-center gap-1.5 rounded-full border border-border/70 bg-card/40 px-3.5 py-2 text-xs text-muted-foreground transition hover:border-primary/50 hover:text-foreground disabled:opacity-50"
                   >
-                    <span className="truncate">{s}</span>
-                    <ArrowUpRight className="h-4 w-4 shrink-0 opacity-0 transition group-hover:opacity-60" />
+                    <s.icon className="h-3.5 w-3.5 opacity-70 transition group-hover:text-primary" />
+                    {s.text}
                   </button>
                 ))}
               </div>
@@ -836,7 +858,7 @@ export function ChatPanel({
             ) : null}
 
             {mode === "chat" ? (
-              <div className="flex items-end gap-2 rounded-[26px] border border-white/10 bg-white/[0.03] p-2 shadow-[0_10px_40px_rgba(0,0,0,0.45)] transition-colors focus-within:border-white/25">
+              <div className="flex items-end gap-2 rounded-[28px] border border-primary/20 bg-primary/[0.03] p-2 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] transition-colors focus-within:border-primary/40">
                 <Textarea
                   ref={textareaRef}
                   value={input}
@@ -858,14 +880,15 @@ export function ChatPanel({
                 <Button
                   onClick={() => send(input)}
                   disabled={!input.trim() || sending || generating || limited}
-                  className="h-9 w-9 shrink-0 self-end rounded-full p-0"
+                  className="h-8 shrink-0 self-end gap-1 rounded-full px-3.5"
                   aria-label="Send message"
                 >
-                  <Send className="h-4 w-4" />
+                  <span className="text-xs font-medium">Send</span>
+                  <Send className="h-3.5 w-3.5" />
                 </Button>
               </div>
             ) : (
-              <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-2 shadow-[0_10px_40px_rgba(0,0,0,0.45)] transition-colors focus-within:border-white/25">
+              <div className="rounded-[28px] border border-primary/20 bg-primary/[0.03] p-2 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] transition-colors focus-within:border-primary/40">
                 <Textarea
                   ref={textareaRef}
                   value={input}

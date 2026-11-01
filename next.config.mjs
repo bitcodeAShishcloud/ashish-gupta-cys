@@ -72,6 +72,11 @@ function buildSecurityHeaders() {
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  // Tree-shake barrel imports (lucide icons, radix primitives) so each page
+  // ships only what it renders.
+  experimental: {
+    optimizePackageImports: ["lucide-react", "@radix-ui/react-avatar", "@radix-ui/react-dialog", "@radix-ui/react-label", "@radix-ui/react-separator", "@radix-ui/react-slot", "@radix-ui/react-tabs"],
+  },
   async headers() {
     return [
       {
