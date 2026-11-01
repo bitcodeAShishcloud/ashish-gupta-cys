@@ -471,29 +471,34 @@ export function ChatPanel({
       }
     >
       <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            {variant === "widget" ? (
-              <h2 className="font-display text-base font-semibold leading-snug tracking-tight">
-                Hey {name} — what are you curious about?
-              </h2>
-            ) : (
-              <h1 className="font-display text-xl font-bold tracking-tight">
-                Hey {name} — what are you curious about?
-              </h1>
-            )}
-            <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
-              <span className="truncate">online · replies instantly</span>
-            </p>
-          </div>
+        {/* Top chrome: greeting rides in the hero when the thread is empty */}
+        <div className="flex min-h-9 items-start justify-between gap-3">
+          {visible.length > 0 ? (
+            <div className="min-w-0">
+              {variant === "widget" ? (
+                <h2 className="font-display text-base font-semibold leading-snug tracking-tight">
+                  Hey {name} — what are you curious about?
+                </h2>
+              ) : (
+                <h1 className="font-display text-xl font-bold tracking-tight">
+                  Hey {name} — what are you curious about?
+                </h1>
+              )}
+              <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+                <span className="truncate">online · replies instantly</span>
+              </p>
+            </div>
+          ) : null}
           <button
             type="button"
             onClick={() => setEraseOpen(true)}
             aria-label="Clear chat"
             title="Clear chat"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+            className={cn(
+              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground",
+              visible.length === 0 && "ml-auto",
+            )}
           >
             <Trash2 className="h-4 w-4" />
           </button>
@@ -542,11 +547,40 @@ export function ChatPanel({
           )}
         >
           {visible.length === 0 ? (
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                {mode === "chat" ? "Not sure where to start?" : "Need an idea?"}
-              </p>
-              <div className="mt-3 overflow-hidden rounded-xl border border-border/80">
+            <div className="flex min-h-full flex-col">
+              {/* Claude-style hero: greeting centered in the open space */}
+              <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
+                {variant === "widget" ? (
+                  <h2 className="font-display text-2xl font-bold tracking-tight">
+                    Hey {name}, what do you want to know?
+                  </h2>
+                ) : (
+                  <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
+                    Hey {name}, what do you want to know?
+                  </h1>
+                )}
+                <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
+                  online · replies instantly
+                </p>
+              </div>
+              {(error || limited) ? (
+                <div className="space-y-2 pb-2">
+                  {error ? (
+                    <div className="rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
+                      {error}
+                    </div>
+                  ) : null}
+                  {limited ? (
+                    <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning">
+                      Daily limit of {DAILY_LIMIT} messages reached. The counter
+                      resets tomorrow.
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+              {/* Suggestion cards hug the composer */}
+              <div className="grid grid-cols-1 gap-2 pb-1 sm:grid-cols-2">
                 {(mode === "chat" ? SUGGESTIONS : IMAGE_SUGGESTIONS).map((s) => (
                   <button
                     key={s}
@@ -557,9 +591,9 @@ export function ChatPanel({
                         : (setInput(s), textareaRef.current?.focus())
                     }
                     disabled={sending || generating || limited}
-                    className="group flex w-full items-center justify-between gap-3 border-b border-border/60 px-4 py-3 text-left text-sm text-muted-foreground transition last:border-b-0 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
+                    className="group flex w-full items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/30 px-3.5 py-3 text-left text-sm text-muted-foreground transition hover:border-white/20 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
                   >
-                    <span>{s}</span>
+                    <span className="truncate">{s}</span>
                     <ArrowUpRight className="h-4 w-4 shrink-0 opacity-0 transition group-hover:opacity-60" />
                   </button>
                 ))}
@@ -569,7 +603,7 @@ export function ChatPanel({
             visible.map((m, i) =>
               m.role === "user" ? (
                 <div key={i} className="flex justify-end">
-                  <div className="max-w-[80%] whitespace-pre-wrap rounded-xl border border-white/10 bg-white/[0.05] px-4 py-2.5 text-sm leading-relaxed">
+                  <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl bg-white/[0.07] px-4 py-2.5 text-sm leading-relaxed">
                     {m.content}
                   </div>
                 </div>
@@ -802,8 +836,9 @@ export function ChatPanel({
             ) : null}
 
             {mode === "chat" ? (
-              <div className="flex items-end gap-2 rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
+              <div className="flex items-end gap-2 rounded-[26px] border border-white/10 bg-white/[0.03] p-2 shadow-[0_10px_40px_rgba(0,0,0,0.45)] transition-colors focus-within:border-white/25">
                 <Textarea
+                  ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -823,14 +858,14 @@ export function ChatPanel({
                 <Button
                   onClick={() => send(input)}
                   disabled={!input.trim() || sending || generating || limited}
-                  className="h-11 w-11 shrink-0 rounded-xl p-0"
+                  className="h-9 w-9 shrink-0 self-end rounded-full p-0"
                   aria-label="Send message"
                 >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
+              <div className="rounded-[26px] border border-white/10 bg-white/[0.03] p-2 shadow-[0_10px_40px_rgba(0,0,0,0.45)] transition-colors focus-within:border-white/25">
                 <Textarea
                   ref={textareaRef}
                   value={input}
