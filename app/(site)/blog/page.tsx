@@ -29,16 +29,23 @@ export default function BlogPage() {
   }, [query, category]);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-16">
-      <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">
+    <div className="relative mx-auto max-w-6xl px-5 py-16">
+      {/* soft radial brand glow behind the header */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[-120px] h-[380px] w-[720px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-[110px]"
+      />
+      <p className="section-label relative font-mono text-xs uppercase tracking-widest text-primary">
         blog
       </p>
-      <h1 className="mt-1 text-3xl font-bold sm:text-4xl">Blog & Writeups</h1>
-      <p className="mt-2 max-w-2xl text-muted-foreground">
+      <h1 className="relative mt-1 font-display text-3xl font-bold tracking-tight sm:text-4xl">
+        Blog &amp; Writeups
+      </h1>
+      <p className="relative mt-2 max-w-2xl text-muted-foreground">
         Notes from the lab, projects, security topics and hands-on guides.
       </p>
 
-      <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-wrap gap-2">
           {["All", ...BLOG_CATEGORIES].map((c) => (
             <button
@@ -61,14 +68,14 @@ export default function BlogPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search posts…"
-            className="pl-9"
+            className="rounded-2xl border-border/60 bg-card/30 pl-9 shadow-[0_10px_40px_rgba(0,0,0,0.35)] transition-colors focus-visible:border-primary/40"
           />
         </div>
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((post) => (
-          <Card key={post.id} className="transition-colors hover:border-primary/40">
+          <Card key={post.id} className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_18px_44px_rgba(0,0,0,0.45)]">
             <CardContent className="p-5">
               {post.image ? (
                 // eslint-disable-next-line @next/next/no-img-element

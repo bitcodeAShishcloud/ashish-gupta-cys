@@ -47,6 +47,11 @@ export default function HomePage() {
     <div className="mx-auto max-w-[1120px] px-5">
       {/* ── Hero ── */}
       <section className="relative flex min-h-[calc(100vh-72px)] flex-col justify-center overflow-hidden py-16">
+        {/* soft radial brand glow behind the hero (CSS layer above the mesh) */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-[-140px] h-[460px] w-[820px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-[120px]"
+        />
         {/* cursor-reactive mesh, hero only, decorative, fades at edges */}
         <canvas
           id="hero-mesh"
