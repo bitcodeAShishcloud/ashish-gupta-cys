@@ -135,6 +135,7 @@ export function ChatPanel({
   const [progress, setProgress] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -551,7 +552,9 @@ export function ChatPanel({
                     key={s}
                     type="button"
                     onClick={() =>
-                      mode === "chat" ? send(s) : setInput(s)
+                      mode === "chat"
+                        ? send(s)
+                        : (setInput(s), textareaRef.current?.focus())
                     }
                     disabled={sending || generating || limited}
                     className="group flex w-full items-center justify-between gap-3 border-b border-border/60 px-4 py-3 text-left text-sm text-muted-foreground transition last:border-b-0 hover:bg-white/[0.04] hover:text-foreground disabled:opacity-50"
@@ -588,7 +591,8 @@ export function ChatPanel({
                         <img
                           src={m.image}
                           alt={m.meta?.prompt || "Generated image"}
-                          className="absolute inset-0 h-full w-full object-cover"
+                          loading="lazy"
+                          className="absolute inset-0 h-full w-full animate-fade-in object-cover"
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-muted-foreground">
@@ -679,10 +683,12 @@ export function ChatPanel({
                 className="relative overflow-hidden rounded-xl border border-border/80 bg-card/40"
                 style={aspectBox(aspect, variant)}
               >
-                <div className="absolute inset-0 animate-pulse bg-white/[0.03]" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ImageIcon className="h-8 w-8 animate-pulse text-muted-foreground/30" />
+                </div>
                 <div className="absolute inset-x-0 bottom-0 p-3">
                   <div className="mb-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                    <span>Generating image…</span>
+                    <span>Generating image… · usually a few seconds</span>
                     <span className="font-mono tabular-nums">{Math.round(progress)}%</span>
                   </div>
                   <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -826,6 +832,7 @@ export function ChatPanel({
             ) : (
               <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-2 transition-colors focus-within:border-white/25">
                 <Textarea
+                  ref={textareaRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
