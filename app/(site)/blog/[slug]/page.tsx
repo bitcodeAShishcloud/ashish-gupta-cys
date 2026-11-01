@@ -76,7 +76,12 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   };
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-16">
+    <div className="relative mx-auto max-w-3xl px-5 py-16">
+      {/* soft radial brand glow behind the header */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[-120px] h-[380px] w-[680px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-[110px]"
+      />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}

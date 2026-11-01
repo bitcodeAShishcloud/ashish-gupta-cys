@@ -9,12 +9,17 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-5 py-16">
-      <p className="section-label font-mono text-xs uppercase tracking-widest text-primary">
+    <div className="relative mx-auto max-w-3xl px-5 py-16">
+      {/* soft radial brand glow behind the header */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-[-120px] h-[380px] w-[680px] -translate-x-1/2 rounded-full bg-primary/[0.07] blur-[110px]"
+      />
+      <p className="section-label relative font-mono text-xs uppercase tracking-widest text-primary">
         legal
       </p>
-      <h1 className="mt-1 font-display text-3xl font-bold">Terms &amp; Conditions</h1>
-      <p className="mt-2 text-sm text-muted-foreground">
+      <h1 className="relative mt-1 font-display text-3xl font-bold">Terms &amp; Conditions</h1>
+      <p className="relative mt-2 text-sm text-muted-foreground">
         Last updated: February 2026
       </p>
 
