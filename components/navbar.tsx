@@ -106,17 +106,17 @@ export function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop */}
-        <nav className="hidden items-center gap-0.5 md:flex" aria-label="Primary">
+        {/* Desktop — same pill language as the chat mode switch */}
+        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
           {NAV.map((l) => (
             <Link
               key={l.label}
               href={l.href}
               className={cn(
-                "rounded-md px-2.5 py-2 text-sm font-medium transition-colors",
+                "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
                 isActive(l)
-                  ? "bg-primary/10 text-primary shadow-[0_0_12px_hsl(var(--primary)/0.15)]"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                  ? "bg-white/10 text-foreground"
+                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
               )}
             >
               {l.label}

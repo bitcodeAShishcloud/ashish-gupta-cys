@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Reveal } from "@/components/reveal";
 import { CountUp } from "@/components/count-up";
-import { HeroCard } from "@/components/hero-card";
 import { BrowserFrame } from "@/components/browser-frame";
 import { ProjectsSection } from "@/components/projects-section";
 
@@ -64,100 +63,120 @@ export default function HomePage() {
               "linear-gradient(to bottom, transparent 0%, #000 8%, #000 58%, transparent 100%)",
           }}
         />
-        <div className="relative z-10 grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
-          <div>
-            <div className="animate-fade-in-up flex flex-wrap items-center gap-3">
-              <Badge variant="success" className="font-mono">
-                <span className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-current" />
-                open to opportunities
-              </Badge>
-              <span className="font-mono text-xs text-muted-foreground">~/portfolio</span>
-            </div>
-
-            <h1
-              className="animate-fade-in-up mt-6 font-display text-4xl font-bold leading-[1.05] sm:text-6xl"
-              style={{ animationDelay: "80ms" }}
-            >
-              Hi, I&apos;m Ashish{" "}
-              <span className="grad-text">Gupta</span>
-            </h1>
-
-            <p
-              className="animate-fade-in-up mt-4 flex items-center gap-2 font-mono text-base text-foreground sm:text-lg"
-              style={{ animationDelay: "160ms" }}
-            >
-              <Terminal className="h-5 w-5 text-secondary" aria-hidden />
-              {p.role}
-              <span className="text-muted-foreground">·</span>
-              <span className="text-muted-foreground">{p.education.institution}</span>
-            </p>
-
-            <p
-              className="animate-fade-in-up mt-4 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg"
-              style={{ animationDelay: "160ms" }}
-            >
-              {p.tagline}
-            </p>
-
+        <div className="relative z-10 mx-auto max-w-3xl px-5 text-center">
+          {/* glowing profile orb — same language as the chat hero */}
+          <div
+            className="animate-fade-in-up relative mx-auto mb-8 h-28 w-28 sm:h-32 sm:w-32"
+            style={{ animationDelay: "0ms" }}
+          >
             <div
-              className="animate-fade-in-up mt-8 flex flex-wrap gap-3"
-              style={{ animationDelay: "240ms" }}
-            >
-              <Button asChild className="grad-btn">
-                <a href="#projects">
-                  <Rocket className="mr-2 h-4 w-4" /> View Projects
-                </a>
-              </Button>
-              <Button asChild variant="outline">
-                <a href={`mailto:${p.socials.email}`}>
-                  <Mail className="mr-2 h-4 w-4" /> Contact
-                </a>
-              </Button>
-              <Button asChild variant="ghost">
-                <Link href="/chat">
-                  <Terminal className="mr-2 h-4 w-4" /> Ask Ashish
-                </Link>
-              </Button>
-            </div>
-
+              aria-hidden
+              className="absolute inset-0 rounded-full bg-primary/30 blur-2xl"
+            />
+            <img
+              src="/assets/profile-photo.webp"
+              alt="Ashish Gupta"
+              width={128}
+              height={128}
+              className="relative h-28 w-28 rounded-full object-cover ring-1 ring-white/15 shadow-[0_0_60px_hsl(var(--primary)/0.45)] sm:h-32 sm:w-32"
+            />
             <div
-              className="animate-fade-in-up mt-12 grid max-w-md grid-cols-3 gap-3"
-              style={{ animationDelay: "240ms" }}
-              aria-label="Portfolio stats"
-            >
-              {p.stats.map((s) => {
-                const href =
-                  s.label === "Projects"
-                    ? "#projects"
-                    : s.label === "Internships"
-                      ? "#experience"
-                      : s.label === "Certifications"
-                        ? "#certifications"
-                        : null;
-                const cls =
-                  "grad-card block rounded-xl p-3 text-center transition-colors duration-200 hover:border-primary/50 sm:p-4";
-                const body = (
-                  <>
-                    <div className="font-mono text-xl font-bold text-foreground sm:text-2xl">
-                      <CountUp value={s.value} />
-                    </div>
-                    <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
-                  </>
-                );
-                return href ? (
-                  <a key={s.label} href={href} aria-label={`Jump to ${s.label}`} className={cls}>
-                    {body}
-                  </a>
-                ) : (
-                  <div key={s.label} className={cls}>
-                    {body}
-                  </div>
-                );
-              })}
-            </div>
+              aria-hidden
+              className="absolute -inset-2 animate-pulse rounded-full border border-primary/20"
+            />
           </div>
 
-          <HeroCard />
+          <div
+            className="animate-fade-in-up flex flex-wrap items-center justify-center gap-3"
+            style={{ animationDelay: "80ms" }}
+          >
+            <Badge variant="success" className="font-mono">
+              <span className="mr-1.5 inline-block h-2 w-2 animate-pulse rounded-full bg-current" />
+              open to opportunities
+            </Badge>
+            <span className="font-mono text-xs text-muted-foreground">~/portfolio</span>
+          </div>
+
+          <h1
+            className="animate-fade-in-up mt-6 font-display text-5xl font-bold leading-[1.05] sm:text-6xl lg:text-7xl"
+            style={{ animationDelay: "140ms" }}
+          >
+            Hi, I&apos;m <span className="grad-text">Ashish Gupta</span>
+          </h1>
+
+          <p
+            className="animate-fade-in-up mt-5 flex items-center justify-center gap-2 font-mono text-base text-foreground sm:text-lg"
+            style={{ animationDelay: "200ms" }}
+          >
+            <Terminal className="h-5 w-5 text-secondary" aria-hidden />
+            {p.role}
+            <span className="text-muted-foreground">·</span>
+            <span className="text-muted-foreground">{p.education.institution}</span>
+          </p>
+
+          <p
+            className="animate-fade-in-up mx-auto mt-4 max-w-2xl text-base leading-7 text-muted-foreground sm:text-lg"
+            style={{ animationDelay: "240ms" }}
+          >
+            {p.tagline}
+          </p>
+
+          <div
+            className="animate-fade-in-up mt-8 flex flex-wrap justify-center gap-3"
+            style={{ animationDelay: "300ms" }}
+          >
+            <Button asChild className="grad-btn">
+              <a href="#projects">
+                <Rocket className="mr-2 h-4 w-4" /> View Projects
+              </a>
+            </Button>
+            <Button asChild variant="outline">
+              <a href={`mailto:${p.socials.email}`}>
+                <Mail className="mr-2 h-4 w-4" /> Contact
+              </a>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/chat">
+                <Terminal className="mr-2 h-4 w-4" /> Ask Ashish
+              </Link>
+            </Button>
+          </div>
+
+          <div
+            className="animate-fade-in-up mx-auto mt-12 grid max-w-md grid-cols-3 gap-3"
+            style={{ animationDelay: "360ms" }}
+            aria-label="Portfolio stats"
+          >
+            {p.stats.map((s) => {
+              const href =
+                s.label === "Projects"
+                  ? "#projects"
+                  : s.label === "Internships"
+                    ? "#experience"
+                    : s.label === "Certifications"
+                      ? "#certifications"
+                      : null;
+              const cls =
+                "grad-card block rounded-xl p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 sm:p-4";
+              const body = (
+                <>
+                  <div className="font-mono text-xl font-bold text-foreground sm:text-2xl">
+                    <CountUp value={s.value} />
+                  </div>
+                  <div className="mt-1 text-xs text-muted-foreground">{s.label}</div>
+                </>
+              );
+              return href ? (
+                <a key={s.label} href={href} aria-label={`Jump to ${s.label}`} className={cls}>
+                  {body}
+                </a>
+              ) : (
+                <div key={s.label} className={cls}>
+                  {body}
+                </div>
+              );
+            })}
+          </div>
         </div>
         <Script src="/hero-mesh.js" strategy="afterInteractive" />
       </section>
