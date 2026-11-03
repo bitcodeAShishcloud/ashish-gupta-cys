@@ -291,7 +291,9 @@ export default function HomePage() {
           <SectionLabel>{"freelance work"}</SectionLabel>
           <h2 className="font-display text-3xl font-bold">Freelance Work</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-            Client properties I designed, built and shipped end-to-end solo, 2025-present. Each one has a full technical case study on the{" "}
+            Client properties and my own products, designed, built and shipped
+            end-to-end solo, 2025-present. Each client build has a full
+            technical case study on the{" "}
             <Link href="/blog" className="text-primary hover:underline">
               blog
             </Link>

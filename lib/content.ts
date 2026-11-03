@@ -646,6 +646,62 @@ Shipping a PWA without a framework forced me to think about *where* each byte ru
 `,
   },
   {
+    id: "freelance-webmaker",
+    title: "Case Study: A No-Code Website Builder That Exports Production-Ready Code",
+    excerpt:
+      "The WebMaker build — a no-code website builder: template gallery with live previews, a section-variant editor, Firebase Auth behind server session cookies, server-side-only Firestore via the Admin SDK, and a React/Tailwind ZIP export you can self-host anywhere.",
+    category: "Freelance",
+    tags: ["Next.js 16", "Firebase", "Cloudinary", "Tailwind CSS 4"],
+    date: "2026-11-03",
+    readTime: "7 min read",
+    image: "/blog-images/freelance-webmaker.webp",
+    imageWidth: 1280,
+    imageHeight: 800,
+    content: `
+I designed, built and shipped **WebMaker** ([webmaker.bond](https://www.webmaker.bond/)) solo — a no-code website builder for founders, freelancers and small teams. Pick a template, customize it live, and export **production-ready React/Next.js + Tailwind code** as a ZIP you deploy anywhere. You own the exported code — no vendor lock-in.
+
+## The Product Flow
+Five steps, end to end:
+
+1. **Create Your Account** — free signup, no credit card required.
+2. **Select a Website Template** — 10+ responsive designs across portfolios, clinics, weddings, photography, blogs and SaaS landing pages, each with a live preview.
+3. **Customize & Style Content** — section variants (V1/V2/V3), a color wheel for brand colors, typography controls, and image/logo uploads.
+4. **Configure Visibility & Cards** — toggle contact elements (phone, email) on/off and set link presets like LinkedIn, GitHub, Maps.
+5. **Export ZIP & Go Live** — download a React/Next.js code ZIP archive and self-host on Vercel, Netlify, or any node web server.
+
+## Architecture
+The builder itself is **Next.js 16 (App Router) with React 19 and TypeScript**, styled with **Tailwind CSS 4**. The template system is data-driven: every template is a configuration object — sections, variants, style tokens, visibility flags — and the editor is a form-driven UI over that schema. Templates stay consistent because rendering is one engine reading one schema, not ten hand-built pages.
+
+## Auth Without Client-Side Tokens
+Authentication is **Firebase Auth (email/password + Google)**, but no Firebase token ever lives in the browser session. Instead, sign-in exchanges the Firebase credential for an **httpOnly server session cookie**. Every privileged route resolves the session from the cookie:
+
+\`\`\`ts
+// every privileged route resolves the session from the cookie,
+// never from a client-side token
+const session = await getSessionFromCookie();
+if (!session) redirect("/login");
+\`\`\`
+
+This keeps the client bundle free of tokens, works with server components out of the box, and centralizes revocation and expiry on the server.
+
+## Server-Side-Only Data Access
+**Firestore is reached only through the Firebase Admin SDK**, inside route handlers and server code — the browser never talks to the database directly. Client-side Firestore rules are not part of the security model at all; the trust boundary is the server session, and all queries run with admin credentials on behalf of an authenticated, authorized user. One place to audit, one place to change.
+
+## Media Pipeline
+Uploaded images and logos go to **Cloudinary**, which handles storage, transformation and delivery. The editor references the hosted asset URLs, so exported templates stay static and load fast wherever they are deployed.
+
+## The Export Pipeline
+The export step serializes the template data back into real code: **optimized React components, Tailwind styling files, a sitemap, and configuration files** — a ZIP archive that runs on Vercel, Netlify, or any node web server. That last mile is the product's thesis: a builder that ends in code you own, not a closed platform you rent.
+
+## Plans & Limits
+- **Starter (free)** — 1 project, up to 3 ZIP downloads.
+- **Professional** — unlimited projects and unlimited ZIP downloads.
+
+## What I Learned
+Building a builder is a different discipline from building a site. You ship three things at once — an editor, a template schema, and an export pipeline — and they all stand on one decision: treat every section, variant, style token and visibility toggle as **data**, not markup. Get the data model right and the editor is just forms over it, and the export step is just serialization.
+`,
+  },
+  {
     id: "freelance-gupta-dental-care",
     title: "Case Study: A Local-SEO-Driven Clinic Website with a Real Booking Funnel",
     excerpt:
@@ -808,7 +864,7 @@ export const PORTFOLIO = {
   tagline:
     "Cyber Security student at NIET, building skills in network defense, ethical hacking, and digital forensics.",
   stats: [
-    { label: "Projects", value: "10" },
+    { label: "Projects", value: "11" },
     { label: "Internships", value: "2" },
     { label: "Certifications", value: "2" },
   ],
@@ -932,6 +988,18 @@ export const PORTFOLIO = {
       image: "/blog-images/freelance-sri-prayag-classes-thumb.webp",
       thumbW: 720,
       thumbH: 506,
+      freelance: true,
+    },
+    {
+      name: "WebMaker",
+      category: "Freelancing",
+      desc: "No-code website builder: 10+ responsive templates with live previews, section variants and brand style controls, exporting production-ready React/Next.js + Tailwind code as a ZIP — deploy anywhere, no vendor lock-in.",
+      tech: ["Next.js 16", "Firebase", "Cloudinary", "Tailwind CSS 4"],
+      live: "https://www.webmaker.bond/",
+      caseStudy: "freelance-webmaker",
+      image: "/blog-images/webmaker-thumb.webp",
+      thumbW: 1280,
+      thumbH: 800,
       freelance: true,
     },
     {
