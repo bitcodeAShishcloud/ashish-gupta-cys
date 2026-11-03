@@ -62,12 +62,12 @@ export function ProjectsSection({ projects }: { projects: ProjectItem[] }) {
             className={cn(
               "min-h-[44px] cursor-pointer rounded-xl border p-4 text-center transition-colors duration-200",
               active === c.name
-                ? "border-primary/60 bg-primary/10"
-                : "border-border/70 bg-card/60 hover:border-primary/40",
+                ? "border-success/70 bg-success/5 text-success"
+                : "border-border/70 bg-card/40 text-muted-foreground hover:border-white/25 hover:text-foreground",
             )}
           >
-            <div className="font-mono text-2xl font-bold text-foreground">{c.count}</div>
-            <div className="mt-1 text-xs text-muted-foreground">{c.name}</div>
+            <div className="font-mono text-2xl font-bold">{c.count}</div>
+            <div className="mt-1 text-xs">{c.name}</div>
           </button>
         ))}
       </div>
@@ -75,7 +75,7 @@ export function ProjectsSection({ projects }: { projects: ProjectItem[] }) {
       <div className="mt-6 grid gap-6 md:grid-cols-2">
         {filtered.map((proj, i) => (
           <Reveal key={proj.name} delay={(i % 2) * 80}>
-            <Card className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.12)]">
+            <Card className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_0_44px_hsl(var(--primary)/0.10)]">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <h3 className="text-lg font-semibold">{proj.name}</h3>

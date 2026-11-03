@@ -45,7 +45,7 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-[1120px] px-5">
       {/* ── Hero ── */}
-      <section className="relative flex min-h-[calc(100vh-72px)] flex-col justify-center overflow-hidden py-16">
+      <section className="relative flex min-h-[calc(100vh-56px)] flex-col justify-center overflow-hidden py-16">
         {/* soft radial brand glow behind the hero (CSS layer above the mesh) */}
         <div
           aria-hidden
@@ -122,22 +122,25 @@ export default function HomePage() {
           </p>
 
           <div
-            className="animate-fade-in-up mt-8 flex flex-wrap justify-center gap-3"
+            className="animate-fade-in-up mt-8 flex flex-wrap items-center justify-center gap-3"
             style={{ animationDelay: "300ms" }}
           >
-            <Button asChild className="grad-btn">
+            <Button
+              asChild
+              className="grad-btn rounded-full px-6 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)]"
+            >
               <a href="#projects">
                 <Rocket className="mr-2 h-4 w-4" /> View Projects
               </a>
             </Button>
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" className="rounded-full px-5">
               <a href={`mailto:${p.socials.email}`}>
                 <Mail className="mr-2 h-4 w-4" /> Contact
               </a>
             </Button>
-            <Button asChild variant="ghost">
+            <Button asChild variant="success" className="rounded-full px-5">
               <Link href="/chat">
-                <Terminal className="mr-2 h-4 w-4" /> Ask Ashish
+                <Terminal className="mr-2 h-4 w-4" aria-hidden /> Ask Ashish
               </Link>
             </Button>
           </div>
@@ -157,7 +160,7 @@ export default function HomePage() {
                       ? "#certifications"
                       : null;
               const cls =
-                "grad-card block rounded-xl p-3 text-center transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 sm:p-4";
+                "flex flex-col items-center justify-center rounded-full border border-border/70 bg-card/40 px-4 py-3 transition hover:border-primary/50 sm:px-5";
               const body = (
                 <>
                   <div className="font-mono text-xl font-bold text-foreground sm:text-2xl">
@@ -297,7 +300,7 @@ export default function HomePage() {
           <div className="mt-8 grid gap-6 md:grid-cols-2">
             {freelance.map((proj, i) => (
               <Reveal key={proj.name} delay={(i % 2) * 80}>
-                <Card className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_0_24px_hsl(var(--primary)/0.12)]">
+                <Card className="group h-full transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_0_44px_hsl(var(--primary)/0.10)]">
                   <CardContent className="p-4 sm:p-5">
                     <BrowserFrame
                       src={proj.image ?? `/blog-images/${proj.caseStudy}.webp`}
@@ -474,7 +477,7 @@ export default function HomePage() {
       {/* ── Contact CTA band ── */}
       <section id="contact" className="scroll-mt-24 py-16">
         <Reveal>
-          <div className="grad-card rounded-2xl p-8 text-center sm:p-12">
+          <div className="rounded-3xl border border-primary/20 bg-primary/[0.03] p-8 text-center shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] sm:p-12">
             <SectionLabel>{"get in touch"}</SectionLabel>
             <h2 className="mt-2 font-display text-2xl font-bold sm:text-3xl">
               Want to collaborate or have a question?
@@ -483,13 +486,16 @@ export default function HomePage() {
               Reach out by email, connect on LinkedIn, or ask me anything
               through the chat — projects, skills, security, all fair game.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-3">
-              <Button asChild className="grad-btn">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+              <Button
+                asChild
+                className="grad-btn rounded-full px-6 shadow-[0_0_60px_hsl(var(--primary)/0.10)]"
+              >
                 <a href={`mailto:${p.socials.email}`}>
                   <Mail className="mr-2 h-4 w-4" aria-hidden /> Email Me
                 </a>
               </Button>
-              <Button asChild variant="outline">
+              <Button asChild variant="outline" className="rounded-full px-5">
                 <a
                   href={p.socials.linkedin}
                   target="_blank"
@@ -498,7 +504,7 @@ export default function HomePage() {
                   <BadgeCheck className="mr-2 h-4 w-4" aria-hidden /> LinkedIn
                 </a>
               </Button>
-              <Button asChild variant="ghost">
+              <Button asChild variant="success" className="rounded-full px-5">
                 <Link href="/chat">
                   <Terminal className="mr-2 h-4 w-4" aria-hidden /> Ask Ashish
                 </Link>

@@ -17,7 +17,7 @@ export default function SiteLayout({ children }: { children: React.ReactNode }) 
         Skip to content
       </a>
       <Navbar />
-      <main id="main" className="relative z-0 min-h-[calc(100vh-72px)] pt-[72px]">
+      <main id="main" className="relative z-0 min-h-[calc(100vh-56px)] pt-14">
         {children}
       </main>
       <Footer />

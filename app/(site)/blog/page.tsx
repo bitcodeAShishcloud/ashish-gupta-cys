@@ -46,16 +46,17 @@ export default function BlogPage() {
       </p>
 
       <div className="relative mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1">
           {["All", ...BLOG_CATEGORIES].map((c) => (
             <button
               key={c}
               onClick={() => setCategory(c)}
+              aria-pressed={category === c}
               className={cn(
-                "rounded-full border px-3 py-1.5 font-mono text-xs transition",
+                "rounded-full px-4 py-1.5 font-mono text-xs font-medium transition",
                 category === c
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border/60 text-muted-foreground hover:border-primary/40",
+                  ? "bg-success/15 text-success"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
               {c}
@@ -68,14 +69,14 @@ export default function BlogPage() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search posts…"
-            className="rounded-2xl border-border/60 bg-card/30 pl-9 shadow-[0_10px_40px_rgba(0,0,0,0.35)] transition-colors focus-visible:border-primary/40"
+            className="rounded-2xl border-border/60 bg-card/30 pl-9 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] transition-colors focus-visible:border-primary/40"
           />
         </div>
       </div>
 
       <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {filtered.map((post) => (
-          <Card key={post.id} className="group transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-[0_18px_44px_rgba(0,0,0,0.45)]">
+          <Card key={post.id} className="group transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-[0_0_44px_hsl(var(--primary)/0.10)]">
             <CardContent className="p-5">
               {post.image ? (
                 // eslint-disable-next-line @next/next/no-img-element

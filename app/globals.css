@@ -57,7 +57,7 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 88px; /* clear the sticky nav for #section jumps */
+    scroll-padding-top: 72px; /* clear the 56px top bar for #section jumps */
   }
 
   body {

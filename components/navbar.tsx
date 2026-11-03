@@ -24,18 +24,24 @@ const ROUTE_LINKS: NavItem[] = [
   { href: "/chat", label: "Chat" },
 ];
 
-const NAV: NavItem[] = [
-  { href: "/", label: "Home" },
-  ...SECTION_LINKS,
-  ...ROUTE_LINKS,
-];
-
+/*
+ * Slim 56px top bar in the chat page's design language (same favicon +
+ * mono brand as /chat's own header). Section pills only show on home,
+ * where the scroll-spy targets live; Blog/Chat pills show everywhere.
+ */
 export function Navbar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  const isHome = pathname === "/";
+  const NAV: NavItem[] = [
+    { href: "/", label: "Home" },
+    ...(isHome ? SECTION_LINKS : []),
+    ...ROUTE_LINKS,
+  ];
 
   /* Drawer accessibility: Escape closes, focus moves to the first link when
      the drawer opens and returns to the toggle when it closes, and page
@@ -61,7 +67,7 @@ export function Navbar() {
 
   // Scrollspy, only meaningful on the home page (where the #sections live).
   useEffect(() => {
-    if (pathname !== "/") {
+    if (!isHome) {
       setActiveSection(null);
       return;
     }
@@ -78,47 +84,48 @@ export function Navbar() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [pathname]);
+  }, [isHome]);
 
-  const isActive = (l: (typeof NAV)[number]): boolean => {
+  const isActive = (l: NavItem): boolean => {
     if (l.id) return activeSection === l.id;
-    if (l.href === "/") return pathname === "/" && !activeSection;
+    if (l.href === "/") return isHome && !activeSection;
     return pathname.startsWith(l.href);
   };
 
+  /* Pill styling — same language as the chat mode switch. */
+  const pillCls = (l: NavItem) =>
+    cn(
+      "flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition",
+      isActive(l)
+        ? "bg-white/10 text-foreground"
+        : "text-muted-foreground hover:text-foreground",
+    );
+
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border/40 bg-background/70 backdrop-blur-xl">
-      <div className="mx-auto flex h-[72px] max-w-[1120px] items-center justify-between px-5">
+      <div className="mx-auto flex h-14 max-w-[1120px] items-center justify-between px-5">
         <Link
           href="/"
-          className="flex items-center gap-2 font-mono text-lg font-bold tracking-tight"
+          className="flex items-center gap-2"
+          aria-label="Ashish Gupta — home"
         >
           <img
             src="/favicon.webp"
             alt="Ashish Gupta logo"
-            width={32}
-            height={32}
-            className="h-8 w-8 rounded-lg object-cover"
+            width={28}
+            height={28}
+            className="h-7 w-7 rounded-full object-cover ring-1 ring-white/10"
           />
-          <span>
-            Ashish<span className="text-primary">_</span>
-            <span className="grad-text">Gupta</span>
-          </span>
+          <span className="font-mono text-sm font-bold">Ashish_Gupta</span>
         </Link>
 
-        {/* Desktop — same pill language as the chat mode switch */}
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Primary">
+        {/* Desktop — chat mode-switch pill group */}
+        <nav
+          className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/[0.03] p-1 md:flex"
+          aria-label="Primary"
+        >
           {NAV.map((l) => (
-            <Link
-              key={l.label}
-              href={l.href}
-              className={cn(
-                "rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors",
-                isActive(l)
-                  ? "bg-white/10 text-foreground"
-                  : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
-              )}
-            >
+            <Link key={l.label} href={l.href} className={pillCls(l)}>
               {l.label}
             </Link>
           ))}
@@ -136,8 +143,6 @@ export function Navbar() {
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
       </div>
-      {/* gradient hairline */}
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/70 to-transparent" />
 
       {/* Mobile menu */}
       {open ? (
@@ -158,9 +163,9 @@ export function Navbar() {
                   requestAnimationFrame(() => toggleRef.current?.focus());
                 }}
                 className={cn(
-                  "flex min-h-[44px] items-center rounded-md px-3 py-2.5 text-sm font-medium",
+                  "flex min-h-[44px] items-center rounded-full px-4 py-2.5 text-sm font-medium",
                   isActive(l)
-                    ? "bg-primary/10 text-primary"
+                    ? "bg-success/10 text-success"
                     : "text-muted-foreground hover:bg-accent/50",
                 )}
               >

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { PORTFOLIO } from "@/lib/content";
 import { Github, Linkedin, Mail, FileText } from "lucide-react";
 
@@ -10,8 +9,6 @@ import { Github, Linkedin, Mail, FileText } from "lucide-react";
  * chat page's footer: © + legal links left, quiet social icons right.
  */
 export function Footer() {
-  const pathname = usePathname();
-  const slim = pathname === "/chat";
   const s = PORTFOLIO.socials;
   const items = [
     { href: s.github, icon: Github, label: "GitHub" },
@@ -21,18 +18,11 @@ export function Footer() {
   ];
 
   return (
-    <footer className="border-t border-border/60 bg-background/60">
-      <div
-        className={
-          slim
-            ? "mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-2.5"
-            : "mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3.5"
-        }
-      >
+    <footer className="border-t border-border/40 bg-background/60">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-5 py-3">
         <p className="truncate text-xs text-muted-foreground">
           © {new Date().getFullYear()}{" "}
           <span className="font-mono text-foreground">{PORTFOLIO.name}</span>
-          {slim ? null : <span> · Cyber Security</span>}
           <span className="mx-1.5">·</span>
           <Link href="/privacy" className="transition-colors hover:text-foreground">
             Privacy
