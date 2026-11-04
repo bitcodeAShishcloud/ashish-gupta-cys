@@ -53,13 +53,19 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| (populated by roadmapper) | — | — |
+| PROV-01 | Phase 4 | Pending |
+| PROV-02 | Phase 4 | Pending |
+| PROV-03 | Phase 4 | Pending |
+| DEPL-01 | Phase 5 | Pending |
+| DEPL-02 | Phase 5 | Pending |
+| DEPL-03 | Phase 5 | Pending |
+| SEC-01 | Phase 5 | Pending |
 
 **Coverage:**
 - v1 requirements: 7 total
-- Mapped to phases: 0
-- Unmapped: 7 ⚠️
+- Mapped to phases: 7
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-11-04*
-*Last updated: 2026-11-04 after initial definition*
+*Last updated: 2026-11-04 — traceability populated by roadmap creation (v0.0.0.0.2, Phases 4-5)*
