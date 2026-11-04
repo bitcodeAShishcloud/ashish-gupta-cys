@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v0.0.0.0.1 Human-feel streaming chat** — Phases 1-3 (shipped 2026-11-02 — full details in [milestones/v0.0.0.0.1-ROADMAP.md](milestones/v0.0.0.0.1-ROADMAP.md))
-- 🚧 **v0.0.0.0.2 Multi-provider chat + production deploy** — Phases 4-5 (in progress)
+- 🚧 **v0.0.0.0.2 Multi-provider chat + production deploy** — Phases 4-6 (in progress)
 
 ## Phases
 
@@ -11,6 +11,7 @@
 
 - [ ] **Phase 4: Multi-Provider Chat with Automatic Failover** - Two interchangeable providers with config-only switching, one-retry automatic failover, and a multi-provider admin console
 - [ ] **Phase 5: Production Deploy on Vercel + Key Hygiene** - Site live on Vercel with every secret in env vars, image mode verified in production, keys rotated and kept out of the repo
+- [ ] **Phase 6: Chat Access Simplification** - Chat opens straight to the composer (no name gate) and the daily limit rises to 50 per device — all client-side, same approach as v0.0.0.0.1
 
 <details>
 <summary>✅ v0.0.0.0.1 Human-feel streaming chat (Phases 1-3) — SHIPPED 2026-11-02</summary>
@@ -54,10 +55,20 @@ Full phase details: [milestones/v0.0.0.0.1-ROADMAP.md](milestones/v0.0.0.0.1-ROA
   4. No API key appears in the repo, planning docs, or chat transcripts; keys pasted into chat are rotated; `.env.local` stays gitignored
 **Plans**: TBD
 
+### Phase 6: Chat Access Simplification
+**Goal**: Visitors land straight in the chat — no name prompt — and get 50 chats per day per device, with every byte of visitor data still living only in the browser.
+**Depends on**: Nothing (independent of Phases 4-5; touches only the chat client component)
+**Requirements**: CHAT-04, CHAT-05
+**Success Criteria** (what must be TRUE):
+  1. Opening `/chat` or the floating widget goes straight to the composer — no name screen, no friction
+  2. The daily limit is 50 per device (client-side localStorage counter) with the existing limit-reached state at 50
+  3. Returning visitors who stored a name still see it used gracefully; history, erase-data flow and streaming behavior are unchanged; nothing server-side is added
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 4 → 5
+Phases execute in numeric order: 4 → 5 → 6
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -66,3 +77,4 @@ Phases execute in numeric order: 4 → 5
 | 3. Image Generation Mode in Chat | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
 | 4. Multi-Provider Chat with Automatic Failover | v0.0.0.0.2 | 0/TBD | Not started | - |
 | 5. Production Deploy on Vercel + Key Hygiene | v0.0.0.0.2 | 0/TBD | Not started | - |
+| 6. Chat Access Simplification | v0.0.0.0.2 | 0/TBD | Not started | - |

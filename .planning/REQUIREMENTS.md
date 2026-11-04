@@ -15,13 +15,18 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Production deploy
 
-- [ ] **DEPL-01**: Site deploys to Vercel and the chat works in production (streaming SSE, name gate, daily limit intact)
+- [ ] **DEPL-01**: Site deploys to Vercel and the chat works in production (streaming SSE and the daily limit working as shipped by Phases 4/6)
 - [ ] **DEPL-02**: All production secrets live in Vercel env vars — `AI_PROVIDERS_JSON` (both providers), `AI_ALLOWED_HOSTS` (both hosts), `AI_IMAGE_CSP_HOSTS`, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
 - [ ] **DEPL-03**: Image-generation mode works on the deployed site (client-direct CDN rendering + download proxy with the CSP host env set)
 
 ### Security hygiene
 
 - [ ] **SEC-01**: No API key in the repo, planning docs, or chat transcripts; keys pasted into chat are rotated; `.env.local` stays gitignored
+
+### Chat access
+
+- [ ] **CHAT-04**: Visitor can start chatting immediately — no name prompt before the composer (chat page and widget both)
+- [ ] **CHAT-05**: Visitor gets 50 chats per day per device — client-side counter in localStorage, same approach as v0.0.0.0.1 (no server-side tracking)
 
 ## v2 Requirements
 
@@ -46,6 +51,7 @@ Deferred to future releases. Tracked but not in current roadmap.
 | Provider selection UI for visitors | Public chat stays provider-agnostic by design (de-branded presentation) |
 | Database / server-side chat history | Product decision: everything stays in the visitor's browser |
 | Automatic multi-provider load balancing | One retry-failover is enough for a portfolio site; load balancing adds failure modes without user value |
+| Server-side per-user daily quotas | Would add server state + identity; privacy model keeps all visitor data client-side (per-device limit only) |
 
 ## Traceability
 
@@ -60,12 +66,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DEPL-02 | Phase 5 | Pending |
 | DEPL-03 | Phase 5 | Pending |
 | SEC-01 | Phase 5 | Pending |
+| CHAT-04 | Phase 6 | Pending |
+| CHAT-05 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 7 total
-- Mapped to phases: 7
+- v1 requirements: 9 total
+- Mapped to phases: 9
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-11-04*
-*Last updated: 2026-11-04 — traceability populated by roadmap creation (v0.0.0.0.2, Phases 4-5)*
+*Last updated: 2026-11-04 — Phase 6 (chat access) added to milestone scope*
