@@ -4,9 +4,17 @@
 
 **Shipped:** v0.0.0.0.1 — Human-feel streaming chat (2026-11-02). Streaming chat (same-origin SSE), image-generation mode (aspect/style pickers, client-direct CDN rendering, same-origin downloads), Dribbble-reference chat UI, standalone app-like /chat page, site-wide design-language consistency, security review passed (0 open threats). All visitor data browser-only.
 
-## Next Milestone Goals
+## Current Milestone: v0.0.0.0.2 Multi-provider chat + production deploy
 
-Not decided yet — start with `/gsd-new-milestone`. Candidate directions from the UI audit + backlog: cancel button + popover Escape handling, per-mode error memory, automated test coverage for the security-critical `lib/` functions, CI pipeline.
+**Goal:** Run the chat on two interchangeable AI providers with automatic failover, and ship the site live on Vercel with every secret configured.
+
+**Target features:**
+- Top-Tools-AI as a second chat provider (OpenAI-compatible; key verified, models live-tested)
+- Automatic failover to the backup provider when the active one errors or times out
+- Vercel production environment fully configured (`AI_PROVIDERS_JSON`, `AI_ALLOWED_HOSTS`, `AI_IMAGE_CSP_HOSTS`) and deployed
+- Rotated API keys, stored only in Vercel env vars / gitignored `.env.local`
+
+**Deferred backlog (future milestones):** cancel button + popover Escape handling, per-mode error memory, automated test coverage for the security-critical `lib/` functions, CI pipeline.
 
 <details>
 <summary>Previous planning (pre-v0.0.0.0.1)</summary>
@@ -32,9 +40,7 @@ Inferred from existing code (see `.planning/codebase/`):
 - ✓ Admin console: captcha-protected login, provider status, live provider test, env generator — existing
 - ✓ Security headers (CSP, HSTS, frame-deny) on every route — existing
 
-### Active
-
-Current milestone scope (user-defined 2026-10-31):
+### Active — v0.0.0.0.1 (shipped 2026-11-02)
 
 - [ ] Assistant replies stream progressively into the chat (visible token-by-token output)
 - [ ] Chat UI never displays the model or provider name to visitors
@@ -88,6 +94,6 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-02 after v0.0.0.0.1 milestone completion*
+*Last updated: 2026-11-04 — milestone v0.0.0.0.2 started*
 
 </details>

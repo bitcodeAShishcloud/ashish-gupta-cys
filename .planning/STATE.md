@@ -1,3 +1,18 @@
+---
+gsd_state_version: "1.0"
+milestone: v0.0.0.0.2
+milestone_name: Multi-provider chat + production deploy
+status: planning
+last_updated: "2026-11-04T00:22:32.361Z"
+last_activity: 2026-11-04
+progress:
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
+---
+
 # Project State
 
 **Milestone:** v1 — Human-feel streaming chat (+ Phase 3 image mode)
@@ -38,3 +53,10 @@ See: .planning/PROJECT.md (updated 2026-10-31)
 ## Deferred Verification
 
 (none)
+
+## Current Position
+
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-11-04 — Milestone v0.0.0.0.2 started
