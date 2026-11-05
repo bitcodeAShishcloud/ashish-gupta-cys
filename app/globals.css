@@ -112,19 +112,27 @@
     -webkit-mask-image: radial-gradient(ellipse 120% 90% at 50% 0%, #000 55%, transparent 100%);
   }
 
-  /* ── One-time reveal (driven by IntersectionObserver; GPU-only) ── */
+  /* ── One-time reveal (driven by IntersectionObserver; GPU-only) ──
+       Hidden state only applies once <html> carries `.js` (set by an inline
+       script before first paint). Without JS the blocks stay fully visible —
+       a crawler or a broken bundle must never be served a blank page. */
   .reveal {
+    opacity: 1;
+    transform: none;
+  }
+  .js .reveal {
     opacity: 0;
     transform: translateY(14px);
     transition: opacity 0.3s cubic-bezier(0.2, 0.7, 0.3, 1), transform 0.3s cubic-bezier(0.2, 0.7, 0.3, 1);
     will-change: opacity, transform;
   }
-  .reveal.is-visible {
+  .js .reveal.is-visible {
     opacity: 1;
     transform: none;
   }
   @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
+    .reveal,
+    .js .reveal { opacity: 1; transform: none; transition: none; }
   }
 
   /* ── Grading helpers — white → grey only (monochrome) ── */

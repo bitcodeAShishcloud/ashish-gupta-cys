@@ -181,7 +181,7 @@ export default function HomePage() {
             })}
           </div>
         </div>
-        <Script src="/hero-mesh.js" strategy="afterInteractive" />
+        <Script src="/hero-mesh.js" strategy="lazyOnload" />
       </section>
 
       {/* ── About + Education ── */}

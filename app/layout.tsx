@@ -97,12 +97,31 @@ export const viewport: Viewport = {
 const personJsonLd = `{"@context":"https://schema.org","@type":"Person","name":"Ashish Gupta","jobTitle":"Cyber Security Student","url":"https://www.ashishcys.cyou","sameAs":["https://github.com/bitcodeAShishcloud","https://www.linkedin.com/in/ashish-gupta-037973259/"],"alumniOf":{"@type":"CollegeOrUniversity","name":"NIET, Greater Noida"}}`;
 
 /*
+ * Pre-paint critical styles. The bundled stylesheet is a separate request, so
+ * without this the browser paints its default white canvas first — the white
+ * flash visitors see on a cold load. Inlined here it lands with the HTML.
+ * CSP allows it via style-src 'unsafe-inline'.
+ */
+const criticalCss = `html,body{background:#05070A;color:#F5F5F7;margin:0}`;
+
+/*
+ * Sets `js` on <html> before first paint so the scroll-reveal animation can
+ * start from opacity:0 without a visible flash. If this never runs (JS off,
+ * crawler, broken bundle) the `.reveal` blocks stay fully visible.
+ */
+const jsFlag = `document.documentElement.classList.add('js')`;
+
+/*
  * Root layout: html/body + the pure-CSS grid background (no canvas, no images).
  * Each route group (site / admin) adds its own chrome.
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <style dangerouslySetInnerHTML={{ __html: criticalCss }} />
+        <script dangerouslySetInnerHTML={{ __html: jsFlag }} />
+      </head>
       <body
         className={`${inter.variable} ${spaceGrotesk.variable} ${jetBrainsMono.variable} min-h-screen overflow-x-hidden bg-background font-sans text-foreground antialiased`}
       >

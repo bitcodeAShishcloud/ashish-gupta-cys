@@ -19,7 +19,9 @@ export function CountUp({
   const ref = useRef<HTMLSpanElement>(null);
   const suffix = value.length > 1 && !/^\d+$/.test(value) ? value.slice(-1) : "";
   const target = parseInt(value, 10);
-  const [display, setDisplay] = useState(0);
+  // Server + first paint render the real number; the effect below only replays
+  // it as animation. Never ship a bare "0" the visitor could mistake for data.
+  const [display, setDisplay] = useState(Number.isNaN(target) ? 0 : target);
 
   useEffect(() => {
     const el = ref.current;
@@ -46,6 +48,8 @@ export function CountUp({
             setDisplay(Math.round(target * (1 - Math.pow(1 - p, 3))));
             if (p < 1) raf = requestAnimationFrame(tick);
           };
+          // Start from 0 only once the element is actually on screen.
+          setDisplay(0);
           raf = requestAnimationFrame(tick);
           io.disconnect();
         });
