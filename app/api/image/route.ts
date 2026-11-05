@@ -18,6 +18,12 @@ const MAX_PROMPT = 1000;
 
 export const dynamic = "force-dynamic";
 
+/* Image generation takes 60-90s server-side. Without an explicit ceiling
+ * Vercel kills the invocation at its default (60s on older Hobby plans),
+ * surfacing as a 504 long before the picture exists. The gateway's own
+ * abort deadline in lib/providers stays at 120s, so this must match it. */
+export const maxDuration = 300;
+
 /* Only sizes the gateway actually supports (it rejects anything else).
  * 3:4/4:3 have no exact match — nearest portrait/landscape wins. */
 const ASPECT_SIZES: Record<string, string> = {

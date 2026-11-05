@@ -36,6 +36,10 @@ Guidelines:
 
 export const dynamic = "force-dynamic";
 
+/* The provider stream runs to a 120s abort deadline in lib/providers; give
+ * Vercel room for it instead of letting the default kill a long reply. */
+export const maxDuration = 180;
+
 const SSE_HEADERS = {
   "Content-Type": "text/event-stream; charset=utf-8",
   "Cache-Control": "no-cache, no-transform",

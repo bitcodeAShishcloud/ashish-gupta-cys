@@ -11,6 +11,9 @@ import { imageCdnHost } from "@/lib/providers";
 
 export const dynamic = "force-dynamic";
 
+/* Downloading a multi-MB PNG from the provider CDN needs headroom too. */
+export const maxDuration = 300;
+
 export async function GET(req: NextRequest) {
   if (!rateLimit("image-dl:" + clientIp(req), 20)) {
     return NextResponse.json(
