@@ -29,7 +29,7 @@ export default function BlogPage() {
   }, [query, category]);
 
   return (
-    <div className="relative mx-auto max-w-6xl px-5 py-16">
+    <div className="relative mx-auto max-w-6xl overflow-x-clip px-5 py-16">
       {/* soft radial brand glow behind the header */}
       <div
         aria-hidden
@@ -53,7 +53,7 @@ export default function BlogPage() {
               onClick={() => setCategory(c)}
               aria-pressed={category === c}
               className={cn(
-                "rounded-full px-4 py-1.5 font-mono text-xs font-medium transition",
+                "min-h-[44px] rounded-full px-4 py-2.5 font-mono text-xs font-medium transition",
                 category === c
                   ? "bg-success/15 text-success"
                   : "text-muted-foreground hover:text-foreground",

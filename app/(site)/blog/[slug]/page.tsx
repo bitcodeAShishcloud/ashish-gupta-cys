@@ -76,7 +76,7 @@ export default function BlogPostPage({ params }: { params: { slug: string } }) {
   };
 
   return (
-    <div className="relative mx-auto max-w-3xl px-5 py-16">
+    <div className="relative mx-auto max-w-3xl overflow-x-clip px-5 py-16">
       {/* soft radial brand glow behind the header */}
       <div
         aria-hidden

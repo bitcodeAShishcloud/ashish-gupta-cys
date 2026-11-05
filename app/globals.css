@@ -223,13 +223,17 @@
 .markdown-body ol { @apply list-decimal space-y-1 pl-6; }
 .markdown-body code {
   @apply mono rounded bg-primary/10 px-1.5 py-0.5 text-[13px] text-foreground;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .markdown-body pre {
   @apply mono overflow-x-auto rounded-lg border border-border bg-black/50 p-4 text-[13px] leading-6;
+  max-width: 100%;
 }
-.markdown-body pre code { @apply bg-transparent p-0 text-foreground; }
+.markdown-body pre code { @apply bg-transparent p-0 text-foreground; overflow-wrap: normal; word-break: normal; }
 .markdown-body a { @apply text-primary underline underline-offset-4 hover:no-underline; }
-.markdown-body table { @apply w-full border-collapse text-sm; }
+/* Tables: wrap in a scrollable block so columns never squeeze the page */
+.markdown-body table { @apply w-full border-collapse text-sm; display: block; overflow-x: auto; }
 .markdown-body th, .markdown-body td { @apply border border-border px-3 py-2 text-left; }
 .markdown-body th { @apply bg-muted/50 font-semibold; }
 .markdown-body blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
