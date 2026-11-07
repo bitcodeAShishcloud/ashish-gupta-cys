@@ -285,7 +285,11 @@ export default function AdminPage() {
                               <Badge variant="success" className="text-[10px]">
                                 active
                               </Badge>
-                            ) : null}
+                            ) : (
+                              <Badge variant="outline" className="font-mono text-[10px]">
+                                standby
+                              </Badge>
+                            )}
                           </div>
                           <span className="font-mono text-[11px] text-muted-foreground">
                             {p.keyPreview || "no key"}
