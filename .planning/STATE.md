@@ -4,18 +4,18 @@ milestone: v0.0.0.0.2
 milestone_name: Multi-provider chat + production deploy
 current_phase: 4
 current_phase_name: Multi-Provider Chat with Automatic Failover
-status: executing
-stopped_at: "Completed 04-01-PLAN.md"
-last_updated: "2026-11-07T07:15:20Z"
+status: verifying
+stopped_at: Completed 04-02-PLAN.md
+last_updated: "2026-11-07T07:45:29.569Z"
 last_activity: 2026-11-07
-last_activity_desc: "04-01 server failover core executed (PROV-01, PROV-02)"
-state_head: 2a218c7acf47f868aacda1992c30b17b866e1b55
+last_activity_desc: 04-02 multi-provider admin console executed (PROV-03)
+state_head: e135a2bcd99c6a1bb12640a86e98d55c8f2517e2
 progress:
   total_phases: 3
   completed_phases: 0
   total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_plans: 2
+  percent: 0
 ---
 
 # Project State
@@ -32,18 +32,18 @@ See: .planning/PROJECT.md (updated 2026-11-04)
 
 ## Current Position
 
-Phase: 4 (Multi-Provider Chat with Automatic Failover) — EXECUTING
+Phase: 4 (Multi-Provider Chat with Automatic Failover) — READY FOR VERIFICATION
 Plan: 2 of 2
-Status: Executing Phase 4
-Last activity: 2026-11-07 — 04-01 server failover core executed (PROV-01, PROV-02)
+Status: Phase complete — ready for verification
+Last activity: 2026-11-07 — 04-02 multi-provider admin console executed (PROV-03)
 
-Progress: [█████░░░░░] 50%
+Progress: [░░░░░░░░░░] 0%
 
 ## Milestone Progress
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 4 | Multi-Provider Chat with Automatic Failover | In Progress (1/2 plans) |
+| 4 | Multi-Provider Chat with Automatic Failover | Executed (2/2 plans) — ready for verification |
 | 5 | Production Deploy on Vercel + Key Hygiene | Not started |
 
 (Phases 1-3 of v0.0.0.0.1 shipped 2026-11-02 — see MILESTONES.md)
@@ -51,8 +51,8 @@ Progress: [█████░░░░░] 50%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4 (3 in v0.0.0.0.1 + 04-01)
-- Average duration: —
+- Total plans completed: 5 (3 in v0.0.0.0.1 + 04-01, 04-02)
+- Average duration: ~20 min (v0.0.0.0.2 phase-4 plans)
 - Total execution time: —
 
 **By Phase:**
@@ -60,7 +60,12 @@ Progress: [█████░░░░░] 50%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1-3 (v0.0.0.0.1) | 3/3 | 3-day milestone | — |
-| 4 | 1/2 (04-01) | 29 min | 29 min |
+| 4 | 2/2 (04-01, 04-02) | 40 min | 20 min |
+**Per-Plan Metrics:**
+
+| Plan | Duration | Tasks | Files |
+|------|----------|-------|-------|
+| Phase 4 P02 | 11 min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -76,6 +81,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - candidate[0] is exactly `getActiveProvider()`'s return (incl. silent fallback) so failover order and the admin active badge can never diverge (04-01)
 - Probe failure advances to the next candidate — no same-candidate buffered retry (doubles latency of a likely-repeat failure) (04-01)
 - Failover warn lines go through the multi-key `redact()` closure so no candidate's apiKey can reach server logs (04-01)
+- [Phase 4]: Per-provider admin test targets any configured provider via optional id on the existing POST /api/providers (no new endpoint) — 04-CONTEXT Admin console decision; first-id-match wins, absent id keeps active-provider byte-compat, 404 provider_not_found strictly post-auth
+- [Phase 4]: Test-failure detail redacts the TARGET provider's apiKey (300-char cap kept); admin result lines are per-row with neutral success tone per 04-UI-SPEC — Closes T-04-06 (standby test would have leaked its key under the old active-key redaction); only the active row carries color
 
 ### Pending Todos
 
@@ -96,6 +103,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-11-07T07:15:20Z
-Stopped at: Completed 04-01-PLAN.md
+Last session: 2026-11-07T07:45:29.534Z
+Stopped at: Completed 04-02-PLAN.md
 Resume file: None
