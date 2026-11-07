@@ -29,3 +29,15 @@
 - tsc + build clean; E2E: create → poll → completed URL renders in `<video>` (CSP clean);
   reload mid-generation resumes polling; history persists; usage counts once; chat/image modes untouched.
 - No key material outside .env.local.
+
+## E2E VERIFIED (2026-11-08, live)
+
+- Task `task_6mlJEWSOGtQNBxIRlBcA7fhrl6SdowUD` ("paper boat at sunrise", 16:9, 4s):
+  create → poll timeline 0% → 10% → 70% → 100% completed in ~6.5 min.
+- Output: `https://platform-outputs.agnes-ai.space/videos/agnes-video-2.5/<taskId>.mp4`,
+  1280×720 (16:9 720P) — **same CDN host as images**, so the `media-src` fallback to
+  `AI_IMAGE_CSP_HOSTS` already allows it; zero CSP violations; no extra env needed.
+- Client poll effect discovered completion, rendered `<video controls>` at 1280×720,
+  usage counted once (shared 50/day), history persisted.
+- Provider-side transient: free-tier queue was full for ~a day ("video queue is full,
+  please retry later") — surfaced cleanly as `video_task_failed` with the provider detail.
