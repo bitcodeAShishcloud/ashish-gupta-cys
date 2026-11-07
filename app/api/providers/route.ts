@@ -88,7 +88,8 @@ export async function POST(req: NextRequest) {
   if (!result.ok) {
     const detail = result.detail
       ? String(result.detail)
-          .replace(target.apiKey ?? "", "***")
+          .split(target.apiKey ?? "")
+          .join("***")
           .slice(0, 300)
       : "";
     return NextResponse.json(
