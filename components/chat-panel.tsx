@@ -11,9 +11,11 @@ import {
   Download,
   Image as ImageIcon,
   ImagePlus,
+  Loader2,
   MessageSquare,
   Monitor,
   Palette,
+  Pencil,
   Send,
   ShieldCheck,
   Trash2,
@@ -150,6 +152,12 @@ export function ChatPanel({
   const [generating, setGenerating] = useState(false);
   const [openPanel, setOpenPanel] = useState<"aspect" | "style" | "tier" | null>(null);
   const [progress, setProgress] = useState(0);
+  const [lightbox, setLightbox] = useState<{
+    image: string;
+    jobId?: string;
+    meta: Msg["meta"];
+  } | null>(null);
+  const [editPrompt, setEditPrompt] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -363,29 +371,29 @@ export function ChatPanel({
     if (results.length > 0) setRefImages((prev) => [...prev, ...results].slice(0, 3));
   }
 
-  async function generate() {
-    const prompt = input.trim();
+  /* Shared generation core — the composer and the lightbox "regenerate"
+   * flow both land here. Settings are passed explicitly so a lightbox edit
+   * can reuse the original image's aspect/style/tier without touching the
+   * composer's picker state. */
+  async function runGeneration(prompt: string, s: { aspect: string; style: string; tier: string; images: string[] }) {
     if (!prompt || generating || sending || limited) return;
     setError(null);
     const userMsg: Msg = { role: "user", content: prompt };
     const history = [...imageHistory, userMsg];
     setImageHistory(history);
-    setInput("");
     setGenerating(true);
     setProgress(0);
-    const meta = { prompt, aspect, style: imgStyle, tier: imgTier };
-    const refs = refImages;
-    setRefImages([]);
+    const meta = { prompt, aspect: s.aspect, style: s.style, tier: s.tier };
     try {
       const res = await fetch("/api/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt,
-          aspect,
-          style: imgStyle,
-          tier: imgTier,
-          images: refs,
+          aspect: s.aspect,
+          style: s.style,
+          tier: s.tier,
+          images: s.images,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -425,6 +433,15 @@ export function ChatPanel({
     } finally {
       setGenerating(false);
     }
+  }
+
+  async function generate() {
+    const prompt = input.trim();
+    if (!prompt) return;
+    const refs = refImages;
+    setRefImages([]);
+    await runGeneration(prompt, { aspect, style: imgStyle, tier: imgTier, images: refs });
+    setInput("");
   }
 
   function eraseData() {
@@ -650,7 +667,11 @@ export function ChatPanel({
                           src={m.image}
                           alt={m.meta?.prompt || "Generated image"}
                           loading="lazy"
-                          className="absolute inset-0 h-full w-full animate-fade-in object-cover"
+                          onClick={() => {
+                            setEditPrompt(null);
+                            setLightbox({ image: m.image, jobId: m.jobId, meta: m.meta });
+                          }}
+                          className="absolute inset-0 h-full w-full animate-fade-in cursor-zoom-in object-cover"
                         />
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-muted-foreground">
@@ -1095,6 +1116,128 @@ export function ChatPanel({
               <Trash2 className="mr-2 h-4 w-4" /> Clear it
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Fullscreen image viewer (ChatGPT-style): click a generated image to
+          open it large, read/edit its prompt, and regenerate in place. The
+          dialog portals to <body>, so it goes fullscreen even from the widget. */}
+      <Dialog
+        open={!!lightbox}
+        onOpenChange={(o) => {
+          if (!o) {
+            setLightbox(null);
+            setEditPrompt(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[94vw] gap-3 p-3 sm:max-w-[820px] sm:p-4">
+          <DialogTitle className="sr-only">Generated image</DialogTitle>
+          {lightbox ? (
+            <>
+              <figure className="relative mx-auto w-full overflow-hidden rounded-xl border border-border bg-card">
+                <img
+                  src={lightbox.image}
+                  alt={lightbox.meta?.prompt || "Generated image"}
+                  className="mx-auto max-h-[68vh] w-auto max-w-full object-contain"
+                />
+              </figure>
+              {editPrompt === null ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                    {lightbox.meta?.prompt} · {lightbox.meta?.aspect}
+                    {lightbox.meta?.tier && lightbox.meta.tier !== "1K"
+                      ? ` · ${lightbox.meta.tier}`
+                      : ""}
+                    {lightbox.meta?.style && lightbox.meta.style !== "Auto"
+                      ? ` · ${lightbox.meta.style}`
+                      : ""}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditPrompt(lightbox.meta?.prompt || "")}
+                  >
+                    <Pencil className="mr-1.5 h-3.5 w-3.5" /> Edit prompt
+                  </Button>
+                  <a
+                    href={
+                      lightbox.jobId
+                        ? `/api/image/download?id=${encodeURIComponent(lightbox.jobId)}`
+                        : lightbox.image
+                    }
+                    {...(lightbox.jobId
+                      ? {}
+                      : lightbox.image.startsWith("data:")
+                        ? {}
+                        : { target: "_blank", rel: "noopener noreferrer" })}
+                    download={
+                      lightbox.jobId
+                        ? `ashish-image-${lightbox.jobId}.png`
+                        : lightbox.image.startsWith("data:")
+                          ? "ashish-image.png"
+                          : undefined
+                    }
+                    aria-label="Download image"
+                  >
+                    <Button variant="outline" size="sm">
+                      <Download className="mr-1.5 h-3.5 w-3.5" /> Download
+                    </Button>
+                  </a>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Textarea
+                    value={editPrompt}
+                    onChange={(e) => setEditPrompt(e.target.value)}
+                    maxLength={1000}
+                    rows={3}
+                    autoFocus
+                    aria-label="Edit image prompt"
+                    className="resize-none text-sm"
+                    placeholder="Describe the image you want…"
+                    disabled={generating || limited}
+                  />
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditPrompt(null)}
+                      disabled={generating}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={async () => {
+                        const p = editPrompt.trim();
+                        if (!p || generating || limited) return;
+                        await runGeneration(p, {
+                          aspect: lightbox.meta?.aspect || aspect,
+                          style: lightbox.meta?.style || imgStyle,
+                          tier: lightbox.meta?.tier || imgTier,
+                          images: [],
+                        });
+                        setLightbox(null);
+                        setEditPrompt(null);
+                      }}
+                      disabled={!editPrompt.trim() || generating || limited}
+                    >
+                      {generating ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> Generating…
+                        </>
+                      ) : (
+                        <>
+                          <Send className="mr-1.5 h-3.5 w-3.5" /> Regenerate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : null}
         </DialogContent>
       </Dialog>
     </div>
