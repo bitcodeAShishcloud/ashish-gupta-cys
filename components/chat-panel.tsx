@@ -947,13 +947,13 @@ export function ChatPanel({
                   disabled={limited}
                 />
                 <Button
+                  variant="success"
                   onClick={() => send(input)}
                   disabled={!input.trim() || sending || generating || limited}
-                  className="h-8 shrink-0 self-end gap-1 rounded-full px-3.5"
                   aria-label="Send message"
+                  className="h-9 w-9 shrink-0 self-end rounded-full p-0 hover:brightness-105"
                 >
-                  <span className="text-xs font-medium">Send</span>
-                  <Send className="h-3.5 w-3.5" />
+                  <Send className="h-4 w-4" />
                 </Button>
               </div>
             ) : (
