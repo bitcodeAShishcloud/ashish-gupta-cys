@@ -10,6 +10,7 @@ import {
   Cpu,
   Download,
   Image as ImageIcon,
+  ImagePlus,
   MessageSquare,
   Monitor,
   Palette,
@@ -45,7 +46,7 @@ interface Msg {
   kind?: "text" | "image";
   image?: string;
   jobId?: string;
-  meta?: { prompt: string; aspect: string; style: string };
+  meta?: { prompt: string; aspect: string; style: string; tier?: string; revisedPrompt?: string };
 }
 
 const SUGGESTIONS = [
@@ -65,9 +66,18 @@ const IMAGE_SUGGESTIONS = [
 const ASPECTS = [
   { id: "9:16", size: "1024 × 1792", box: "h-3.5 w-2" },
   { id: "3:4", size: "1024 × 1536", box: "h-3.5 w-2.5" },
+  { id: "2:3", size: "832 × 1248", box: "h-3.5 w-2.5" },
   { id: "1:1", size: "1024 × 1024", box: "h-3 w-3" },
   { id: "4:3", size: "1536 × 1024", box: "h-2.5 w-3.5" },
+  { id: "3:2", size: "1248 × 832", box: "h-2.5 w-3.5" },
   { id: "16:9", size: "1792 × 1024", box: "h-2 w-3.5" },
+  { id: "21:9", size: "1568 × 672", box: "h-1.5 w-3.5" },
+] as const;
+
+const TIERS = [
+  { id: "1K", hint: "fast · standard" },
+  { id: "2K", hint: "sharper · slower" },
+  { id: "4K", hint: "sharpest · slowest" },
 ] as const;
 
 const STYLES = [
@@ -134,8 +144,11 @@ export function ChatPanel({
   const [mode, setMode] = useState<"chat" | "image">("chat");
   const [aspect, setAspect] = useState<string>("16:9");
   const [imgStyle, setImgStyle] = useState<string>("Auto");
+  const [imgTier, setImgTier] = useState<string>("1K");
+  const [refImages, setRefImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [generating, setGenerating] = useState(false);
-  const [openPanel, setOpenPanel] = useState<"aspect" | "style" | null>(null);
+  const [openPanel, setOpenPanel] = useState<"aspect" | "style" | "tier" | null>(null);
   const [progress, setProgress] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLDivElement>(null);
@@ -310,6 +323,45 @@ export function ChatPanel({
     }
   }
 
+  /* Client-side reference-image resize: ≤1024px long edge, JPEG q0.85 —
+   * keeps the JSON body (and Vercel's 4.5MB request cap) comfortably small. */
+  async function addRefImages(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const room = 3 - refImages.length;
+    if (room <= 0) return;
+    const picked = Array.from(files).slice(0, room);
+    const results: string[] = [];
+    for (const file of picked) {
+      if (!file.type.startsWith("image/")) continue;
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(String(reader.result));
+          reader.onerror = () => reject(new Error("read failed"));
+          reader.readAsDataURL(file);
+        });
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error("decode failed"));
+          el.src = dataUrl;
+        });
+        const long = Math.max(img.naturalWidth, img.naturalHeight);
+        const scale = long > 1024 ? 1024 / long : 1;
+        const w = Math.max(1, Math.round(img.naturalWidth * scale));
+        const h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext("2d")?.drawImage(img, 0, 0, w, h);
+        results.push(canvas.toDataURL("image/jpeg", 0.85));
+      } catch {
+        /* skip unreadable file */
+      }
+    }
+    if (results.length > 0) setRefImages((prev) => [...prev, ...results].slice(0, 3));
+  }
+
   async function generate() {
     const prompt = input.trim();
     if (!prompt || generating || sending || limited) return;
@@ -320,25 +372,37 @@ export function ChatPanel({
     setInput("");
     setGenerating(true);
     setProgress(0);
-    const meta = { prompt, aspect, style: imgStyle };
+    const meta = { prompt, aspect, style: imgStyle, tier: imgTier };
+    const refs = refImages;
+    setRefImages([]);
     try {
       const res = await fetch("/api/image", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, aspect, style: imgStyle }),
+        body: JSON.stringify({
+          prompt,
+          aspect,
+          style: imgStyle,
+          tier: imgTier,
+          images: refs,
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || typeof data.image !== "string" || !data.image) {
         const base = data.message || `Request failed (${res.status})`;
         throw new Error(base + (data.detail ? `, ${data.detail}` : ""));
       }
+      const revised =
+        typeof data.revisedPrompt === "string" && data.revisedPrompt.trim()
+          ? data.revisedPrompt.trim()
+          : undefined;
       const imgMsg: Msg = {
         role: "assistant",
         content: "",
         kind: "image",
         image: data.image,
         jobId: typeof data.jobId === "string" && data.jobId ? data.jobId : undefined,
-        meta,
+        meta: { ...meta, revisedPrompt: revised },
       };
       const finalHistory = [...history, imgMsg];
       setImageHistory(finalHistory);
@@ -595,12 +659,14 @@ export function ChatPanel({
                       <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2.5 pb-2 pt-7">
                         <span className="truncate text-[11px] text-white/75">
                           {m.meta?.prompt} · {m.meta?.aspect}
+                          {m.meta?.tier && m.meta.tier !== "1K" ? ` · ${m.meta.tier}` : ""}
                           {m.meta?.style && m.meta.style !== "Auto" ? ` · ${m.meta.style}` : ""}
                         </span>
                         {m.image ? (
                           <a
-                            // Same-origin proxy forces a real download; legacy
-                            // entries without a jobId still open the CDN URL.
+                            // Job-based providers download via the same-origin
+                            // proxy; data-URL images (b64) download natively;
+                            // plain CDN URLs open in a new tab.
                             href={
                               m.jobId
                                 ? `/api/image/download?id=${encodeURIComponent(m.jobId)}`
@@ -608,8 +674,16 @@ export function ChatPanel({
                             }
                             {...(m.jobId
                               ? {}
-                              : { target: "_blank", rel: "noopener noreferrer" })}
-                            download={m.jobId ? `ashish-image-${m.jobId}.png` : undefined}
+                              : m.image.startsWith("data:")
+                                ? {}
+                                : { target: "_blank", rel: "noopener noreferrer" })}
+                            download={
+                              m.jobId
+                                ? `ashish-image-${m.jobId}.png`
+                                : m.image.startsWith("data:")
+                                  ? "ashish-image.png"
+                                  : undefined
+                            }
                             aria-label="Download image"
                             className="shrink-0 text-white/70 transition hover:text-white"
                           >
@@ -618,6 +692,11 @@ export function ChatPanel({
                         ) : null}
                       </figcaption>
                     </figure>
+                    {m.meta?.revisedPrompt ? (
+                      <p className="mt-1 line-clamp-2 font-mono text-[10px] leading-4 text-muted-foreground">
+                        → {m.meta.revisedPrompt}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               ) : (
@@ -743,6 +822,37 @@ export function ChatPanel({
                 </div>
               </div>
             ) : null}
+            {openPanel === "tier" ? (
+              <div className="absolute bottom-full left-0 z-20 mb-2 w-64 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-foreground">Resolution</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {TIERS.find((t) => t.id === imgTier)?.hint}
+                  </p>
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  {TIERS.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => {
+                        setImgTier(t.id);
+                        setOpenPanel(null);
+                      }}
+                      aria-pressed={imgTier === t.id}
+                      className={cn(
+                        "flex-1 rounded-lg border px-2 py-2 text-center transition",
+                        imgTier === t.id
+                          ? "border-success/70 bg-success/5 text-success"
+                          : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                      )}
+                    >
+                      <span className="block text-xs font-medium">{t.id}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {openPanel === "style" ? (
               <div className="absolute bottom-full left-0 z-20 mb-2 w-80 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center justify-between">
@@ -843,6 +953,27 @@ export function ChatPanel({
                   disabled={limited}
                 />
                 <div className="flex items-center gap-1.5 px-1 pt-1">
+                  {refImages.length > 0 ? (
+                    <div className="flex flex-wrap items-center gap-1.5 pr-1">
+                      {refImages.map((src, i) => (
+                        <span
+                          key={i}
+                          className="relative inline-block h-8 w-8 overflow-hidden rounded-md border border-border"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={src} alt="" className="h-full w-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setRefImages((prev) => prev.filter((_, j) => j !== i))}
+                            aria-label={`Remove reference image ${i + 1}`}
+                            className="absolute inset-0 flex items-center justify-center bg-black/60 text-[10px] text-white opacity-0 transition hover:opacity-100"
+                          >
+                            ✕
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setOpenPanel(openPanel === "aspect" ? null : "aspect")}
@@ -875,6 +1006,47 @@ export function ChatPanel({
                   >
                     <ImageIcon className="h-3.5 w-3.5" />
                     {imgStyle}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenPanel(openPanel === "tier" ? null : "tier")}
+                    aria-expanded={openPanel === "tier"}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] transition",
+                      openPanel === "tier" || imgTier !== "1K"
+                        ? "border-success/60 bg-success/5 text-success"
+                        : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                    )}
+                  >
+                    {imgTier}
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      addRefImages(e.target.files);
+                      e.target.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={refImages.length >= 3}
+                    aria-label="Add reference images (up to 3)"
+                    title="Add reference images (up to 3)"
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] transition",
+                      refImages.length > 0
+                        ? "border-success/60 bg-success/5 text-success"
+                        : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                      refImages.length >= 3 && "cursor-not-allowed opacity-40",
+                    )}
+                  >
+                    <ImagePlus className="h-3.5 w-3.5" />
+                    {refImages.length > 0 ? `Ref ${refImages.length}/3` : "Ref"}
                   </button>
                   <span className="ml-auto hidden pr-1 text-[10px] text-muted-foreground lg:block">
                     Enter to generate · Shift + Enter for a new line

@@ -28,6 +28,9 @@ export interface ProviderConfig {
   maxOutput?: number;
   /** "image" marks an image-generation endpoint; entries whose baseUrl contains /images/ are inferred as image providers. */
   type?: string;
+  /** "ratio-tiers": the provider takes {size: "1K".."4K", ratio} + return_base64 (Agnes-style),
+   *  instead of the legacy exact pixel-size OpenAI shape. */
+  sizeMode?: string;
 }
 
 export interface ProviderRegistry {
@@ -118,6 +121,8 @@ export interface ImageResult {
   url?: string;
   /** Inline base64 payload when the provider returns b64 instead of a URL. */
   dataUrl?: string;
+  /** Model's restated understanding of the prompt (Agnes returns revised_prompt). */
+  revisedPrompt?: string;
   /** Async-job id, when the provider used one — enables the download route. */
   jobId?: string;
   status?: number;
@@ -133,7 +138,7 @@ export async function generateImage(
   target: { provider: ProviderConfig; url: string },
   prompt: string,
   size: string,
-  opts: { timeoutMs?: number } = {},
+  opts: { timeoutMs?: number; tier?: string; ratio?: string; images?: string[] } = {},
 ): Promise<ImageResult> {
   const { provider, url } = target;
   const c = providerDefaults(provider);
@@ -154,12 +159,26 @@ export async function generateImage(
   const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
   headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
 
+  /* ratio-tiers providers (Agnes-style) take tier + ratio + base64 return;
+   * legacy OpenAI-shape providers keep the exact-size body unchanged. */
+  const tierMode = provider.sizeMode === "ratio-tiers";
+  const payload: Record<string, unknown> = tierMode
+    ? {
+        model: provider.model,
+        prompt,
+        size: opts.tier || "1K",
+        ratio: opts.ratio || "1:1",
+        return_base64: true,
+      }
+    : { model: provider.model, prompt, n: 1, size };
+  if (opts.images && opts.images.length > 0) payload.image = opts.images;
+
   try {
     const res = await fetch(url, {
       method: "POST",
       headers,
       signal: controller.signal,
-      body: JSON.stringify({ model: provider.model, prompt, n: 1, size }),
+      body: JSON.stringify(payload),
     });
 
     const text = await res.text();
@@ -248,6 +267,10 @@ export async function generateImage(
     // OpenAI shape: { data: [{ url | b64_json }] }; aggregator fallbacks below.
     const first = (data as { data?: unknown[] })?.data;
     const item = (Array.isArray(first) ? first[0] : data) as Record<string, unknown> | undefined;
+    const revised =
+      typeof item?.revised_prompt === "string" && item.revised_prompt.trim()
+        ? item.revised_prompt.trim().slice(0, 500)
+        : undefined;
     const candidates = [
       item?.url,
       item?.image_url,
@@ -268,12 +291,13 @@ export async function generateImage(
       };
     }
 
-    if (/^data:image\//i.test(found)) return { ok: true, dataUrl: found, jobId: resolvedJobId };
-    if (/^https?:\/\//i.test(found)) return { ok: true, url: found, jobId: resolvedJobId };
+    if (/^data:image\//i.test(found)) return { ok: true, dataUrl: found, revisedPrompt: revised, jobId: resolvedJobId };
+    if (/^https?:\/\//i.test(found)) return { ok: true, url: found, revisedPrompt: revised, jobId: resolvedJobId };
     // Bare base64 payload
     return {
       ok: true,
       dataUrl: toDataUrl(Buffer.from(found, "base64"), "image/png"),
+      revisedPrompt: revised,
       jobId: resolvedJobId,
     };
   } catch (err) {

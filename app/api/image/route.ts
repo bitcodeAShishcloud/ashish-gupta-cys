@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { generateImage, resolveImageTarget } from "@/lib/providers";
+import { generateImage, resolveImageTarget, validateProviderUrl } from "@/lib/providers";
 
 const RATE_LIMIT = Number(process.env.IMAGE_RATE_LIMIT) || 6; // requests / min / IP
 const MAX_PROMPT = 1000;
@@ -33,6 +33,21 @@ const ASPECT_SIZES: Record<string, string> = {
   "4:3": "1536x1024",
   "16:9": "1792x1024",
 };
+
+/* ratio-tiers providers (sizeMode:"ratio-tiers", e.g. Agnes) take a ratio
+ * string + a size tier instead of exact pixel sizes. */
+const RATIOS = new Set(["1:1", "3:4", "4:3", "16:9", "9:16", "2:3", "3:2", "21:9"]);
+const TIERS = new Set(["1K", "2K", "3K", "4K"]);
+/* Docs recommend 60-360s client timeouts; higher tiers take longer. The
+ * route ceiling stays at maxDuration 300. */
+const TIER_TIMEOUT_MS: Record<string, number> = {
+  "1K": 120000,
+  "2K": 240000,
+  "3K": 295000,
+  "4K": 295000,
+};
+const MAX_IMAGE_ITEMS = 3;
+const MAX_IMAGE_CHARS = 3_500_000; // ~2.6MB binary per reference image
 
 const STYLES = new Set([
   "Auto",
@@ -76,18 +91,6 @@ export async function POST(req: NextRequest) {
     );
   }
   const aspect = String(body.aspect ?? "16:9");
-  const size = ASPECT_SIZES[aspect];
-  if (!size) {
-    return NextResponse.json(
-      { error: "bad_aspect", message: "Pick one of the listed aspect ratios." },
-      { status: 400 },
-    );
-  }
-  const style = STYLES.has(String(body.style ?? "")) ? String(body.style) : "Auto";
-  const styleFragment = STYLE_PROMPTS[style] || "";
-  const styledPrompt = styleFragment
-    ? styleFragment.replace("{prompt}", prompt)
-    : prompt;
 
   const target = resolveImageTarget();
   if (!target) {
@@ -101,7 +104,73 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await generateImage(target, styledPrompt, size);
+  /* Per-mode aspect validation: ratio-tiers providers accept any documented
+   * ratio; legacy exact-size providers stay restricted to the original five. */
+  const tierMode = target.provider.sizeMode === "ratio-tiers";
+  const tier = TIERS.has(String(body.tier ?? "")) ? String(body.tier) : "1K";
+  let size = "";
+  if (tierMode) {
+    if (!RATIOS.has(aspect)) {
+      return NextResponse.json(
+        { error: "bad_aspect", message: "Pick one of the listed aspect ratios." },
+        { status: 400 },
+      );
+    }
+    size = `${tier} ${aspect}`;
+  } else {
+    size = ASPECT_SIZES[aspect];
+    if (!size) {
+      return NextResponse.json(
+        { error: "bad_aspect", message: "Pick one of the listed aspect ratios." },
+        { status: 400 },
+      );
+    }
+  }
+
+  /* Reference images (img2img): ≤3 items, each a data:image URI or a public
+   * https URL under the size cap. The provider fetches URLs itself — the
+   * server never does — but localhost/private hosts are still rejected so
+   * the endpoint cannot be used to point the provider at internal targets. */
+  const rawImages = Array.isArray(body.images) ? body.images : [];
+  const images: string[] = [];
+  for (const raw of rawImages.slice(0, MAX_IMAGE_ITEMS)) {
+    const s = String(raw ?? "");
+    if (/^data:image\/[a-z0-9.+-]+;base64,[A-Za-z0-9+/=]+$/.test(s)) {
+      if (s.length > MAX_IMAGE_CHARS) {
+        return NextResponse.json(
+          { error: "bad_image", message: "Reference image is too large. Try a smaller one." },
+          { status: 413 },
+        );
+      }
+      images.push(s);
+    } else if (/^https:\/\//i.test(s)) {
+      if (validateProviderUrl(s)) {
+        return NextResponse.json(
+          { error: "bad_image", message: "Reference image URL is not allowed." },
+          { status: 400 },
+        );
+      }
+      images.push(s);
+    } else {
+      return NextResponse.json(
+        { error: "bad_image", message: "Reference images must be image files or https URLs." },
+        { status: 400 },
+      );
+    }
+  }
+
+  const style = STYLES.has(String(body.style ?? "")) ? String(body.style) : "Auto";
+  const styleFragment = STYLE_PROMPTS[style] || "";
+  const styledPrompt = styleFragment
+    ? styleFragment.replace("{prompt}", prompt)
+    : prompt;
+
+  const result = await generateImage(target, styledPrompt, size, {
+    timeoutMs: TIER_TIMEOUT_MS[tier] || 120000,
+    tier,
+    ratio: aspect,
+    images,
+  });
   if (!result.ok) {
     return NextResponse.json(
       {
@@ -116,6 +185,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     image: result.url ?? result.dataUrl,
     jobId: result.jobId ?? null,
+    revisedPrompt: result.revisedPrompt ?? null,
     size,
     style,
   });
