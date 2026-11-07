@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { SwCleanup } from "@/components/sw-cleanup";
 import "./globals.css";
 
 const SITE_URL = "https://www.ashishcys.cyou";
@@ -131,6 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         <div className="bg-grid" aria-hidden />
         <div className="relative z-0 min-h-screen">{children}</div>
+        <SwCleanup />
       </body>
     </html>
   );
