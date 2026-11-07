@@ -20,6 +20,7 @@ import {
   ShieldCheck,
   Trash2,
   User,
+  Video as VideoIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -37,6 +38,7 @@ import { cn } from "@/lib/utils";
 const NAME_KEY = "chat_user_name";
 const HISTORY_KEY = "chat_history_v1";
 const IMAGE_HISTORY_KEY = "chat_image_history_v1";
+const VIDEO_HISTORY_KEY = "chat_video_history_v1";
 const USAGE_KEY = "chat_usage";
 const DAILY_LIMIT = 50;
 
@@ -44,11 +46,23 @@ interface Msg {
   role: "user" | "assistant";
   content: string;
   /** "image" messages carry the generated picture + settings. URL images
-   * persist in history; the jobId enables same-origin downloads. */
-  kind?: "text" | "image";
+   * persist in history; the jobId enables same-origin downloads. "video"
+   * messages hold an async task: jobId polls via /api/video until the
+   * finished MP4 URL lands in videoUrl (or failed is set). */
+  kind?: "text" | "image" | "video";
   image?: string;
+  videoUrl?: string;
+  failed?: boolean;
+  progress?: number;
   jobId?: string;
-  meta?: { prompt: string; aspect: string; style: string; tier?: string; revisedPrompt?: string };
+  meta?: {
+    prompt: string;
+    aspect: string;
+    style?: string;
+    tier?: string;
+    seconds?: string;
+    revisedPrompt?: string;
+  };
 }
 
 const SUGGESTIONS = [
@@ -63,6 +77,13 @@ const IMAGE_SUGGESTIONS = [
   { icon: ImageIcon, text: "A red fox in a snowy forest" },
   { icon: Palette, text: "A neon city skyline after rain" },
   { icon: Bot, text: "A robot detective's office" },
+];
+
+const VIDEO_SUGGESTIONS = [
+  { icon: Monitor, text: "Slow pan over a neon city skyline at night" },
+  { icon: ImageIcon, text: "Waves rolling on a beach at sunrise" },
+  { icon: Palette, text: "Smoke curling through a shaft of light" },
+  { icon: Bot, text: "A drone flight through snowy mountains" },
 ];
 
 const ASPECTS = [
@@ -81,6 +102,18 @@ const TIERS = [
   { id: "2K", hint: "sharper · slower" },
   { id: "4K", hint: "sharpest · slowest" },
 ] as const;
+
+/* Video mode: the API supports 720P only, with these ratios and a 4–12s
+ * duration (string seconds). */
+const V_ASPECTS = [
+  { id: "21:9", box: "h-1.5 w-3.5" },
+  { id: "16:9", box: "h-2 w-3.5" },
+  { id: "4:3", box: "h-2.5 w-3.5" },
+  { id: "1:1", box: "h-3 w-3" },
+  { id: "3:4", box: "h-3.5 w-2.5" },
+  { id: "9:16", box: "h-3.5 w-2" },
+] as const;
+const V_SECONDS = ["4", "6", "8", "10", "12"] as const;
 
 const STYLES = [
   { name: "Auto", preview: "/style-previews/auto.webp" },
@@ -137,20 +170,25 @@ export function ChatPanel({
   const [name, setName] = useState<string | null>(null);
   const [chatHistory, setChatHistory] = useState<Msg[]>([]);
   const [imageHistory, setImageHistory] = useState<Msg[]>([]);
+  const [videoHistory, setVideoHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [eraseOpen, setEraseOpen] = useState(false);
   const [limited, setLimited] = useState(false);
   const [firstToken, setFirstToken] = useState(false);
-  const [mode, setMode] = useState<"chat" | "image">("chat");
+  const [mode, setMode] = useState<"chat" | "image" | "video">("chat");
   const [aspect, setAspect] = useState<string>("16:9");
   const [imgStyle, setImgStyle] = useState<string>("Auto");
   const [imgTier, setImgTier] = useState<string>("1K");
   const [refImages, setRefImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [vAspect, setVAspect] = useState<string>("16:9");
+  const [vSeconds, setVSeconds] = useState<string>("5");
   const [generating, setGenerating] = useState(false);
-  const [openPanel, setOpenPanel] = useState<"aspect" | "style" | "tier" | null>(null);
+  const [openPanel, setOpenPanel] = useState<
+    "aspect" | "style" | "tier" | "vAspect" | "vSeconds" | null
+  >(null);
   const [progress, setProgress] = useState(0);
   const [lightbox, setLightbox] = useState<{
     image: string;
@@ -197,6 +235,13 @@ export function ChatPanel({
           setImageHistory(parsed.filter(valid).slice(-24));
         }
       }
+      const rawVid = localStorage.getItem(VIDEO_HISTORY_KEY);
+      if (rawVid) {
+        const parsed = JSON.parse(rawVid);
+        if (Array.isArray(parsed)) {
+          setVideoHistory(parsed.filter(valid).slice(-24));
+        }
+      }
       setLimited(usageToday() >= DAILY_LIMIT);
     } catch {
       /* storage unavailable, start fresh */
@@ -206,7 +251,7 @@ export function ChatPanel({
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
-  }, [chatHistory, imageHistory, sending, generating, mode]);
+  }, [chatHistory, imageHistory, videoHistory, sending, generating, mode]);
 
   // Close picker popovers when clicking outside the composer.
   useEffect(() => {
@@ -444,17 +489,116 @@ export function ChatPanel({
     setInput("");
   }
 
+  /* Text-to-video: creates an async task and appends a pending "video"
+   * message; the poll effect below drives it to completion. Usage counts
+   * once, on completion (same rule as images). */
+  async function generateVideo() {
+    const prompt = input.trim();
+    if (!prompt || generating || sending || limited) return;
+    setError(null);
+    const userMsg: Msg = { role: "user", content: prompt };
+    const history = [...videoHistory, userMsg];
+    setVideoHistory(history);
+    setInput("");
+    setGenerating(true);
+    try {
+      const res = await fetch("/api/video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt, aspect: vAspect, seconds: vSeconds }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || typeof data.taskId !== "string" || !data.taskId) {
+        const base = data.message || `Request failed (${res.status})`;
+        throw new Error(base + (data.detail ? `, ${data.detail}` : ""));
+      }
+      const vidMsg: Msg = {
+        role: "assistant",
+        content: "",
+        kind: "video",
+        jobId: data.taskId,
+        progress: 0,
+        meta: { prompt, aspect: vAspect, seconds: vSeconds },
+      };
+      setVideoHistory([...history, vidMsg]);
+    } catch (e) {
+      setVideoHistory((prev) => {
+        const next = [...prev];
+        if (next[next.length - 1]?.role === "user") next.pop();
+        return next;
+      });
+      setError(e instanceof Error ? e.message : "Something went wrong — try again");
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  /* Poll pending video tasks (oldest first) every 2.5s via the status
+   * route — no long-lived request, so reloads and tab switches are safe:
+   * the taskId rides in history and polling resumes on mount. */
+  useEffect(() => {
+    const pending = videoHistory.find(
+      (m) => m.kind === "video" && m.jobId && !m.videoUrl && !m.failed,
+    );
+    if (!pending?.jobId) return;
+    const t = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/video?id=${encodeURIComponent(pending.jobId)}`);
+        const d = await res.json().catch(() => ({}));
+        if (d.status === "completed" && typeof d.url === "string" && d.url) {
+          setVideoHistory((prev) => {
+            const next = prev.map((m) =>
+              m.kind === "video" && m.jobId === pending.jobId
+                ? { ...m, videoUrl: d.url as string, progress: 100 }
+                : m,
+            );
+            try {
+              localStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(next.slice(-50)));
+              const nextUsage = usageToday() + 1;
+              localStorage.setItem(
+                USAGE_KEY,
+                JSON.stringify({ date: todayKey(), count: nextUsage }),
+              );
+              if (nextUsage >= DAILY_LIMIT) setLimited(true);
+            } catch {
+              /* ignore */
+            }
+            return next;
+          });
+        } else if (d.status === "failed") {
+          setVideoHistory((prev) =>
+            prev.map((m) =>
+              m.kind === "video" && m.jobId === pending.jobId ? { ...m, failed: true } : m,
+            ),
+          );
+        } else {
+          const pct = Math.max(1, Math.min(99, Number(d.progress) || 0));
+          setVideoHistory((prev) =>
+            prev.map((m) =>
+              m.kind === "video" && m.jobId === pending.jobId ? { ...m, progress: pct } : m,
+            ),
+          );
+        }
+      } catch {
+        /* transient network error — the next tick retries */
+      }
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [videoHistory, mode]);
+
   function eraseData() {
     try {
       localStorage.removeItem(NAME_KEY);
       localStorage.removeItem(HISTORY_KEY);
       localStorage.removeItem(IMAGE_HISTORY_KEY);
+      localStorage.removeItem(VIDEO_HISTORY_KEY);
       localStorage.removeItem(USAGE_KEY);
     } catch {
       /* ignore */
     }
     setChatHistory([]);
     setImageHistory([]);
+    setVideoHistory([]);
     setName(null);
     setLimited(false);
     setFirstToken(false);
@@ -473,7 +617,8 @@ export function ChatPanel({
   // ── Chat view: full-height app, messages scroll internally ──
   // Phase 6: no name gate — visitors land straight in the chat. A stored
   // name (returning visitor) is still used in the greetings when present.
-  const visible = mode === "chat" ? chatHistory : imageHistory;
+  const visible =
+    mode === "chat" ? chatHistory : mode === "video" ? videoHistory : imageHistory;
 
   // ── Chat view: full-height app, messages scroll internally ──
   return (
@@ -549,6 +694,20 @@ export function ChatPanel({
               <ImageIcon className="h-3.5 w-3.5" />
               Image
             </button>
+            <button
+              type="button"
+              onClick={() => setMode("video")}
+              aria-pressed={mode === "video"}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-medium transition",
+                mode === "video"
+                  ? "bg-white/10 text-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <VideoIcon className="h-3.5 w-3.5" />
+              Video
+            </button>
           </div>
         </div>
 
@@ -622,7 +781,12 @@ export function ChatPanel({
               ) : null}
               {/* Capability pills, Dribbble-reference style */}
               <div className="flex flex-wrap items-center justify-center gap-2 pb-3">
-                {(mode === "chat" ? SUGGESTIONS : IMAGE_SUGGESTIONS).map((s) => (
+                {(mode === "chat"
+                  ? SUGGESTIONS
+                  : mode === "video"
+                    ? VIDEO_SUGGESTIONS
+                    : IMAGE_SUGGESTIONS
+                ).map((s) => (
                   <button
                     key={s.text}
                     type="button"
@@ -646,6 +810,65 @@ export function ChatPanel({
                 <div key={i} className="flex justify-end">
                   <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl bg-white/[0.07] px-4 py-2.5 text-sm leading-relaxed">
                     {m.content}
+                  </div>
+                </div>
+              ) : m.kind === "video" ? (
+                <div key={i} className="flex max-w-[92%] items-start gap-2.5">
+                  <img
+                    src="/favicon.webp"
+                    alt=""
+                    width={20}
+                    height={20}
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <figure
+                      className="relative inline-block overflow-hidden rounded-xl border border-border/80 bg-card/40 align-top"
+                      style={aspectBox(m.meta?.aspect || "16:9", variant)}
+                    >
+                      {m.videoUrl ? (
+                        <video
+                          src={m.videoUrl}
+                          controls
+                          playsInline
+                          preload="metadata"
+                          className="absolute inset-0 h-full w-full bg-black object-contain"
+                        />
+                      ) : m.failed ? (
+                        <div className="absolute inset-0 flex items-center justify-center px-3 text-center text-xs text-danger">
+                          Video generation failed — try again
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                          <Loader2 className="h-6 w-6 animate-spin" />
+                          <p className="font-mono text-[11px]">
+                            {typeof m.progress === "number" ? `${m.progress}%` : "queued"} ·
+                            generating {m.meta?.seconds}s video
+                          </p>
+                        </div>
+                      )}
+                      {m.videoUrl ? (
+                        <figcaption className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-2.5 pb-2 pt-7">
+                          <span className="truncate text-[11px] text-white/75">
+                            {m.meta?.prompt} · {m.meta?.aspect} · {m.meta?.seconds}s
+                          </span>
+                          <a
+                            href={m.videoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label="Open video"
+                            className="shrink-0 text-white/70 transition hover:text-white"
+                          >
+                            <ArrowUpRight className="h-3.5 w-3.5" />
+                          </a>
+                        </figcaption>
+                      ) : null}
+                    </figure>
+                    {m.meta?.revisedPrompt ? (
+                      <p className="mt-1 line-clamp-2 font-mono text-[10px] leading-4 text-muted-foreground">
+                        → {m.meta.revisedPrompt}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               ) : m.kind === "image" ? (
@@ -875,6 +1098,65 @@ export function ChatPanel({
                 </div>
               </div>
             ) : null}
+            {openPanel === "vAspect" ? (
+              <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-foreground">Aspect ratio</p>
+                  <p className="text-[11px] text-muted-foreground">720P video</p>
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  {V_ASPECTS.map((a) => (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => {
+                        setVAspect(a.id);
+                        setOpenPanel(null);
+                      }}
+                      aria-pressed={vAspect === a.id}
+                      className={cn(
+                        "flex flex-1 flex-col items-center gap-1.5 rounded-lg border px-1 py-2 transition",
+                        vAspect === a.id
+                          ? "border-success/70 bg-success/5 text-success"
+                          : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                      )}
+                    >
+                      <span className={cn("inline-block rounded-[3px] border-2 border-current", a.box)} />
+                      <span className="text-[10px] leading-none">{a.id}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            {openPanel === "vSeconds" ? (
+              <div className="absolute bottom-full left-0 z-20 mb-2 w-64 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-foreground">Duration</p>
+                  <p className="text-[11px] text-muted-foreground">{vSeconds} seconds</p>
+                </div>
+                <div className="mt-2 flex gap-1.5">
+                  {V_SECONDS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => {
+                        setVSeconds(s);
+                        setOpenPanel(null);
+                      }}
+                      aria-pressed={vSeconds === s}
+                      className={cn(
+                        "flex-1 rounded-lg border px-2 py-2 text-center text-xs font-medium transition",
+                        vSeconds === s
+                          ? "border-success/70 bg-success/5 text-success"
+                          : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                      )}
+                    >
+                      {s}s
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
             {openPanel === "style" ? (
               <div className="absolute bottom-full left-0 z-20 mb-2 w-80 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center justify-between">
@@ -961,7 +1243,7 @@ export function ChatPanel({
                   </Button>
                 </div>
               </div>
-            ) : (
+            ) : mode === "image" ? (
               <div className="rounded-[28px] border border-primary/20 bg-primary/[0.03] p-2 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] transition-colors focus-within:border-primary/40">
                 <Textarea
                   ref={textareaRef}
@@ -1083,6 +1365,71 @@ export function ChatPanel({
                     onClick={() => generate()}
                     disabled={!input.trim() || generating || sending || limited}
                     aria-label="Generate image"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-[#05070A] transition hover:brightness-110 disabled:opacity-40"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[28px] border border-primary/20 bg-primary/[0.03] p-2 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] transition-colors focus-within:border-primary/40">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      generateVideo();
+                    }
+                  }}
+                  placeholder="Describe the video you want…"
+                  rows={1}
+                  maxLength={1000}
+                  className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
+                  disabled={limited}
+                />
+                <div className="flex items-center gap-1.5 px-1 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setOpenPanel(openPanel === "vAspect" ? null : "vAspect")}
+                    aria-expanded={openPanel === "vAspect"}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] transition",
+                      openPanel === "vAspect" || vAspect !== "16:9"
+                        ? "border-success/60 bg-success/5 text-success"
+                        : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "inline-block rounded-[2px] border-[1.5px] border-current",
+                        V_ASPECTS.find((a) => a.id === vAspect)?.box,
+                      )}
+                    />
+                    {vAspect}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenPanel(openPanel === "vSeconds" ? null : "vSeconds")}
+                    aria-expanded={openPanel === "vSeconds"}
+                    className={cn(
+                      "flex items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[11px] transition",
+                      openPanel === "vSeconds" || vSeconds !== "5"
+                        ? "border-success/60 bg-success/5 text-success"
+                        : "border-border/60 text-muted-foreground hover:border-white/25 hover:text-foreground",
+                    )}
+                  >
+                    {vSeconds}s
+                  </button>
+                  <span className="ml-auto hidden pr-1 text-[10px] text-muted-foreground lg:block">
+                    Enter to generate · 720P
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => generateVideo()}
+                    disabled={!input.trim() || generating || sending || limited}
+                    aria-label="Generate video"
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success text-[#05070A] transition hover:brightness-110 disabled:opacity-40"
                   >
                     <ArrowUp className="h-4 w-4" />

@@ -58,9 +58,13 @@ export function loadProviders(): ProviderRegistry {
 
 export function getActiveProvider(): ProviderConfig | null {
   const reg = loadProviders();
-  const chat = reg.providers.find((p) => p.id === reg.activeId && !isImageProvider(p));
+  const chat = reg.providers.find(
+    (p) => p.id === reg.activeId && !isImageProvider(p) && !isVideoProvider(p),
+  );
   if (chat) return chat;
-  return reg.providers.find((p) => !isImageProvider(p)) ?? null;
+  return (
+    reg.providers.find((p) => !isImageProvider(p) && !isVideoProvider(p)) ?? null
+  );
 }
 
 /**
@@ -73,7 +77,7 @@ export function getActiveProvider(): ProviderConfig | null {
  */
 export function orderedChatCandidates(): ProviderConfig[] {
   const reg = loadProviders();
-  const chat = reg.providers.filter((p) => !isImageProvider(p));
+  const chat = reg.providers.filter((p) => !isImageProvider(p) && !isVideoProvider(p));
   const active = getActiveProvider();
   if (!active) return chat;
   const ordered = [active, ...chat];
@@ -90,6 +94,30 @@ export function orderedChatCandidates(): ProviderConfig[] {
 /* ── Image generation ── */
 export function isImageProvider(p: ProviderConfig): boolean {
   return p.type === "image" || /\/images\//.test(p.baseUrl);
+}
+
+/* ── Video generation ── */
+export function isVideoProvider(p: ProviderConfig): boolean {
+  return p.type === "video";
+}
+
+/**
+ * Resolve the video-generation target. An explicit type:"video" entry is
+ * used verbatim: create URL = baseUrl + /videos (unless it already ends
+ * with it), retrieval URL = baseUrl + /agnesapi?video_id=…&model_name=….
+ * Returns null when no video provider with a key is configured.
+ */
+export function resolveVideoTarget(): {
+  provider: ProviderConfig;
+  createUrl: string;
+  retrievalBase: string;
+} | null {
+  const reg = loadProviders();
+  const video = reg.providers.find((p) => isVideoProvider(p) && p.apiKey);
+  if (!video) return null;
+  const base = normalizeBaseUrl(video.baseUrl);
+  const createUrl = base.endsWith("/videos") ? base : `${base}/videos`;
+  return { provider: video, createUrl, retrievalBase: base };
 }
 
 /**
@@ -687,6 +715,183 @@ export async function callProvider(
       return { ok: false, status: 504, detail: "Provider timed out." };
     }
     return { ok: false, status: 502, detail: e.message };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/* ── Video generation (async task API) ── */
+export interface VideoCreateResult {
+  ok: boolean;
+  taskId?: string;
+  status?: number;
+  detail?: string;
+}
+
+export interface VideoStatusResult {
+  ok: boolean;
+  status?: "pending" | "completed" | "failed";
+  progress?: number;
+  url?: string;
+  httpStatus?: number;
+  detail?: string;
+}
+
+/**
+ * Create a text-to-video task. Agnes is async: the call returns a task id
+ * immediately; status arrives via getVideoTask polling. SSRF gates run on
+ * the create URL before any fetch.
+ */
+export async function createVideoTask(
+  target: { provider: ProviderConfig; createUrl: string },
+  payload: { prompt: string; seconds: string; aspectRatio: string },
+  opts: { timeoutMs?: number } = {},
+): Promise<VideoCreateResult> {
+  const { provider, createUrl } = target;
+  const c = providerDefaults(provider);
+
+  const urlError = validateProviderUrl(createUrl);
+  if (urlError) return { ok: false, status: 503, detail: urlError };
+  if (!hostIsAllowed(new URL(createUrl).hostname.toLowerCase())) {
+    return {
+      ok: false,
+      status: 503,
+      detail: `Provider host "${new URL(createUrl).hostname}" is not in the AI_ALLOWED_HOSTS whitelist.`,
+    };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 30000);
+
+  const headers: Record<string, string> = { "Content-Type": "application/json", Accept: "application/json" };
+  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
+
+  try {
+    const res = await fetch(createUrl, {
+      method: "POST",
+      headers,
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: provider.model,
+        prompt: payload.prompt,
+        mode: "text",
+        seconds: payload.seconds,
+        size: "720P",
+        aspect_ratio: payload.aspectRatio,
+        n: 1,
+      }),
+    });
+    const text = await res.text();
+    let data: unknown = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      const anyErr = data as { error?: { message?: string }; message?: string; msg?: string };
+      const detail = String(
+        anyErr?.error?.message || anyErr?.message || anyErr?.msg || text || `HTTP ${res.status}`,
+      ).slice(0, 300);
+      return { ok: false, status: res.status, detail };
+    }
+    const body = data as { id?: unknown; task_id?: unknown; video_id?: unknown } | null;
+    const taskId = [body?.id, body?.task_id, body?.video_id].find(
+      (v) => typeof v === "string" && v,
+    );
+    if (typeof taskId !== "string" || !taskId) {
+      const keys = data && typeof data === "object" ? Object.keys(data as object).join(", ") : "";
+      return {
+        ok: false,
+        status: 502,
+        detail: `Unrecognized video task response shape${keys ? ` (keys: ${keys})` : ""}.`,
+      };
+    }
+    return { ok: true, taskId };
+  } catch (err) {
+    const e = err as { name?: string; message?: string };
+    if (e.name === "AbortError") return { ok: false, status: 504, detail: "Video provider timed out." };
+    return { ok: false, status: 502, detail: e.message };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * One status fetch for a video task. Returns the provider's normalized
+ * status (pending | completed | failed), progress percent, and the final
+ * URL when completed. The URL is played by the BROWSER directly — the
+ * server never fetches it — so no server-side SSRF surface exists for the
+ * generated output.
+ */
+export async function getVideoTask(
+  target: { provider: ProviderConfig; retrievalBase: string },
+  taskId: string,
+  opts: { timeoutMs?: number } = {},
+): Promise<VideoStatusResult> {
+  const { provider, retrievalBase } = target;
+  const c = providerDefaults(provider);
+
+  const retrievalUrl = `${retrievalBase}/agnesapi?video_id=${encodeURIComponent(taskId)}&model_name=${encodeURIComponent(provider.model)}`;
+  const urlError = validateProviderUrl(retrievalUrl);
+  if (urlError) return { ok: false, detail: urlError };
+  if (!hostIsAllowed(new URL(retrievalUrl).hostname.toLowerCase())) {
+    return {
+      ok: false,
+      detail: `Provider host "${new URL(retrievalUrl).hostname}" is not in the AI_ALLOWED_HOSTS whitelist.`,
+    };
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 20000);
+
+  const headers: Record<string, string> = { Accept: "application/json" };
+  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
+
+  try {
+    const res = await fetch(retrievalUrl, { method: "GET", headers, signal: controller.signal });
+    const text = await res.text();
+    let data: unknown = null;
+    try {
+      data = text ? JSON.parse(text) : null;
+    } catch {
+      data = null;
+    }
+    if (!res.ok) {
+      const anyErr = data as { error?: { message?: string }; message?: string; msg?: string };
+      const detail = String(
+        anyErr?.error?.message || anyErr?.message || anyErr?.msg || text || `HTTP ${res.status}`,
+      ).slice(0, 300);
+      return { ok: false, httpStatus: res.status, detail };
+    }
+    const body = data as {
+      status?: unknown;
+      progress?: unknown;
+      url?: unknown;
+      error?: unknown;
+    } | null;
+    const st = String(body?.status ?? "pending").toLowerCase();
+    const status: VideoStatusResult["status"] =
+      st === "completed" || st === "succeeded" || st === "success"
+        ? "completed"
+        : st === "failed" || st === "error"
+          ? "failed"
+          : "pending";
+    const progress = Math.max(0, Math.min(100, Math.round(Number(body?.progress) || 0)));
+    const url = typeof body?.url === "string" && body.url ? body.url : undefined;
+    if (status === "failed") {
+      const detail =
+        typeof body?.error === "string" ? body.error.slice(0, 300) : "Video generation failed.";
+      return { ok: true, status: "failed", progress, detail };
+    }
+    if (status === "completed" && !url) {
+      return { ok: true, status: "pending", progress, detail: "Completed without a video URL." };
+    }
+    return { ok: true, status, progress, url };
+  } catch (err) {
+    const e = err as { name?: string; message?: string };
+    if (e.name === "AbortError") return { ok: false, detail: "Video status fetch timed out." };
+    return { ok: false, detail: e.message };
   } finally {
     clearTimeout(timer);
   }

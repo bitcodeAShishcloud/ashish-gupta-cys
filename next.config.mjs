@@ -64,8 +64,19 @@ function buildSecurityHeaders() {
   const csp = imageHosts
     ? CSP.replace("img-src 'self' data:", `img-src 'self' data: ${imageHosts}`)
     : CSP;
+  // Generated-video hosts for <video> playback (AI_VIDEO_CSP_HOSTS falls
+  // back to the image host list — provider CDNs are usually shared).
+  const videoHosts = (process.env.AI_VIDEO_CSP_HOSTS || process.env.AI_IMAGE_CSP_HOSTS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((h) => `https://${h}`)
+    .join(" ");
+  const cspWithMedia = videoHosts
+    ? csp.replace("object-src 'none'", `media-src 'self' ${videoHosts}; object-src 'none'`)
+    : csp;
   return SECURITY_HEADERS.map((h) =>
-    h.key === "Content-Security-Policy" ? { key: h.key, value: csp } : h,
+    h.key === "Content-Security-Policy" ? { key: h.key, value: cspWithMedia } : h,
   );
 }
 
