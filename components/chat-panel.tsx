@@ -943,18 +943,23 @@ export function ChatPanel({
                   }
                   rows={1}
                   maxLength={1000}
-                  className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 py-2.5 text-sm shadow-none focus-visible:ring-0"
+                  className="max-h-32 min-h-[44px] flex-1 resize-none border-none bg-transparent px-2.5 pt-2.5 text-sm shadow-none focus-visible:ring-0"
                   disabled={limited}
                 />
-                <Button
-                  variant="success"
-                  onClick={() => send(input)}
-                  disabled={!input.trim() || sending || generating || limited}
-                  aria-label="Send message"
-                  className="h-9 w-9 shrink-0 self-end rounded-full p-0 hover:brightness-105"
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1.5 px-1 pb-1.5 pt-1">
+                  <span className="hidden pr-1 text-[10px] text-muted-foreground lg:block">
+                    Enter to send · Shift + Enter for a new line
+                  </span>
+                  <Button
+                    variant="success"
+                    onClick={() => send(input)}
+                    disabled={!input.trim() || sending || generating || limited}
+                    aria-label="Send message"
+                    className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-full p-0 hover:brightness-105"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="rounded-[28px] border border-primary/20 bg-primary/[0.03] p-2 shadow-[0_0_60px_hsl(var(--primary)/0.10),0_10px_40px_rgba(0,0,0,0.4)] transition-colors focus-within:border-primary/40">
