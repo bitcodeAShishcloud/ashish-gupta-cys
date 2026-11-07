@@ -188,6 +188,17 @@ export async function POST(req: NextRequest) {
     return out.slice(0, 300);
   };
 
+  // PRES-01: upstream error text can echo the requested model id back (e.g.
+  // "The model `qwen/...` does not exist"), which would carry model identity
+  // into the public stream/DOM. Scrub every candidate's model id from
+  // visitor-bound detail — full detail stays server-side (console.warn).
+  const scrubIdentity = (out: string) => {
+    for (const p of candidates) {
+      if (p.model) out = out.split(p.model).join("[model]");
+    }
+    return out;
+  };
+
   // Shared failover budget: every candidate draws from the same 170s pool via
   // its per-call abort timer, so N attempts together stay inside the 180s
   // maxDuration even though a single attempt would otherwise get 120s.
@@ -274,7 +285,9 @@ export async function POST(req: NextRequest) {
               } catch (err) {
                 // Mid-stream failure: the visitor already saw text — no
                 // cross-provider retry, surface exactly as before.
-                push({ error: redact(err instanceof Error ? err.message : "stream interrupted") });
+                push({
+                  error: redact(scrubIdentity(err instanceof Error ? err.message : "stream interrupted")),
+                });
               } finally {
                 if (sentChars === 0) {
                   push({ error: redact("The AI provider returned an empty response.") });
@@ -329,13 +342,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Every candidate failed: the LAST candidate's redacted error reaches the
-  // visitor through the existing buffered error path — generic copy, no
-  // provider names added by our code, no silent fallback.
+  // Every candidate failed: the LAST candidate's redacted, identity-scrubbed
+  // error reaches the visitor through the existing buffered error path —
+  // generic copy, no provider or model identity added by our code or echoed
+  // from upstream, no silent fallback.
   const buffered = new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(
-        sseEvent({ error: redact(lastErr.detail || "The AI provider failed to respond.") }),
+        sseEvent({
+          error: redact(scrubIdentity(lastErr.detail || "The AI provider failed to respond.")),
+        }),
       );
       controller.enqueue(sseEvent({ done: true }));
       controller.close();
