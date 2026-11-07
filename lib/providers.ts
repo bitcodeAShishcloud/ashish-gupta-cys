@@ -60,6 +60,30 @@ export function getActiveProvider(): ProviderConfig | null {
   return reg.providers.find((p) => !isImageProvider(p)) ?? null;
 }
 
+/**
+ * Ordered chat-failover candidate list. The active provider comes first —
+ * exactly what getActiveProvider() returns, including its silent fallback
+ * when activeId is empty/invalid/image-typed, so the failover order and the
+ * admin "active" badge can never diverge — followed by the remaining chat
+ * providers in AI_PROVIDERS_JSON array order. Image providers are never
+ * candidates; duplicate ids dedupe with the first occurrence winning.
+ */
+export function orderedChatCandidates(): ProviderConfig[] {
+  const reg = loadProviders();
+  const chat = reg.providers.filter((p) => !isImageProvider(p));
+  const active = getActiveProvider();
+  if (!active) return chat;
+  const ordered = [active, ...chat];
+  const seen = new Set<string>();
+  const deduped: ProviderConfig[] = [];
+  for (const p of ordered) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    deduped.push(p);
+  }
+  return deduped;
+}
+
 /* ── Image generation ── */
 export function isImageProvider(p: ProviderConfig): boolean {
   return p.type === "image" || /\/images\//.test(p.baseUrl);
