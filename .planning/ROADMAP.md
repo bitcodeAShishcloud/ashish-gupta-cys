@@ -9,9 +9,9 @@
 
 **v0.0.0.0.2 — current milestone:**
 
-- [ ] **Phase 4: Multi-Provider Chat with Automatic Failover** - Two interchangeable providers with config-only switching, one-retry automatic failover, and a multi-provider admin console
-- [ ] **Phase 5: Production Deploy on Vercel + Key Hygiene** - Site live on Vercel with every secret in env vars, image mode verified in production, keys rotated and kept out of the repo
-- [ ] **Phase 6: Chat Access Simplification** - Chat opens straight to the composer (no name gate) and the daily limit rises to 50 per device — all client-side, same approach as v0.0.0.0.1
+- [x] **Phase 4: Multi-Provider Chat with Automatic Failover** - Two interchangeable providers with config-only switching, one-retry automatic failover, and a multi-provider admin console (completed 2026-11-07)
+- [x] **Phase 5: Production Deploy on Vercel + Key Hygiene** - Site live on Vercel with every secret in env vars, image mode verified in production, keys rotated and kept out of the repo
+- [x] **Phase 6: Chat Access Simplification** - Chat opens straight to the composer (no name gate) and the daily limit rises to 50 per device — all client-side, same approach as v0.0.0.0.1
 
 <details>
 <summary>✅ v0.0.0.0.1 Human-feel streaming chat (Phases 1-3) — SHIPPED 2026-11-02</summary>
@@ -41,7 +41,7 @@ Full phase details: [milestones/v0.0.0.0.1-ROADMAP.md](milestones/v0.0.0.0.1-ROA
   2. When the active provider fails (HTTP error, timeout, malformed reply), a visitor's message still gets a complete streamed reply — `/api/chat` retried once against the next configured provider automatically
   3. Admin console lists every configured provider with its status, and the live provider test can target any configured provider — not just the active one
   4. With multiple providers configured, the visitor experience is unchanged: replies still stream via same-origin SSE, the name gate and 30/day limit still apply, and no provider/model identity appears in the public chat
-**Plans**: 2/2 plans executed
+**Plans**: 2/2 plans complete
 Plans:
 - [x] 04-01-PLAN.md — Server failover core: ordered candidate list + probe-guarded retry loop in /api/chat (PROV-01, PROV-02) — complete 2026-11-07
 - [x] 04-02-PLAN.md — Multi-provider admin console: status badges + per-row live test via optional id (PROV-03) — complete 2026-11-07
@@ -56,7 +56,9 @@ Plans:
   2. Image-generation mode works on the deployed site — client-direct CDN rendering and the download proxy both function with `AI_IMAGE_CSP_HOSTS` configured
   3. Every production secret lives only in Vercel env vars — `AI_PROVIDERS_JSON` (both providers), `AI_ALLOWED_HOSTS` (both hosts), `AI_IMAGE_CSP_HOSTS`, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET` — and the owner can log into the admin console on the deployed site
   4. No API key appears in the repo, planning docs, or chat transcripts; keys pasted into chat are rotated; `.env.local` stays gitignored
-**Plans**: TBD
+**Plans**: 1/1 plans complete
+Plans:
+- [x] 05-01-PLAN.md — Deploy readiness + key hygiene: leak audit, credential rotation, live production verification, owner runbook for the env-only multi-provider config (DEPL-01, DEPL-03, SEC-01; DEPL-02 owner steps via 05-OWNER-RUNBOOK.md) — complete 2026-11-07
 
 ### Phase 6: Chat Access Simplification
 **Goal**: Visitors land straight in the chat — no name prompt — and get 50 chats per day per device, with every byte of visitor data still living only in the browser.
@@ -66,7 +68,9 @@ Plans:
   1. Opening `/chat` or the floating widget goes straight to the composer — no name screen, no friction
   2. The daily limit is 50 per device (client-side localStorage counter) with the existing limit-reached state at 50
   3. Returning visitors who stored a name still see it used gracefully; history, erase-data flow and streaming behavior are unchanged; nothing server-side is added
-**Plans**: TBD
+**Plans**: 1/1 plans complete
+Plans:
+- [x] 06-PLAN — Chat access simplification: name gate removed, DAILY_LIMIT 30→50, stored names stay graceful (CHAT-04, CHAT-05) — complete 2026-11-07
 
 ## Progress
 
@@ -78,6 +82,6 @@ Phases execute in numeric order: 4 → 5 → 6
 | 1. Streaming Chat + De-branded Presentation | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
 | 2. Handcrafted Feel Polish Pass | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
 | 3. Image Generation Mode in Chat | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
-| 4. Multi-Provider Chat with Automatic Failover | v0.0.0.0.2 | 2/2 | In Progress | - |
-| 5. Production Deploy on Vercel + Key Hygiene | v0.0.0.0.2 | 0/TBD | Not started | - |
-| 6. Chat Access Simplification | v0.0.0.0.2 | 0/TBD | Not started | - |
+| 4. Multi-Provider Chat with Automatic Failover | v0.0.0.0.2 | 2/2 | Complete    | 2026-11-07 |
+| 5. Production Deploy on Vercel + Key Hygiene | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |
+| 6. Chat Access Simplification | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |

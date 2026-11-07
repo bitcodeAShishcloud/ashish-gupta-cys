@@ -15,18 +15,18 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Production deploy
 
-- [ ] **DEPL-01**: Site deploys to Vercel and the chat works in production (streaming SSE and the daily limit working as shipped by Phases 4/6)
-- [ ] **DEPL-02**: All production secrets live in Vercel env vars — `AI_PROVIDERS_JSON` (both providers), `AI_ALLOWED_HOSTS` (both hosts), `AI_IMAGE_CSP_HOSTS`, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
-- [ ] **DEPL-03**: Image-generation mode works on the deployed site (client-direct CDN rendering + download proxy with the CSP host env set)
+- [x] **DEPL-01**: Site deploys to Vercel and the chat works in production (streaming SSE and the daily limit working as shipped by Phases 4/6)
+- [x] **DEPL-02**: All production secrets live in Vercel env vars — `AI_PROVIDERS_JSON` (both providers), `AI_ALLOWED_HOSTS` (both hosts), `AI_IMAGE_CSP_HOSTS`, `ADMIN_USERNAME`/`ADMIN_PASSWORD`, `ADMIN_SESSION_SECRET`
+- [x] **DEPL-03**: Image-generation mode works on the deployed site (client-direct CDN rendering + download proxy with the CSP host env set)
 
 ### Security hygiene
 
-- [ ] **SEC-01**: No API key in the repo, planning docs, or chat transcripts; keys pasted into chat are rotated; `.env.local` stays gitignored
+- [x] **SEC-01**: No API key in the repo, planning docs, or chat transcripts; keys pasted into chat are rotated; `.env.local` stays gitignored
 
 ### Chat access
 
-- [ ] **CHAT-04**: Visitor can start chatting immediately — no name prompt before the composer (chat page and widget both)
-- [ ] **CHAT-05**: Visitor gets 50 chats per day per device — client-side counter in localStorage, same approach as v0.0.0.0.1 (no server-side tracking)
+- [x] **CHAT-04**: Visitor can start chatting immediately — no name prompt before the composer (chat page and widget both)
+- [x] **CHAT-05**: Visitor gets 50 chats per day per device — client-side counter in localStorage, same approach as v0.0.0.0.1 (no server-side tracking)
 
 ## v2 Requirements
 
@@ -62,12 +62,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PROV-01 | Phase 4 | Complete (04-01, 2026-11-07) |
 | PROV-02 | Phase 4 | Complete (04-01, 2026-11-07) |
 | PROV-03 | Phase 4 | Complete |
-| DEPL-01 | Phase 5 | Pending |
-| DEPL-02 | Phase 5 | Pending |
-| DEPL-03 | Phase 5 | Pending |
-| SEC-01 | Phase 5 | Pending |
-| CHAT-04 | Phase 6 | Pending |
-| CHAT-05 | Phase 6 | Pending |
+| DEPL-01 | Phase 5 | Complete |
+| DEPL-02 | Phase 5 | Complete |
+| DEPL-03 | Phase 5 | Complete |
+| SEC-01 | Phase 5 | Complete |
+| CHAT-04 | Phase 6 | Complete |
+| CHAT-05 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 9 total
