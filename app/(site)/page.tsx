@@ -276,20 +276,11 @@ export default function HomePage() {
         </Reveal>
       </section>
 
-      {/* ── Projects: count-card filters + grid ── */}
-      <section id="projects" className="scroll-mt-24 py-16">
-        <Reveal>
-          <SectionLabel>{"projects"}</SectionLabel>
-          <h2 className="mt-1 font-display text-3xl font-bold">Projects</h2>
-          <ProjectsSection projects={p.projects} />
-        </Reveal>
-      </section>
-
-      {/* ── Freelance work, strongest proof of shipping ── */}
+      {/* ── Freelance work, strongest proof of shipping — leads Projects ── */}
       <section id="freelance" className="scroll-mt-24 py-16">
         <Reveal>
           <SectionLabel>{"freelance work"}</SectionLabel>
-          <h2 className="font-display text-3xl font-bold">Freelance Work</h2>
+          <h2 className="mt-1 font-display text-3xl font-bold">Freelance Work</h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
             Client properties and my own products, designed, built and shipped
             end-to-end solo, 2025-present. Each client build has a full
@@ -348,6 +339,15 @@ export default function HomePage() {
               </Reveal>
             ))}
           </div>
+        </Reveal>
+      </section>
+
+      {/* ── Projects: count-card filters + grid ── */}
+      <section id="projects" className="scroll-mt-24 py-16">
+        <Reveal>
+          <SectionLabel>{"projects"}</SectionLabel>
+          <h2 className="mt-1 font-display text-3xl font-bold">Projects</h2>
+          <ProjectsSection projects={p.projects} />
         </Reveal>
       </section>
 

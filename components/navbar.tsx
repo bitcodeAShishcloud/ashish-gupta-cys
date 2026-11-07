@@ -15,8 +15,8 @@ interface NavItem {
 const SECTION_LINKS: NavItem[] = [
   { href: "/#about", id: "about", label: "About" },
   { href: "/#skills", id: "skills", label: "Skills" },
-  { href: "/#projects", id: "projects", label: "Projects" },
   { href: "/#freelance", id: "freelance", label: "Freelance" },
+  { href: "/#projects", id: "projects", label: "Projects" },
 ];
 
 const ROUTE_LINKS: NavItem[] = [
@@ -71,7 +71,7 @@ export function Navbar() {
       setActiveSection(null);
       return;
     }
-    const ids = ["about", "skills", "projects", "freelance", "experience", "blog"];
+    const ids = ["about", "skills", "freelance", "projects", "experience", "blog"];
     const onScroll = () => {
       const probe = window.scrollY + 140;
       let current: string | null = null;
