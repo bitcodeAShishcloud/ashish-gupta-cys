@@ -72,9 +72,10 @@ Inferred from existing code (see `.planning/codebase/`):
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Stream via same-origin SSE proxied from the provider | CSP allows only `connect-src 'self'`; provider key must stay server-side | — Pending |
-| Remove model/provider info from public chat UI only | Admin console still needs it for provider management | — Pending |
-| Polish pass targets copy + chat visual details, not a redesign | Site already has a strong custom theme; tells are in microcopy and chat chrome | — Pending |
+| Stream via same-origin SSE proxied from the provider | CSP allows only `connect-src 'self'`; provider key must stay server-side | ✓ Shipped Phase 1 (v0.0.0.0.1) |
+| Remove model/provider info from public chat UI only | Admin console still needs it for provider management | ✓ Shipped Phase 1 + re-verified Phase 4 (PRES-01 sweep) |
+| Polish pass targets copy + chat visual details, not a redesign | Site already has a strong custom theme; tells are in microcopy and chat chrome | ✓ Shipped Phase 2 |
+| Failover = stateless per-request retry, pre-first-token only | Serverless-unreliable in-memory state; mid-stream retry would duplicate visitor-visible text | ✓ Shipped Phase 4 (first-token commit probe; activeId never mutated) |
 
 ## Evolution
 
@@ -94,6 +95,8 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-11-04 — milestone v0.0.0.0.2 started*
+*Last updated: 2026-11-07 after Phase 4*
+
+**Last updated: 2026-11-04 — milestone v0.0.0.0.2 started*
 
 </details>
