@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, adminConfigured } from "@/lib/admin-auth";
-import { rateLimit, clientIp } from "@/lib/chat-http";
+import { rateLimit, clientIp, readJsonBody } from "@/lib/chat-http";
 import {
   loadProviders,
   getActiveProvider,
@@ -49,33 +49,48 @@ export async function GET(req: NextRequest) {
   });
 }
 
-// POST /api/providers { action: "test" } — live test of the ACTIVE provider
-// with a tiny ping. Only the env-configured provider is ever contacted.
+// POST /api/providers { action: "test", id? } — live test of ONE provider
+// with a tiny ping. `id` present → test that provider (first id match wins);
+// `id` absent → test the ACTIVE provider (backward compatible).
 export async function POST(req: NextRequest) {
   if (!adminConfigured() || !isAdminRequest(req)) return unauthorized();
   if (!rateLimit("providers-test:" + clientIp(req), 6)) {
     return NextResponse.json({ error: "rate_limited", message: "Too many tests. Wait a bit." }, { status: 429 });
   }
 
-  const provider = getActiveProvider();
-  if (!provider || !provider.apiKey || !provider.model) {
+  const body = await readJsonBody(req);
+  const id = typeof body.id === "string" ? body.id.trim() : "";
+  const target = id
+    ? loadProviders().providers.find((p) => p.id === id)
+    : getActiveProvider();
+  if (id && !target) {
+    return NextResponse.json(
+      { error: "provider_not_found", message: "No provider with that id is configured." },
+      { status: 404 },
+    );
+  }
+  if (!target || !target.apiKey || !target.model) {
     return NextResponse.json(
       { error: "provider_not_configured", message: "No active provider with an API key is configured." },
       { status: 503 },
     );
   }
-  const urlError = validateProviderUrl(provider.baseUrl);
+  const urlError = validateProviderUrl(target.baseUrl);
   if (urlError) {
     return NextResponse.json({ error: "invalid_url", message: urlError }, { status: 503 });
   }
 
-  const result = await callProvider(provider, [
+  const result = await callProvider(target, [
     { role: "system", content: "Reply with exactly: ok" },
     { role: "user", content: "ping" },
   ]);
 
   if (!result.ok) {
-    const detail = result.detail ? String(result.detail).replace(provider.apiKey, "***").slice(0, 300) : "";
+    const detail = result.detail
+      ? String(result.detail)
+          .replace(target.apiKey ?? "", "***")
+          .slice(0, 300)
+      : "";
     return NextResponse.json(
       { error: "test_failed", message: "Provider test failed.", detail, status: result.status },
       { status: 502 },
@@ -83,8 +98,8 @@ export async function POST(req: NextRequest) {
   }
   return NextResponse.json({
     ok: true,
-    provider: provider.name,
-    model: provider.model,
+    provider: target.name,
+    model: target.model,
     reply: (result.reply || "").slice(0, 200),
   });
 }

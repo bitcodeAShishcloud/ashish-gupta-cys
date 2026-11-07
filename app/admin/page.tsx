@@ -9,7 +9,7 @@ import {
   Loader2,
   LogOut,
   Plus,
-  Rocket,
+  RefreshCw,
   ShieldCheck,
   Trash2,
   Wrench,
@@ -84,9 +84,9 @@ export default function AdminPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Test state
-  const [testing, setTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+  // Test state — per provider row
+  const [testingId, setTestingId] = useState<string | null>(null);
+  const [rowResults, setRowResults] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   async function checkAuth() {
     setChecking(true);
@@ -162,28 +162,41 @@ export default function AdminPage() {
     );
   }
 
-  async function runTest() {
-    setTesting(true);
-    setTestResult(null);
+  async function runTest(id: string) {
+    setTestingId(id);
+    setRowResults((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     try {
       const res = await fetch("/api/providers", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "test" }),
+        body: JSON.stringify({ action: "test", id }),
       });
       const data = await res.json().catch(() => ({}));
       if (res.ok && data.ok) {
-        setTestResult({ ok: true, text: `Connected to ${data.provider} (${data.model}), replied: "${(data.reply || "").slice(0, 80)}"` });
+        setRowResults((prev) => ({
+          ...prev,
+          [id]: {
+            ok: true,
+            text: `Connected to ${data.provider} (${data.model}), replied: "${(data.reply || "").slice(0, 80)}"`,
+          },
+        }));
       } else {
-        setTestResult({
-          ok: false,
-          text: data.detail || data.message || `Provider test failed (HTTP ${res.status}).`,
-        });
+        setRowResults((prev) => ({
+          ...prev,
+          [id]: {
+            ok: false,
+            text: data.detail || data.message || `Provider test failed (HTTP ${res.status}).`,
+          },
+        }));
       }
     } catch {
-      setTestResult({ ok: false, text: "Network error while testing." });
+      setRowResults((prev) => ({ ...prev, [id]: { ok: false, text: "Network error while testing." } }));
     } finally {
-      setTesting(false);
+      setTestingId(null);
     }
   }
 
@@ -284,39 +297,38 @@ export default function AdminPage() {
                           <span>ctx {fmt(p.contextWindow)}</span>
                           <span>out {fmt(p.maxOutput)}</span>
                         </div>
+                        <div className="mt-3 flex items-center justify-end">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="font-mono"
+                            onClick={() => runTest(p.id)}
+                            disabled={testingId === p.id}
+                          >
+                            {testingId === p.id ? (
+                              <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                            )}
+                            Test
+                          </Button>
+                        </div>
+                        {rowResults[p.id] ? (
+                          <div
+                            className={cn(
+                              "mt-3 rounded-md border px-3 py-2 font-mono text-xs",
+                              rowResults[p.id].ok
+                                ? "border-border/60 bg-transparent text-muted-foreground"
+                                : "border-danger/40 bg-danger/10 text-danger",
+                            )}
+                          >
+                            {rowResults[p.id].ok ? "✓ " : "✗ "}
+                            {rowResults[p.id].text}
+                          </div>
+                        ) : null}
                       </div>
                     ))
                   )}
-
-                  <div className="border-t border-border/60 pt-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-muted-foreground">
-                        Test the <span className="font-mono text-foreground">active</span> provider
-                        with a tiny ping.
-                      </p>
-                      <Button size="sm" onClick={runTest} disabled={testing}>
-                        {testing ? (
-                          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                        ) : (
-                          <Rocket className="mr-1.5 h-4 w-4" />
-                        )}
-                        Test
-                      </Button>
-                    </div>
-                    {testResult ? (
-                      <div
-                        className={cn(
-                          "mt-3 rounded-md border px-3 py-2 font-mono text-xs",
-                          testResult.ok
-                            ? "border-success/40 bg-success/10 text-success"
-                            : "border-danger/40 bg-danger/10 text-danger",
-                        )}
-                      >
-                        {testResult.ok ? "✓ " : "✗ "}
-                        {testResult.text}
-                      </div>
-                    ) : null}
-                  </div>
                 </CardContent>
               </Card>
 
