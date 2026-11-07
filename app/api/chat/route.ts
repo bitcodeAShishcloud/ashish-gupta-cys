@@ -245,11 +245,9 @@ export async function POST(req: NextRequest) {
               // split at the commit boundary is not corrupted.
               const decoder = tailDecoder ?? new TextDecoder();
               let buffer = tailBuffer;
-              let sentChars = 0;
               const push = (obj: Record<string, unknown>) => controller.enqueue(sseEvent(obj));
               try {
                 for (const piece of pending) {
-                  sentChars += piece.length;
                   push({ delta: piece });
                 }
                 for (;;) {
@@ -274,7 +272,6 @@ export async function POST(req: NextRequest) {
                         chunk.choices?.[0]?.delta?.content ??
                         chunk.choices?.[0]?.message?.content;
                       if (typeof piece === "string" && piece) {
-                        sentChars += piece.length;
                         push({ delta: piece });
                       }
                     } catch {
@@ -289,9 +286,6 @@ export async function POST(req: NextRequest) {
                   error: redact(scrubIdentity(err instanceof Error ? err.message : "stream interrupted")),
                 });
               } finally {
-                if (sentChars === 0) {
-                  push({ error: redact("The AI provider returned an empty response.") });
-                }
                 push({ done: true });
                 controller.close();
                 streamed.dispose?.();
