@@ -161,31 +161,32 @@ export function ChatPanel({
 
   // Load name + histories once, on the client only. The old shared history
   // key is split: image entries move to the image history, the rest stay chat.
+  // Histories load UNCONDITIONALLY — since the name gate was removed
+  // (Phase 6), most visitors have no stored name, and gating this block on
+  // the name made every anonymous conversation vanish on refresh.
   useEffect(() => {
     try {
       const n = localStorage.getItem(NAME_KEY);
-      if (n) {
-        setName(n);
-        const valid = (m: Msg) =>
-          m &&
-          (m.role === "user" || m.role === "assistant") &&
-          typeof m.content === "string";
-        const rawChat = localStorage.getItem(HISTORY_KEY);
-        if (rawChat) {
-          const parsed = JSON.parse(rawChat);
-          if (Array.isArray(parsed)) {
-            const all = parsed.filter(valid);
-            const imgs = all.filter((m: Msg) => m.kind === "image");
-            setChatHistory(all.filter((m: Msg) => m.kind !== "image").slice(-24));
-            if (imgs.length) setImageHistory(imgs.slice(-24));
-          }
+      if (n) setName(n);
+      const valid = (m: Msg) =>
+        m &&
+        (m.role === "user" || m.role === "assistant") &&
+        typeof m.content === "string";
+      const rawChat = localStorage.getItem(HISTORY_KEY);
+      if (rawChat) {
+        const parsed = JSON.parse(rawChat);
+        if (Array.isArray(parsed)) {
+          const all = parsed.filter(valid);
+          const imgs = all.filter((m: Msg) => m.kind === "image");
+          setChatHistory(all.filter((m: Msg) => m.kind !== "image").slice(-24));
+          if (imgs.length) setImageHistory(imgs.slice(-24));
         }
-        const rawImg = localStorage.getItem(IMAGE_HISTORY_KEY);
-        if (rawImg) {
-          const parsed = JSON.parse(rawImg);
-          if (Array.isArray(parsed)) {
-            setImageHistory(parsed.filter(valid).slice(-24));
-          }
+      }
+      const rawImg = localStorage.getItem(IMAGE_HISTORY_KEY);
+      if (rawImg) {
+        const parsed = JSON.parse(rawImg);
+        if (Array.isArray(parsed)) {
+          setImageHistory(parsed.filter(valid).slice(-24));
         }
       }
       setLimited(usageToday() >= DAILY_LIMIT);
