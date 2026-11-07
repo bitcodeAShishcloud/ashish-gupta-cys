@@ -1,0 +1,43 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v0.0.0.0.2 — Multi-provider chat + production deploy",
+  "phases": [
+    {
+      "number": "1",
+      "name": "Streaming Chat + De-branded Presentation",
+      "status": "complete"
+    },
+    {
+      "number": "2",
+      "name": "Handcrafted Feel Polish Pass",
+      "status": "complete"
+    },
+    {
+      "number": "3",
+      "name": "Image Generation Mode in Chat",
+      "status": "complete"
+    },
+    {
+      "number": "4",
+      "name": "Multi-Provider Chat with Automatic Failover",
+      "status": "complete"
+    },
+    {
+      "number": "5",
+      "name": "Production Deploy on Vercel + Key Hygiene",
+      "status": "complete"
+    },
+    {
+      "number": "6",
+      "name": "Chat Access Simplification",
+      "status": "complete"
+    }
+  ],
+  "next": {
+    "command": "/gsd-progress",
+    "label": "Show progress",
+    "reason": "Unsure of state — showing progress"
+  },
+  "updated_at": "2026-11-07T10:04:11.138Z"
+}

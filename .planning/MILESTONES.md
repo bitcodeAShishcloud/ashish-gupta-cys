@@ -1,5 +1,16 @@
 # Milestones
 
+## v0.0.0.0.2 v0.0.0.0.2 (Shipped: 2026-11-07)
+
+**Phases completed:** 3 phases, 3 plans, 5 tasks
+
+**Key accomplishments:**
+- Ordered-provider failover for /api/chat with a first-token commit probe — a pre-token provider failure now retries the next configured chat provider while the SSE contract, visitor client, image path and redaction bar stay byte-identical.
+- Per-provider live tests via an optional `id` on POST /api/providers plus exhaustive active/standby badges in the admin providers card — one endpoint, zero new deps, guards and masking untouched.
+- 05-01 — Production deploy readiness + key hygiene
+
+---
+
 ## v0.0.0.0.1 Human-feel streaming chat (Shipped: 2026-11-02)
 
 **Delivered:** The portfolio's AI experience rebuilt end-to-end — streaming chat via same-origin SSE, a full image-generation mode with aspect/style pickers and client-direct CDN rendering, a Claude/Dribbble-grade chat UI on a standalone /chat page, and the same design language across the whole site.
