@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  ArrowRight,
   ArrowUp,
   ArrowUpRight,
   BadgeCheck,
@@ -20,7 +19,6 @@ import {
   User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -37,7 +35,7 @@ const NAME_KEY = "chat_user_name";
 const HISTORY_KEY = "chat_history_v1";
 const IMAGE_HISTORY_KEY = "chat_image_history_v1";
 const USAGE_KEY = "chat_usage";
-const DAILY_LIMIT = 30;
+const DAILY_LIMIT = 50;
 
 interface Msg {
   role: "user" | "assistant";
@@ -125,7 +123,6 @@ export function ChatPanel({
   variant?: "page" | "widget";
 }) {
   const [name, setName] = useState<string | null>(null);
-  const [nameInput, setNameInput] = useState("");
   const [chatHistory, setChatHistory] = useState<Msg[]>([]);
   const [imageHistory, setImageHistory] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -212,17 +209,6 @@ export function ChatPanel({
     }, 200);
     return () => clearInterval(t);
   }, [generating]);
-
-  function enterName() {
-    const n = nameInput.trim().slice(0, 40);
-    if (!n) return;
-    try {
-      localStorage.setItem(NAME_KEY, n);
-    } catch {
-      /* ignore */
-    }
-    setName(n);
-  }
 
   async function send(text: string) {
     const message = text.trim();
@@ -388,7 +374,6 @@ export function ChatPanel({
     setChatHistory([]);
     setImageHistory([]);
     setName(null);
-    setNameInput("");
     setLimited(false);
     setFirstToken(false);
     setError(null);
@@ -403,69 +388,9 @@ export function ChatPanel({
     );
   }
 
-  // ── Name gate ──
-  if (!name) {
-    return (
-      <div
-        className={
-          variant === "widget"
-            ? "flex h-full items-center justify-center p-5"
-            : "flex h-[calc(100vh-56px)] items-center justify-center overflow-hidden px-5 py-16"
-        }
-      >
-        <div className="w-full max-w-sm animate-fade-in-up rounded-2xl border border-border/80 bg-card/50 p-7 shadow-[0_24px_70px_rgba(0,0,0,0.5)]">
-          <img
-            src="/favicon.webp"
-            alt="Ashish Gupta logo"
-            width={48}
-            height={48}
-            className="mx-auto h-12 w-12 rounded-full object-cover ring-1 ring-white/10"
-          />
-          {variant === "widget" ? (
-            <h2 className="mt-5 text-center font-display text-xl font-bold tracking-tight">
-              What should I call you?
-            </h2>
-          ) : (
-            <h1 className="mt-5 text-center font-display text-2xl font-bold tracking-tight">
-              What should I call you?
-            </h1>
-          )}
-          <p className="mx-auto mt-2 max-w-[17rem] text-center text-sm leading-relaxed text-muted-foreground">
-            Just a nickname is fine. Your name and this conversation stay in
-            your browser — nothing is stored on a server.
-          </p>
-          <form
-            className="mt-6 flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              enterName();
-            }}
-          >
-            <Input
-              id="chat-name"
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="Your name"
-              maxLength={40}
-              autoFocus
-              className="h-11 flex-1 rounded-xl"
-            />
-            <Button
-              type="submit"
-              disabled={!nameInput.trim()}
-              className="h-11 rounded-xl px-5"
-            >
-              Let&apos;s go
-              <ArrowRight className="ml-1.5 h-4 w-4" />
-            </Button>
-          </form>
-        </div>
-      </div>
-    );
-  }
-
-  // Each mode renders its own thread: chat messages under Chat, image
-  // generations under Image. The daily budget is shared between them.
+  // ── Chat view: full-height app, messages scroll internally ──
+  // Phase 6: no name gate — visitors land straight in the chat. A stored
+  // name (returning visitor) is still used in the greetings when present.
   const visible = mode === "chat" ? chatHistory : imageHistory;
 
   // ── Chat view: full-height app, messages scroll internally ──
@@ -484,11 +409,11 @@ export function ChatPanel({
             <div className="min-w-0">
               {variant === "widget" ? (
                 <h2 className="font-display text-base font-semibold leading-snug tracking-tight">
-                  Hey {name} — what are you curious about?
+                  Hey{name ? ` ${name}` : ""} — what are you curious about?
                 </h2>
               ) : (
                 <h1 className="font-display text-xl font-bold tracking-tight">
-                  Hey {name} — what are you curious about?
+                  Hey{name ? ` ${name}` : ""} — what are you curious about?
                 </h1>
               )}
               <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
@@ -572,13 +497,25 @@ export function ChatPanel({
                 </div>
                 {variant === "widget" ? (
                   <h2 className="font-display text-xl font-bold tracking-tight">
-                    Hey, I&apos;m <span className="text-primary">{name}</span>.
-                    How can I help you today?
+                    {name ? (
+                      <>
+                        Hey, I&apos;m <span className="text-primary">{name}</span>.
+                        How can I help you today?
+                      </>
+                    ) : (
+                      <>Hi — how can I help you today?</>
+                    )}
                   </h2>
                 ) : (
                   <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
-                    Hey, I&apos;m <span className="text-primary">{name}</span>.
-                    How can I help you today?
+                    {name ? (
+                      <>
+                        Hey, I&apos;m <span className="text-primary">{name}</span>.
+                        How can I help you today?
+                      </>
+                    ) : (
+                      <>Hi — how can I help you today?</>
+                    )}
                   </h1>
                 )}
                 <p className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
@@ -963,7 +900,7 @@ export function ChatPanel({
           >
             {limited
               ? "Daily limit reached — resets tomorrow"
-              : `${usageToday()}/30 today · stays on your device`}
+              : `${usageToday()}/${DAILY_LIMIT} today · stays on your device`}
           </p>
         </div>
       </div>
