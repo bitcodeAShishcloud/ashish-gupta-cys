@@ -2,15 +2,20 @@
 gsd_state_version: "1.0"
 milestone: v0.0.0.0.2
 milestone_name: Multi-provider chat + production deploy
-status: planning
-last_updated: "2026-11-04T00:00:00.000Z"
-last_activity: 2026-11-04
+current_phase: 4
+current_phase_name: Multi-Provider Chat with Automatic Failover
+status: executing
+stopped_at: "Completed 04-01-PLAN.md"
+last_updated: "2026-11-07T07:15:20Z"
+last_activity: 2026-11-07
+last_activity_desc: "04-01 server failover core executed (PROV-01, PROV-02)"
+state_head: 2a218c7acf47f868aacda1992c30b17b866e1b55
 progress:
-  total_phases: 2
+  total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -27,18 +32,18 @@ See: .planning/PROJECT.md (updated 2026-11-04)
 
 ## Current Position
 
-Phase: 4 of 5 (Multi-Provider Chat with Automatic Failover) — first of 2 phases this milestone
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-11-04 — Roadmap created for v0.0.0.0.2 (Phases 4-5, 7/7 requirements mapped)
+Phase: 4 (Multi-Provider Chat with Automatic Failover) — EXECUTING
+Plan: 2 of 2
+Status: Executing Phase 4
+Last activity: 2026-11-07 — 04-01 server failover core executed (PROV-01, PROV-02)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [█████░░░░░] 50%
 
 ## Milestone Progress
 
 | Phase | Name | Status |
 |-------|------|--------|
-| 4 | Multi-Provider Chat with Automatic Failover | Not started |
+| 4 | Multi-Provider Chat with Automatic Failover | In Progress (1/2 plans) |
 | 5 | Production Deploy on Vercel + Key Hygiene | Not started |
 
 (Phases 1-3 of v0.0.0.0.1 shipped 2026-11-02 — see MILESTONES.md)
@@ -46,7 +51,7 @@ Progress: [░░░░░░░░░░] 0%
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (all in v0.0.0.0.1)
+- Total plans completed: 4 (3 in v0.0.0.0.1 + 04-01)
 - Average duration: —
 - Total execution time: —
 
@@ -55,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 1-3 (v0.0.0.0.1) | 3/3 | 3-day milestone | — |
+| 4 | 1/2 (04-01) | 29 min | 29 min |
 
 ## Accumulated Context
 
@@ -66,6 +72,10 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Failover = single retry against the next configured provider; no load balancing (portfolio scale)
 - SEC-01 (key rotation) folded into Phase 5 as operational hygiene, not its own phase
 - Top-Tools-AI (https://top-tools-ai.com/v1, OpenAI-compatible) is the second provider — key verified, models live-tested (DeepSeek-V4-Flash, Qwen-3.8-Max, GLM-5.3-Flash all 200 OK)
+- Failover commit point = first-token probe (`readFirstDelta`): the SSE Response is only built after the first delta is parsed, so a failover can never duplicate text (04-01)
+- candidate[0] is exactly `getActiveProvider()`'s return (incl. silent fallback) so failover order and the admin active badge can never diverge (04-01)
+- Probe failure advances to the next candidate — no same-candidate buffered retry (doubles latency of a likely-repeat failure) (04-01)
+- Failover warn lines go through the multi-key `redact()` closure so no candidate's apiKey can reach server logs (04-01)
 
 ### Pending Todos
 
@@ -86,6 +96,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-11-04
-Stopped at: Roadmap created for v0.0.0.0.2 — Phases 4-5 defined, ready to plan Phase 4
+Last session: 2026-11-07T07:15:20Z
+Stopped at: Completed 04-01-PLAN.md
 Resume file: None

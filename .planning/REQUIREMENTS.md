@@ -9,8 +9,8 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 ### Provider layer
 
-- [ ] **PROV-01**: Owner can configure multiple AI providers in `AI_PROVIDERS_JSON` and switch the active one by editing `activeId` only — no code changes
-- [ ] **PROV-02**: If the active provider fails (HTTP error, timeout, malformed reply), `/api/chat` automatically retries once against the next configured provider and still returns a reply
+- [x] **PROV-01**: Owner can configure multiple AI providers in `AI_PROVIDERS_JSON` and switch the active one by editing `activeId` only — no code changes
+- [x] **PROV-02**: If the active provider fails (HTTP error, timeout, malformed reply), `/api/chat` automatically retries once against the next configured provider and still returns a reply
 - [ ] **PROV-03**: Admin console lists every configured provider with status, and the live provider test can target any configured provider — not just the active one
 
 ### Production deploy
@@ -59,8 +59,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PROV-01 | Phase 4 | Pending |
-| PROV-02 | Phase 4 | Pending |
+| PROV-01 | Phase 4 | Complete (04-01, 2026-11-07) |
+| PROV-02 | Phase 4 | Complete (04-01, 2026-11-07) |
 | PROV-03 | Phase 4 | Pending |
 | DEPL-01 | Phase 5 | Pending |
 | DEPL-02 | Phase 5 | Pending |

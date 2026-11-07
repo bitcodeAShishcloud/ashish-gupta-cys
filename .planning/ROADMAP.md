@@ -43,7 +43,7 @@ Full phase details: [milestones/v0.0.0.0.1-ROADMAP.md](milestones/v0.0.0.0.1-ROA
   4. With multiple providers configured, the visitor experience is unchanged: replies still stream via same-origin SSE, the name gate and 30/day limit still apply, and no provider/model identity appears in the public chat
 **Plans**: 2 plans
 Plans:
-- [ ] 04-01-PLAN.md — Server failover core: ordered candidate list + probe-guarded retry loop in /api/chat (PROV-01, PROV-02)
+- [x] 04-01-PLAN.md — Server failover core: ordered candidate list + probe-guarded retry loop in /api/chat (PROV-01, PROV-02) — complete 2026-11-07
 - [ ] 04-02-PLAN.md — Multi-provider admin console: status badges + per-row live test via optional id (PROV-03)
 **UI hint**: yes
 
