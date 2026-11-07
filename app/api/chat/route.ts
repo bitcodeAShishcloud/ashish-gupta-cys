@@ -53,13 +53,14 @@ function sseEvent(obj: Record<string, unknown>): Uint8Array {
 }
 
 /* Result of the first-token probe: either the candidate is committed (reader
- * held, first deltas parsed, partial-line tail kept) or it failed before any
- * byte reached the visitor. */
+ * held, first deltas parsed, partial-line tail and the mid-stream TextDecoder
+ * kept) or it failed before any byte reached the visitor. */
 interface FirstTokenProbe {
   ok: boolean;
   reader?: ReadableStreamDefaultReader<Uint8Array>;
   pendingDeltas?: string[];
   tailBuffer?: string;
+  tailDecoder?: TextDecoder;
   err?: { detail: string; status: number };
 }
 
@@ -124,7 +125,7 @@ async function readFirstDelta(
       }
     }
     if (pending.length > 0) {
-      return { ok: true, reader, pendingDeltas: pending, tailBuffer: buffer };
+      return { ok: true, reader, pendingDeltas: pending, tailBuffer: buffer, tailDecoder: decoder };
     }
   }
 }
@@ -224,10 +225,14 @@ export async function POST(req: NextRequest) {
         const reader = probe.reader;
         const pending = probe.pendingDeltas;
         const tailBuffer = probe.tailBuffer;
+        const tailDecoder = probe.tailDecoder;
         return new Response(
           new ReadableStream<Uint8Array>({
             async start(controller) {
-              const decoder = new TextDecoder();
+              // The probe's stream:true decode may hold an incomplete trailing
+              // multi-byte UTF-8 sequence — reuse its decoder so a character
+              // split at the commit boundary is not corrupted.
+              const decoder = tailDecoder ?? new TextDecoder();
               let buffer = tailBuffer;
               let sentChars = 0;
               const push = (obj: Record<string, unknown>) => controller.enqueue(sseEvent(obj));
