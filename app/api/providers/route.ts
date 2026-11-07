@@ -86,9 +86,13 @@ export async function POST(req: NextRequest) {
   ]);
 
   if (!result.ok) {
+    // target.apiKey is guaranteed truthy here: the provider_not_configured
+    // guard above rejects every falsy key before this line — and an
+    // empty-string pattern would PREPEND "***" to the detail instead of
+    // redacting it.
     const detail = result.detail
       ? String(result.detail)
-          .split(target.apiKey ?? "")
+          .split(target.apiKey as string)
           .join("***")
           .slice(0, 300)
       : "";
