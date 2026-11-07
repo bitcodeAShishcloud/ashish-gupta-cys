@@ -41,7 +41,10 @@ Full phase details: [milestones/v0.0.0.0.1-ROADMAP.md](milestones/v0.0.0.0.1-ROA
   2. When the active provider fails (HTTP error, timeout, malformed reply), a visitor's message still gets a complete streamed reply — `/api/chat` retried once against the next configured provider automatically
   3. Admin console lists every configured provider with its status, and the live provider test can target any configured provider — not just the active one
   4. With multiple providers configured, the visitor experience is unchanged: replies still stream via same-origin SSE, the name gate and 30/day limit still apply, and no provider/model identity appears in the public chat
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 04-01-PLAN.md — Server failover core: ordered candidate list + probe-guarded retry loop in /api/chat (PROV-01, PROV-02)
+- [ ] 04-02-PLAN.md — Multi-provider admin console: status badges + per-row live test via optional id (PROV-03)
 **UI hint**: yes
 
 ### Phase 5: Production Deploy on Vercel + Key Hygiene
@@ -75,6 +78,6 @@ Phases execute in numeric order: 4 → 5 → 6
 | 1. Streaming Chat + De-branded Presentation | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
 | 2. Handcrafted Feel Polish Pass | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
 | 3. Image Generation Mode in Chat | v0.0.0.0.1 | 1/1 | Complete | 2026-11-02 |
-| 4. Multi-Provider Chat with Automatic Failover | v0.0.0.0.2 | 0/TBD | Not started | - |
+| 4. Multi-Provider Chat with Automatic Failover | v0.0.0.0.2 | 0/2 | Not started | - |
 | 5. Production Deploy on Vercel + Key Hygiene | v0.0.0.0.2 | 0/TBD | Not started | - |
 | 6. Chat Access Simplification | v0.0.0.0.2 | 0/TBD | Not started | - |
