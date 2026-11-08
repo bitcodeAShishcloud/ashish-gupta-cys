@@ -45,7 +45,8 @@ export function buildKnowledgeBase(): string {
   for (const p of PORTFOLIO.projects) {
     const bits = [clip(p.desc, 200)];
     if (p.tech?.length) bits.push(`tech: ${p.tech.join(", ")}`);
-    if (p.live) bits.push("has live demo");
+    if (p.live) bits.push(`live website: ${p.live}`);
+    if (p.github) bits.push(`code: ${p.github}`);
     if (p.caseStudy) bits.push(`case study: /blog/${p.caseStudy}`);
     lines.push(`- ${p.name} (${p.category ?? "project"}): ${bits.join(" | ")}`);
   }
@@ -68,6 +69,9 @@ export function buildKnowledgeBase(): string {
 
   lines.push(
     `Contact: email ${PORTFOLIO.socials.email}; GitHub ${PORTFOLIO.socials.github}; LinkedIn ${PORTFOLIO.socials.linkedin}.`,
+  );
+  lines.push(
+    "When a visitor asks for a project link, share the live website URL from this sheet directly.",
   );
 
   return lines.join("\n");
