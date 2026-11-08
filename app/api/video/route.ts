@@ -13,6 +13,7 @@ import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
 import { createVideoTask, getVideoTask, resolveVideoTarget } from "@/lib/providers";
 
 const VIDEO_RATE_LIMIT = Number(process.env.VIDEO_RATE_LIMIT) || 3; // creates / min / IP
+const STATUS_RATE_LIMIT = Number(process.env.VIDEO_STATUS_RATE_LIMIT) || 30; // polls / min / IP
 const MAX_PROMPT = 1000;
 const ASPECTS = new Set(["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"]);
 const SECONDS = new Set(["4", "5", "6", "7", "8", "9", "10", "11", "12"]);
@@ -66,6 +67,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  // Status polls proxy a provider call each time — keep them bounded too.
+  if (!rateLimit("video-status:" + clientIp(req), STATUS_RATE_LIMIT)) {
+    return NextResponse.json(
+      { error: "rate_limited", message: "Too many status polls — slow down" },
+      { status: 429 },
+    );
+  }
   const id = req.nextUrl.searchParams.get("id") ?? "";
   if (!id || id.length > 200 || !/^[A-Za-z0-9_-]+$/.test(id)) {
     return NextResponse.json(

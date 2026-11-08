@@ -62,6 +62,8 @@ interface Msg {
     tier?: string;
     seconds?: string;
     revisedPrompt?: string;
+    /** Video tasks: creation timestamp — powers the 30-minute poll deadline. */
+    createdAt?: number;
   };
 }
 
@@ -185,6 +187,11 @@ export function ChatPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [vAspect, setVAspect] = useState<string>("16:9");
   const [vSeconds, setVSeconds] = useState<string>("5");
+  /* Latest videoHistory for async callbacks — the poll handler reads this
+   * ref instead of closing over state, so persistence and the usage counter
+   * run OUTSIDE the setState updater (side effects in updaters re-run on
+   * every replay, which double-counted the daily limit). */
+  const videoHistoryRef = useRef<Msg[]>([]);
   const [generating, setGenerating] = useState(false);
   const [openPanel, setOpenPanel] = useState<
     "aspect" | "style" | "tier" | "vAspect" | "vSeconds" | null
@@ -518,7 +525,7 @@ export function ChatPanel({
         kind: "video",
         jobId: data.taskId,
         progress: 0,
-        meta: { prompt, aspect: vAspect, seconds: vSeconds },
+        meta: { prompt, aspect: vAspect, seconds: vSeconds, createdAt: Date.now() },
       };
       setVideoHistory([...history, vidMsg]);
     } catch (e) {
@@ -533,27 +540,74 @@ export function ChatPanel({
     }
   }
 
-  /* Poll pending video tasks (oldest first) every 2.5s via the status
-   * route — no long-lived request, so reloads and tab switches are safe:
-   * the taskId rides in history and polling resumes on mount. */
+  /* Poll pending video tasks every 2.5s via the status route. Hard caps:
+   * 12 consecutive failed status fetches or a 30-minute total age mark the
+   * task failed, so a stuck task can never poll forever. Progress updates
+   * are skipped when unchanged (no state churn), and the completion
+   * bookkeeping (persist + usage count) happens in the interval handler —
+   * never inside a setState updater, which re-runs on replay and
+   * double-counted the daily limit. */
+  const pollFailRef = useRef(0);
   useEffect(() => {
-    const pending = videoHistory.find(
+    videoHistoryRef.current = videoHistory;
+  }, [videoHistory]);
+  useEffect(() => {
+    const hasPending = videoHistory.some(
       (m) => m.kind === "video" && m.jobId && !m.videoUrl && !m.failed,
     );
-    if (!pending?.jobId) return;
-    const t = setTimeout(async () => {
+    if (!hasPending) {
+      pollFailRef.current = 0;
+      return;
+    }
+    const tick = async () => {
+      const pending = videoHistoryRef.current.find(
+        (m) => m.kind === "video" && m.jobId && !m.videoUrl && !m.failed,
+      );
+      const jobId = pending?.jobId as string | undefined;
+      if (!jobId) return; // pending list changed between ticks
+      const createdAt = Number(pending?.meta?.createdAt) || 0;
+      if (createdAt && Date.now() - createdAt > 30 * 60 * 1000) {
+        setVideoHistory((prev) =>
+          prev.map((m) =>
+            m.kind === "video" && m.jobId === jobId ? { ...m, failed: true } : m,
+          ),
+        );
+        return;
+      }
       try {
-        const res = await fetch(`/api/video?id=${encodeURIComponent(pending.jobId)}`);
+        const res = await fetch(`/api/video?id=${encodeURIComponent(jobId)}`);
+        if (!res.ok) {
+          pollFailRef.current += 1;
+          if (pollFailRef.current >= 12) {
+            pollFailRef.current = 0;
+            setVideoHistory((prev) =>
+              prev.map((m) =>
+                m.kind === "video" && m.jobId === jobId ? { ...m, failed: true } : m,
+              ),
+            );
+          }
+          return; // next tick retries; no state churn on failure
+        }
         const d = await res.json().catch(() => ({}));
         if (d.status === "completed" && typeof d.url === "string" && d.url) {
-          setVideoHistory((prev) => {
-            const next = prev.map((m) =>
-              m.kind === "video" && m.jobId === pending.jobId
-                ? { ...m, videoUrl: d.url as string, progress: 100 }
-                : m,
-            );
+          pollFailRef.current = 0;
+          const next = videoHistoryRef.current.map((m) =>
+            m.kind === "video" && m.jobId === jobId
+              ? { ...m, videoUrl: d.url as string, progress: 100 }
+              : m,
+          );
+          setVideoHistory(next);
+          // Persist first; count usage only when the completion actually
+          // stuck — a failed write would otherwise recount on every mount.
+          let persisted = false;
+          try {
+            localStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(next.slice(-50)));
+            persisted = true;
+          } catch {
+            /* ignore */
+          }
+          if (persisted) {
             try {
-              localStorage.setItem(VIDEO_HISTORY_KEY, JSON.stringify(next.slice(-50)));
               const nextUsage = usageToday() + 1;
               localStorage.setItem(
                 USAGE_KEY,
@@ -563,27 +617,44 @@ export function ChatPanel({
             } catch {
               /* ignore */
             }
-            return next;
-          });
-        } else if (d.status === "failed") {
+          }
+          return; // history change re-arms the effect; pending is gone
+        }
+        if (d.status === "failed") {
+          pollFailRef.current = 0;
           setVideoHistory((prev) =>
             prev.map((m) =>
-              m.kind === "video" && m.jobId === pending.jobId ? { ...m, failed: true } : m,
+              m.kind === "video" && m.jobId === jobId ? { ...m, failed: true } : m,
             ),
           );
-        } else {
-          const pct = Math.max(1, Math.min(99, Number(d.progress) || 0));
+          return;
+        }
+        pollFailRef.current = 0;
+        const pct = Math.max(1, Math.min(99, Number(d.progress) || 0));
+        const current = videoHistoryRef.current.find(
+          (m) => m.kind === "video" && m.jobId === jobId,
+        );
+        if (current && current.progress !== pct) {
           setVideoHistory((prev) =>
             prev.map((m) =>
-              m.kind === "video" && m.jobId === pending.jobId ? { ...m, progress: pct } : m,
+              m.kind === "video" && m.jobId === jobId ? { ...m, progress: pct } : m,
             ),
           );
         }
       } catch {
-        /* transient network error — the next tick retries */
+        pollFailRef.current += 1;
+        if (pollFailRef.current >= 12) {
+          pollFailRef.current = 0;
+          setVideoHistory((prev) =>
+            prev.map((m) =>
+              m.kind === "video" && m.jobId === jobId ? { ...m, failed: true } : m,
+            ),
+          );
+        }
       }
-    }, 2500);
-    return () => clearTimeout(t);
+    };
+    const t = setInterval(tick, 2500);
+    return () => clearInterval(t);
   }, [videoHistory, mode]);
 
   function eraseData() {
