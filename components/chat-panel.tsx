@@ -267,9 +267,23 @@ export function ChatPanel({
     }
   }, []);
 
+  // During streaming, instant scroll (no smooth animation → no up/down jank).
+  // Smooth-scroll only when not actively streaming.
+  const prevCounts = useRef({ chat: 0, img: 0, vid: 0 });
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    if (!el) return;
+    const grew =
+      chatHistory.length > prevCounts.current.chat ||
+      imageHistory.length > prevCounts.current.img ||
+      videoHistory.length > prevCounts.current.vid;
+    prevCounts.current = { chat: chatHistory.length, img: imageHistory.length, vid: videoHistory.length };
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const behavior: ScrollBehavior =
+      reduceMotion || sending || generating ? "instant" : grew ? "smooth" : "instant";
+    el.scrollTo({ top: el.scrollHeight, behavior });
   }, [chatHistory, imageHistory, videoHistory, sending, generating, mode]);
 
   // Close picker popovers when clicking outside the composer.
@@ -1189,7 +1203,7 @@ export function ChatPanel({
 
           {sending && !firstToken ? (
             <div
-              className="flex items-center gap-1.5"
+              className="flex h-5 items-center gap-1.5"
               aria-label="AI is typing"
               role="status"
             >
