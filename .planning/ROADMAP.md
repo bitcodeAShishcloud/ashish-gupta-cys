@@ -86,6 +86,7 @@ Phases execute in numeric order: 4 → 5 → 6
 | 5. Production Deploy on Vercel + Key Hygiene | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |
 | 6. Chat Access Simplification | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |
 | 7. Rich Markdown Rendering & Export | v0.0.0.0.3 | 0/1 | In progress | - |
+| 8. Mail/Draft Replies, Send Action & Prospect Research | v0.0.0.0.3 | 0/1 | Not started | - |
 
 ## v0.0.0.0.3 — Rich Markdown Rendering & Export
 
@@ -101,3 +102,16 @@ Phases execute in numeric order: 4 → 5 → 6
   4. Chat header toolbar controls font size, font family, line spacing and reading width, persisted per device
   5. Whole-conversation export works; no server-side state added
   6. Streaming replies never break on partially-written code fences or math
+
+### Phase 8: Mail/Draft Replies, Send Action & Prospect Research
+**Goal**: Email/draft replies get a dedicated two-action bar (Copy + Send), normal replies keep their own bar, and the assistant can produce research-backed personalized outreach drafts.
+**Depends on**: Phase 7 (action bar, SYSTEM_PROMPT)
+**Requirements**: SEND-01 … SEND-06 (see REQUIREMENTS.md)
+**Decisions**: `.planning/phases/08-mail-draft-and-send/08-CONTEXT.md` — 9 owner answers locked; 5 open items flagged for the owner
+**Success Criteria**:
+  1. Mail/draft replies show only `Copy` + `Send`; normal replies show `Copy / Copy as / Download / Share / Regenerate`
+  2. `Send` opens the native share sheet with Email-ready text (Subject + body + sign-off), clipboard fallback on desktop
+  3. `Email`, `Print`, `Draft email` are removed from the codebase
+  4. Mail type is signalled by a structured SSE event with a content-detection fallback; streaming never flashes between bars
+  5. A same-origin, SSRF-gated research route can fetch prospect info; the assistant produces a personalized draft from it
+  6. No visitor data stored server-side; no new colours or hover-only affordances

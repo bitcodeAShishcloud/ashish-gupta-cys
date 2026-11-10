@@ -41,6 +41,19 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **MD-07**: Whole-conversation export is available; no server-side state is added
 - [ ] **MD-08**: Streaming replies degrade gracefully on partially-written fences, math and diagrams
 
+## v0.0.0.0.4 Requirements (Phase 8)
+
+### Mail / draft replies
+
+- [ ] **SEND-01**: Mail/draft replies show only `Copy` + `Send`; normal replies show `Copy`, `Copy as`, `Download`, `Share`, `Regenerate`
+- [ ] **SEND-02**: `Send` opens the native share sheet (Web Share API) with Email-ready text (Subject + greeting + body + sign-off), falling back to clipboard on desktop
+- [ ] **SEND-03**: `Email`, `Print` and `Draft email` buttons are removed from the codebase
+- [ ] **SEND-04**: Mail type is signalled by a structured SSE event with a content-detection fallback; the bar never flashes during streaming
+- [ ] **SEND-05**: A same-origin, SSRF-gated `/api/research` route fetches prospect info (auto web search + user-supplied link/paste) and the assistant produces a personalized outreach draft
+- [ ] **SEND-06**: No visitor data is stored server-side; no new colours or hover-only affordances
+
+> **Open items (owner must decide before planning):** research provider + API key, per-call cost/rate limit, manual-input UX, auto-detect false-positive policy, and whether research runs automatically on every message. See `08-CONTEXT.md`.
+
 ## v2 Requirements
 
 Deferred to future releases. Tracked but not in current roadmap.
