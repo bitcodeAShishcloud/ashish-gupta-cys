@@ -2,31 +2,39 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Check, Copy, Download, Share2, Mail, Printer, RefreshCw, ChevronDown,
+  Check, Copy, Download, Share2, RefreshCw, ChevronDown, Send,
 } from "lucide-react";
 import {
   COPY_FORMATS, DOWNLOAD_FORMATS, FORMAT_LABELS, formatPayload,
-  copyToClipboard, downloadBlob, exportDocx, exportPdf, mailtoLink,
-  printHtml, safeFilename, shareContent, toEmailText, type ExportFormat,
+  copyToClipboard, downloadBlob, exportDocx, exportPdf, safeFilename,
+  shareContent, toEmailText, type ExportFormat,
 } from "@/lib/export-formats";
 import { cn } from "@/lib/utils";
 
+/* Phase 8 (locked decisions #1, #3, #6, #9, #15):
+ *  - isMail=true  → Copy + Send only
+ *  - isMail=false → Copy, Copy as, Download, Share, Regenerate
+ * Email (mailto), Print and Draft email are REMOVED, not hidden.
+ * `Send` opens the native share sheet with Email-ready text and falls back
+ * to the clipboard on desktop. The share sheet never sends anything itself.
+ */
 export function MessageActions({
   markdown,
   getRenderedHtml,
   getRenderedElement,
   onRegenerate,
-  onDraftEmail,
+  isMail = false,
   subject = "Notes from Ashish Gupta",
 }: {
   markdown: string;
   getRenderedHtml: () => string;
   getRenderedElement: () => HTMLElement | null;
   onRegenerate?: () => void;
-  onDraftEmail?: () => void;
+  isMail?: boolean;
   subject?: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const [sent, setSent] = useState(false);
   const [openMenu, setOpenMenu] = useState<"copy" | "download" | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -47,24 +55,22 @@ export function MessageActions({
     };
   }, [openMenu]);
 
-  async function flash(ok: boolean) {
-    if (ok) {
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
-    }
+  async function flash(setter: (v: boolean) => void, ok: boolean) {
+    if (!ok) return;
+    setter(true);
+    window.setTimeout(() => setter(false), 1600);
   }
 
   async function doCopy(format: ExportFormat) {
     setOpenMenu(null);
     const html = getRenderedHtml();
     const { data } = formatPayload(format, markdown, html, { subject, title: subject });
-    await flash(await copyToClipboard(String(data)));
+    await flash(setCopied, await copyToClipboard(String(data)));
   }
 
   async function doDownload(format: ExportFormat) {
     setOpenMenu(null);
     const html = getRenderedHtml();
-    const base = safeFilename(subject.replace(/^Notes from /, "").replace(/\s+/g, "-").toLowerCase(), format);
     if (format === "pdf") {
       const el = getRenderedElement();
       if (!el) return;
@@ -85,18 +91,46 @@ export function MessageActions({
       }
       return;
     }
-    const { data, mime, ext } = formatPayload(format, markdown, html, { subject, title: subject });
-    downloadBlob(safeFilename(subject, ext) || base, data, mime);
+    const { data, mime, ext } = formatPayload(format, markdown, html, {
+      subject,
+      title: subject,
+    });
+    downloadBlob(safeFilename(subject, ext), data, mime);
+  }
+
+  async function doSend() {
+    const payload = toEmailText(markdown, subject);
+    const shared = await shareContent("Share email draft", payload);
+    if (shared === "failed") {
+      await flash(setSent, await copyToClipboard(payload));
+    } else {
+      await flash(setSent, true);
+    }
   }
 
   const btn = "md-action-btn";
+  const copyBtn = (
+    <button type="button" className={btn} onClick={() => doCopy("md")} title="Copy as Markdown">
+      {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+      <span>{copied ? "Copied" : "Copy"}</span>
+    </button>
+  );
+
+  if (isMail) {
+    return (
+      <div ref={rootRef} className="md-actions">
+        {copyBtn}
+        <button type="button" className={cn(btn, "md-action-send")} onClick={doSend} title="Share email draft">
+          {sent ? <Check className="h-3.5 w-3.5 text-success" /> : <Send className="h-3.5 w-3.5" />}
+          <span>{sent ? "Copied" : "Send"}</span>
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div ref={rootRef} className="md-actions">
-      <button type="button" className={btn} onClick={() => doCopy("md")} title="Copy as Markdown">
-        {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
-        <span>{copied ? "Copied" : "Copy"}</span>
-      </button>
+      {copyBtn}
 
       <div className="relative">
         <button type="button" className={btn} onClick={() => setOpenMenu(openMenu === "copy" ? null : "copy")} aria-expanded={openMenu === "copy"} title="Copy as…">
@@ -130,30 +164,12 @@ export function MessageActions({
         className={btn}
         onClick={async () => {
           const r = await shareContent(subject, markdown);
-          await flash(r !== "failed");
+          await flash(setCopied, r !== "failed");
         }}
         title="Share"
       >
         <Share2 className="h-3.5 w-3.5" /><span>Share</span>
       </button>
-
-      <a
-        className={btn}
-        href={mailtoLink(subject, toEmailText(markdown, subject))}
-        title="Open in your mail app"
-      >
-        <Mail className="h-3.5 w-3.5" /><span>Email</span>
-      </a>
-
-      <button type="button" className={btn} onClick={() => printHtml(getRenderedHtml(), subject)} title="Print / Save as PDF">
-        <Printer className="h-3.5 w-3.5" /><span>Print</span>
-      </button>
-
-      {onDraftEmail ? (
-        <button type="button" className={btn} onClick={onDraftEmail} title="Ask the assistant to draft this as an email">
-          <Mail className="h-3.5 w-3.5" /><span>Draft email</span>
-        </button>
-      ) : null}
 
       {onRegenerate ? (
         <button type="button" className={btn} onClick={onRegenerate} title="Regenerate this reply">

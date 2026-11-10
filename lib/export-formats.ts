@@ -98,10 +98,6 @@ function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 }
 
-export function mailtoLink(subject: string, body: string): string {
-  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
-
 export function downloadBlob(filename: string, data: BlobPart, mime: string): void {
   const blob = data instanceof Blob ? data : new Blob([data], { type: mime });
   const url = URL.createObjectURL(blob);
@@ -152,22 +148,6 @@ export async function shareContent(title: string, text: string): Promise<"shared
     }
   }
   return (await copyToClipboard(text)) ? "copied" : "failed";
-}
-
-/** Print a rendered fragment by injecting a print-only host (no new window → no CSP frame issues). */
-export function printHtml(innerHtml: string, title = "Ashish Gupta — Notes"): void {
-  const host = document.createElement("div");
-  host.className = "print-host";
-  host.innerHTML = `<h1>${escapeHtml(title)}</h1>${innerHtml}`;
-  document.body.appendChild(host);
-  const cleanup = () => {
-    host.remove();
-    window.removeEventListener("afterprint", cleanup);
-  };
-  window.addEventListener("afterprint", cleanup);
-  window.print();
-  // Safari/old Edge may not fire afterprint — safety net.
-  window.setTimeout(cleanup, 60_000);
 }
 
 /** Build the payload for one format. `innerHtml` comes from the rendered DOM. */

@@ -37,6 +37,7 @@ import { ChatControls } from "@/components/chat-controls";
 import { MessageActions } from "@/components/message-actions";
 import { loadTypography, fontCss, type TypographySettings } from "@/lib/typography";
 import { conversationToMarkdown, copyToClipboard, downloadBlob } from "@/lib/export-formats";
+import { detectMail, stripControlMarkers } from "@/lib/mail";
 import { cn } from "@/lib/utils";
 
 const NAME_KEY = "chat_user_name";
@@ -69,6 +70,8 @@ interface Msg {
     /** Video tasks: creation timestamp — powers the 30-minute poll deadline. */
     createdAt?: number;
   };
+  /** Phase 8: true when the reply is an email/draft — drives the Send bar. */
+  mail?: boolean;
 }
 
 const SUGGESTIONS = [
@@ -339,7 +342,18 @@ export function ChatPanel({
               delta?: string;
               error?: string;
               done?: boolean;
+              type?: string;
             };
+            if (evt.type === "mail") {
+              setChatHistory((prev) => {
+                const next = [...prev];
+                const last = next.length - 1;
+                if (next[last]?.role === "assistant") {
+                  next[last] = { ...next[last], mail: true };
+                }
+                return next;
+              });
+            }
             if (typeof evt.delta === "string" && evt.delta) {
               full += evt.delta;
               setFirstToken(true);
@@ -347,7 +361,7 @@ export function ChatPanel({
                 const next = [...prev];
                 const last = next.length - 1;
                 if (next[last]?.role === "assistant") {
-                  next[last] = { role: "assistant", content: full };
+                  next[last] = { role: "assistant", content: full, mail: next[last].mail };
                 }
                 return next;
               });
@@ -363,9 +377,10 @@ export function ChatPanel({
       }
       if (streamError) throw new Error(streamError);
 
+      const mailFlag = detectMail(full);
       const finalHistory = [
         ...history,
-        { role: "assistant" as const, content: full.trim() || "…" },
+        { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag },
       ];
       setChatHistory(finalHistory);
       try {
@@ -444,14 +459,22 @@ export function ChatPanel({
           const line = ev.trim();
           if (!line.startsWith("data:")) continue;
           try {
-            const evt = JSON.parse(line.slice(5).trim()) as { delta?: string; error?: string; done?: boolean };
+            const evt = JSON.parse(line.slice(5).trim()) as { delta?: string; error?: string; done?: boolean; type?: string };
+            if (evt.type === "mail") {
+              setChatHistory((prev) => {
+                const next = [...prev];
+                const last = next.length - 1;
+                if (next[last]?.role === "assistant") next[last] = { ...next[last], mail: true };
+                return next;
+              });
+            }
             if (typeof evt.delta === "string" && evt.delta) {
               full += evt.delta;
               setFirstToken(true);
               setChatHistory((prev) => {
                 const next = [...prev];
                 const last = next.length - 1;
-                if (next[last]?.role === "assistant") next[last] = { role: "assistant", content: full };
+                if (next[last]?.role === "assistant") next[last] = { role: "assistant", content: full, mail: next[last].mail };
                 return next;
               });
             } else if (evt.error) {
@@ -463,7 +486,8 @@ export function ChatPanel({
         }
       }
       if (streamError) throw new Error(streamError);
-      const finalHistory = [...base, { role: "user" as const, content: message }, { role: "assistant" as const, content: full.trim() || "…" }];
+      const mailFlag = detectMail(full);
+      const finalHistory = [...base, { role: "user" as const, content: message }, { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag }];
       setChatHistory(finalHistory);
     } catch (e) {
       setChatHistory(base);
@@ -472,13 +496,6 @@ export function ChatPanel({
       setSending(false);
       setFirstToken(false);
     }
-  }
-
-  function draftEmailFrom(markdown: string) {
-    setInput(
-      `Turn the following into a professional email — subject line, short greeting, clear body and sign-off. Keep it concise and do not add facts that are not present.\n\n---\n\n${markdown}`,
-    );
-    textareaRef.current?.focus();
   }
 
   function exportConversation() {
@@ -1150,16 +1167,18 @@ export function ChatPanel({
                   />
                   <div className="min-w-0 flex-1">
                     <div ref={(el) => { messageRefs.current.set(i, el); }}>
-                      <Markdown streaming={sending && i === visible.length - 1}>{m.content}</Markdown>
+                      <Markdown streaming={sending && i === visible.length - 1}>
+                        {stripControlMarkers(m.content)}
+                      </Markdown>
                     </div>
                     {m.content && m.content.trim() && !(sending && i === visible.length - 1) ? (
                       <MessageActions
                         markdown={m.content}
                         subject="Notes from Ashish Gupta"
+                        isMail={Boolean(m.mail) || detectMail(m.content)}
                         getRenderedHtml={() => messageRefs.current.get(i)?.innerHTML ?? ""}
                         getRenderedElement={() => messageRefs.current.get(i) ?? null}
                         onRegenerate={i === visible.length - 1 ? regenerate : undefined}
-                        onDraftEmail={() => draftEmailFrom(m.content)}
                       />
                     ) : null}
                   </div>
