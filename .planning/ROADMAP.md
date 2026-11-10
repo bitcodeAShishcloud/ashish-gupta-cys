@@ -107,7 +107,7 @@ Phases execute in numeric order: 4 → 5 → 6
 **Goal**: Email/draft replies get a dedicated two-action bar (Copy + Send), normal replies keep their own bar, and the assistant can produce research-backed personalized outreach drafts.
 **Depends on**: Phase 7 (action bar, SYSTEM_PROMPT)
 **Requirements**: SEND-01 … SEND-06 (see REQUIREMENTS.md)
-**Decisions**: `.planning/phases/08-mail-draft-and-send/08-CONTEXT.md` — 9 owner answers locked; 5 open items flagged for the owner
+**Decisions**: `.planning/phases/08-mail-draft-and-send/08-CONTEXT.md` — all 16 owner answers locked across 4 rounds; no open design questions
 **Success Criteria**:
   1. Mail/draft replies show only `Copy` + `Send`; normal replies show `Copy / Copy as / Download / Share / Regenerate`
   2. `Send` opens the native share sheet with Email-ready text (Subject + body + sign-off), clipboard fallback on desktop

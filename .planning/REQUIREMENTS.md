@@ -49,10 +49,11 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [ ] **SEND-02**: `Send` opens the native share sheet (Web Share API) with Email-ready text (Subject + greeting + body + sign-off), falling back to clipboard on desktop
 - [ ] **SEND-03**: `Email`, `Print` and `Draft email` buttons are removed from the codebase
 - [ ] **SEND-04**: Mail type is signalled by a structured SSE event with a content-detection fallback; the bar never flashes during streaming
-- [ ] **SEND-05**: A same-origin, SSRF-gated `/api/research` route fetches prospect info (auto web search + user-supplied link/paste) and the assistant produces a personalized outreach draft
+- [ ] **SEND-05**: A same-origin, SSRF-gated `/api/research` route (You.com YDC `POST /v1/search`, `YDC_API_KEY`) fetches prospect info — triggered only on explicit request or model-judged necessity, never every message; user may also paste a link/details in the composer; rate-limited 3/min/IP
 - [ ] **SEND-06**: No visitor data is stored server-side; no new colours or hover-only affordances
+- [ ] **SEND-07**: The pasted You.com key is rotated/revoked, the new `YDC_API_KEY` lives only in Vercel env vars, and `ydc-index.io` is added to the outbound host allowlist
 
-> **Open items (owner must decide before planning):** research provider + API key, per-call cost/rate limit, manual-input UX, auto-detect false-positive policy, and whether research runs automatically on every message. See `08-CONTEXT.md`.
+> **All design decisions locked:** 16 owner answers across 4 rounds in `08-CONTEXT.md`. No open design questions remain. The only outstanding work is operational (key rotation + env/allowlist config).
 
 ## v2 Requirements
 

@@ -45,6 +45,25 @@ No visitor-visible change to chat content, streaming, or the blog renderer.
 | 8 | Mail-type signal | **Both.** Add a structured SSE signal (`data: {"type":"mail"}`) AND a content-based auto-detect fallback |
 | 9 | Button label | **`Send`**, share-sheet title `Share email draft` |
 
+### Round 3 — 5 answers (the open items)
+
+| # | Area | Decision |
+|---|------|----------|
+| 10 | Research provider | **You.com YDC Search API** — `POST https://ydc-index.io/v1/search`, `X-API-Key` header, body `{query, count, extraction:{extraction_mode:"highlights"}}`. Secret read from **`YDC_API_KEY`** env var (Vercel). **The key pasted into chat is NOT stored in any file and MUST be rotated + revoked.** |
+| 11 | Research trigger | **On explicit request + model-judged necessity, never every message.** Confirmed by owner: *"sirf poochhne pe + model khud zarurat samjhe to bhi, par har message pe nahi"*. Model gets a controlled tool/signal, not blanket auto-search. |
+| 12 | Rate limit | **3 requests / min / IP** for `/api/research` (conservative cost control) |
+| 13 | Manual input UX | **Composer text** — user pastes a link or prospect details directly into the chat input. No new field, no new mode switch. |
+| 14 | Misclassification | **"Do alag bars final"** — the earlier "dono bars saath dikhao" answer is **superseded**. Classification + SSE signal stay; no toggle, no dual-bar display. |
+
+### Round 4 — 2 answers (conflict resolution)
+
+| # | Area | Decision |
+|---|------|----------|
+| 15 | Bar conflict | **"Do alag bars" is FINAL.** Mail/draft → `Copy` + `Send` only; normal → 5 buttons. The round-3 "dono bars saath" answer is void. |
+| 16 | Research trigger | **Confirmed** — explicit request OR model-judged necessity; never auto on every message. |
+
+> **Decision count: 16 answers across 4 rounds. All conflicts resolved. No unilateral decisions.**
+
 ### Derived consequences (locked by the above, not new decisions)
 
 - `Print`, `Email` (mailto), and `Draft email` (composer-prompt) are **deleted** from the codebase —
@@ -62,8 +81,25 @@ No visitor-visible change to chat content, streaming, or the blog renderer.
 ## Technical Constraints (carried forward)
 
 - **CSP** `connect-src 'self'` — the browser cannot call any search API directly. All research
-  fetching MUST go through a same-origin server route (e.g. `/api/research`), reusing
+  fetching MUST go through a same-origin server route (`/api/research`), reusing
   `validateProviderUrl()` + `AI_ALLOWED_HOSTS` from `lib/providers.ts`.
+  **`ydc-index.io` must be added to the outbound host allowlist** (owner-approved env change).
+- **Research API (locked, You.com YDC)**: `POST https://ydc-index.io/v1/search`,
+  `X-API-Key: ${YDC_API_KEY}`, JSON body
+  `{ query, count: 10, extraction: { extraction_mode: "highlights" } }`.
+  Response: `results.web[].{url,title,description,snippets,contents.highlights}` → feed only
+  plain text/highlights into the prompt. Use `highlights` (token-efficient), not `full_page`
+  (cost + latency). `count ≤ 50` with highlights. `country: "IN"` is available for local
+  prospects. Errors: 401 bad key, 402 out of credits, 422 bad params — map to a friendly
+  visitor message, never leak the key.
+- **🔑 KEY HYGIENE (blocking operational item)**: the owner pasted a live `ydc-sk-…` key into
+  the chat. It is **NOT written to any file** here. It must be **rotated and the old one revoked**
+  at you.com/platform, then the NEW value set as `YDC_API_KEY` in Vercel → Settings →
+  Environment Variables. Add it to the gitignored `.env.local` for local dev only.
+  This joins the existing rotation backlog in STATE.md (XKiro + top-tools-ai keys).
+- **Rate limit**: `3/min/IP` on `/api/research` via `rateLimit()` in `lib/chat-http.ts`.
+- **Research trigger**: never automatic on every message. Either the user explicitly asks, or
+  the model signals it needs fresh prospect data. Server-side call only when triggered.
 - **SSE contract** is currently `data: {"delta"}`, `data: {"error"}`, `data: {"done"}`. Adding
   `{"type":"mail"}` must not break existing clients — unknown fields are ignored, and the
   content-based detector is the fallback so older cached history still works.
@@ -100,21 +136,14 @@ No visitor-visible change to chat content, streaming, or the blog renderer.
 - Storing research results or drafts server-side
 - Any change to the blog action bar (blog has none)
 
-## Open Items — ASK THE OWNER, DO NOT DECIDE
+## All Open Items Resolved ✓
 
-These surfaced while writing context and are **not** covered by the 9 answers:
+The 5 items originally flagged here were answered by the owner in rounds 3 and 4
+(decisions #10–16 above). **No questions remain for the planner.** The only outstanding
+action is operational, not a design decision:
 
-1. **Research provider / API key** — "server-side web search" needs a provider (Brave / Tavily /
-   Serper / provider-native browsing) and a new secret in Vercel env vars. Which one, and who
-   supplies the key? (`config.json` has `tavily_search: true` for the GSD harness — that is NOT
-   the app's runtime.)
-2. **Search cost / rate limit** — per-call cost and a per-IP cap for `/api/research`. Needs a number.
-3. **Manual input UX** — where does the user paste a link / prospect info? Composer text, a
-   dedicated field, or a mode switch (like the existing Chat/Image/Video switch)?
-4. **Auto-detect false positives** — what counts as "mail"? (`Subject:`, `Dear`, `Namaste`,
-   sign-off). If a normal reply is misclassified, should the user be able to toggle the bar?
-5. **Whether research should be automatic** — should every outbound-looking question trigger a
-   search, or only when the user asks? Auto-search on every message could burn quota.
+- Rotate + revoke the pasted You.com key; set the new `YDC_API_KEY` in Vercel.
+- Add `ydc-index.io` to the server-side outbound allowlist.
 
 ## Canonical Refs
 
