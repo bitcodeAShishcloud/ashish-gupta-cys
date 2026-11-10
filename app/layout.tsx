@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { SwCleanup } from "@/components/sw-cleanup";
+import "katex/dist/katex.min.css";
 import "./globals.css";
 
 const SITE_URL = "https://www.ashishcys.cyou";

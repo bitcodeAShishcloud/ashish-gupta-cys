@@ -233,8 +233,184 @@
 .markdown-body pre code { @apply bg-transparent p-0 text-foreground; overflow-wrap: normal; word-break: normal; }
 .markdown-body a { @apply text-primary underline underline-offset-4 hover:no-underline; }
 /* Tables: wrap in a scrollable block so columns never squeeze the page */
-.markdown-body table { @apply w-full border-collapse text-sm; display: block; overflow-x: auto; }
+.markdown-body table { @apply w-full border-collapse text-sm; }
 .markdown-body th, .markdown-body td { @apply border border-border px-3 py-2 text-left; }
 .markdown-body th { @apply bg-muted/50 font-semibold; }
 .markdown-body blockquote { @apply border-l-2 border-primary/50 pl-4 italic text-muted-foreground; }
-.markdown-body img { @apply my-4 rounded-lg border border-border; }
+.markdown-body img { @apply my-4 rounded-lg border border-border; max-width: 100%; height: auto; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Phase 7 — rich markdown rendering + export
+   All brand-monochrome: black surfaces, white/grey text, green accent only.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Visitor typography — driven by chat header controls via CSS vars */
+.markdown-body {
+  font-size: calc(15px * var(--md-font-scale, 1));
+  font-family: var(--md-font-family, var(--font-inter), ui-sans-serif, system-ui, sans-serif);
+  line-height: var(--md-line-height, 1.75);
+  user-select: text;
+  overflow-wrap: break-word;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3, .markdown-body h4 {
+  scroll-margin-top: 80px;
+}
+.markdown-body h1 { @apply text-3xl; }
+.markdown-body h2 { @apply text-2xl; }
+.markdown-body h3 { @apply text-xl; }
+.markdown-body h4 { @apply text-lg; }
+.markdown-body hr.md-hr { @apply my-8 border-0 border-t border-border; }
+.markdown-body .md-ext-icon { @apply ml-1 inline h-3 w-3 align-baseline opacity-60; }
+.markdown-body .md-inline-code {
+  @apply mono rounded bg-primary/10 px-1.5 py-0.5 text-foreground;
+  font-size: 0.86em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+/* Task lists (GFM) */
+.markdown-body input[type="checkbox"] { @apply mr-2 align-middle accent-success; }
+.markdown-body li:has(> input[type="checkbox"]) { @apply list-none -ml-5; }
+.markdown-body ul:has(> li > input[type="checkbox"]) { @apply pl-5; }
+
+/* ── Callouts (monochrome) ── */
+.md-callout {
+  @apply my-5 rounded-r-lg border-l-2 border-primary/60 bg-white/[0.035] px-4 py-3;
+}
+.md-callout[data-type="warning"], .md-callout[data-type="caution"], .md-callout[data-type="danger"] {
+  border-left-color: hsl(var(--primary) / 0.85);
+  background: hsl(var(--primary) / 0.05);
+}
+.md-callout-head {
+  @apply mb-1.5 flex items-center gap-1.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-foreground;
+}
+.md-callout-head svg { @apply opacity-70; }
+.md-callout-body > *:first-child { margin-top: 0; }
+.md-callout-body > *:last-child { margin-bottom: 0; }
+.md-callout-body p { @apply my-2; }
+
+/* ── Code block (header bar always visible) ── */
+.md-code { @apply my-5 overflow-hidden rounded-xl border border-border/80 bg-[#080B10]; }
+.md-code-bar {
+  @apply flex min-h-[40px] items-center justify-between gap-2 border-b border-border/60 bg-white/[0.035] px-2.5 py-1.5;
+}
+.md-code-lang {
+  @apply rounded bg-white/[0.06] px-2 py-0.5 font-mono text-[10px] font-medium uppercase tracking-wider text-foreground/80;
+}
+.md-code-btn {
+  @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-md px-2 font-mono text-[11px] text-muted-foreground transition hover:bg-white/[0.07] hover:text-foreground;
+}
+.md-code-btn.is-on { @apply bg-white/[0.08] text-foreground; }
+.md-code-btn span { @apply hidden sm:inline; }
+.md-code-body {
+  @apply relative overflow-auto;
+  max-height: 320px;
+}
+.md-code-body.expanded-unused { max-height: none; }
+.md-code-body:not(.collapsed) { max-height: none; }
+.md-code-body.wrap pre, .md-code-body.wrap .md-code-html pre { white-space: pre-wrap; word-break: break-word; }
+.md-code-html pre {
+  @apply mono p-4 text-[13px] leading-6;
+  margin: 0;
+  background: transparent !important;
+  overflow-x: auto;
+}
+.md-code-html pre code { @apply block bg-transparent p-0; }
+.md-code-plain {
+  @apply mono m-0 p-4 text-[13px] leading-6 text-foreground/90;
+  white-space: pre;
+  overflow-x: auto;
+}
+/* Line numbers via CSS counters — works for both Shiki and plain fallback */
+.md-code-body.with-lines .md-code-html pre code,
+.md-code-body.with-lines .md-code-plain code { counter-reset: mdline; }
+.md-code-body.with-lines .md-code-html .line { display: block; counter-increment: mdline; }
+.md-code-body.with-lines .md-code-html .line::before {
+  content: counter(mdline);
+  @apply mr-4 inline-block w-6 select-none text-right text-muted-foreground/45;
+}
+.md-code-expand {
+  @apply flex w-full items-center justify-center gap-1.5 border-t border-border/60 bg-white/[0.02] py-2 font-mono text-[11px] text-muted-foreground transition hover:bg-white/[0.05] hover:text-foreground;
+}
+/* Streaming: no heavy chrome animation while deltas arrive */
+.md-code[data-streaming] .md-code-html { opacity: 0.9; }
+
+/* ── Mermaid ── */
+.md-mermaid {
+  @apply my-5 flex justify-center overflow-x-auto rounded-xl border border-border/80 bg-[#080B10] p-4;
+}
+.md-mermaid svg { max-width: 100%; height: auto; }
+.md-mermaid-loading {
+  @apply my-5 rounded-xl border border-border/80 bg-[#080B10] p-6 text-center font-mono text-[11px] text-muted-foreground;
+}
+
+/* ── KaTeX ── */
+.markdown-body .katex { font-size: 1.05em; }
+.markdown-body .katex-display { @apply my-5 overflow-x-auto overflow-y-hidden py-2; }
+
+/* ── Table wrapper ── */
+.md-table-wrap { @apply my-5 max-w-full overflow-x-auto rounded-lg border border-border/60; }
+.md-table-wrap table { @apply m-0 w-full border-collapse text-sm; display: table; }
+.md-table-wrap th, .md-table-wrap td { @apply border border-border px-3 py-2 text-left; }
+.md-table-wrap th { @apply bg-muted/50 font-semibold; }
+
+/* ── Message action bar (always visible) ── */
+.md-actions {
+  @apply mt-2 flex flex-wrap items-center gap-1 border-t border-border/40 pt-2;
+}
+.md-action-btn {
+  @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-md px-2 font-mono text-[11px] text-muted-foreground transition hover:bg-white/[0.06] hover:text-foreground;
+}
+.md-action-btn:disabled { @apply cursor-wait opacity-50; }
+.md-action-btn svg { @apply shrink-0; }
+.md-menu {
+  @apply absolute bottom-full left-0 z-30 mb-1 min-w-[190px] overflow-hidden rounded-lg border border-border/80 bg-card p-1 shadow-[0_18px_50px_rgba(0,0,0,0.6)];
+}
+.md-menu button {
+  @apply block w-full rounded px-2.5 py-2 text-left font-mono text-[11px] text-muted-foreground transition hover:bg-white/[0.06] hover:text-foreground;
+}
+
+/* ── Chat header controls ── */
+.md-controls { @apply relative flex shrink-0 items-center gap-0.5 rounded-lg border border-border/60 bg-white/[0.03] px-1 py-0.5; }
+.md-ctrl-btn {
+  @apply inline-flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition hover:bg-white/[0.08] hover:text-foreground;
+}
+.md-ctrl-btn.is-on { @apply bg-white/[0.08] text-foreground; }
+.md-ctrl-value { @apply w-9 text-center font-mono text-[10px] text-muted-foreground; }
+.md-controls-pop {
+  @apply absolute right-0 top-full z-40 mt-2 w-64 rounded-xl border border-border/80 bg-card shadow-[0_20px_60px_rgba(0,0,0,0.65)];
+}
+.md-field { @apply block px-3 py-2.5; }
+.md-field > span { @apply mb-1.5 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider text-muted-foreground; }
+.md-field > span b { @apply font-normal text-foreground; }
+.md-field select {
+  @apply w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground;
+}
+.md-field input[type="range"] { @apply w-full accent-success; }
+.md-reset {
+  @apply inline-flex items-center gap-1 rounded px-1.5 py-1 font-mono text-[10px] text-muted-foreground transition hover:bg-white/[0.06] hover:text-foreground;
+}
+
+/* ── Print host (print without opening a new window) ── */
+.print-host { display: none; }
+@media print {
+  body > *:not(.print-host) { display: none !important; }
+  .print-host {
+    display: block !important;
+    background: #fff;
+    color: #111;
+    padding: 24px;
+    font: 14px/1.7 system-ui, sans-serif;
+  }
+  .print-host h1 { font-size: 22px; margin-bottom: 20px; }
+  .print-host pre { background: #f4f4f4; border: 1px solid #ddd; padding: 10px; white-space: pre-wrap; }
+  .print-host .katex, .print-host .shiki { color: #111 !important; background: transparent !important; }
+  .md-actions, .md-controls, .md-code-bar, .md-code-expand { display: none !important; }
+}
+
+/* Mobile: actions stay tappable, code header scrolls instead of overflowing */
+@media (max-width: 640px) {
+  .md-code-bar { @apply flex-wrap; }
+  .md-action-btn { @apply min-h-[36px]; }
+  .md-code-btn { @apply min-h-[36px]; }
+}
+

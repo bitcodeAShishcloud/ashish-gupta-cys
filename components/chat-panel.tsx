@@ -33,6 +33,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Markdown } from "@/components/markdown";
+import { ChatControls } from "@/components/chat-controls";
+import { MessageActions } from "@/components/message-actions";
+import { loadTypography, fontCss, type TypographySettings } from "@/lib/typography";
+import { conversationToMarkdown, copyToClipboard, downloadBlob } from "@/lib/export-formats";
 import { cn } from "@/lib/utils";
 
 const NAME_KEY = "chat_user_name";
@@ -207,9 +211,14 @@ export function ChatPanel({
   const composerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mounted, setMounted] = useState(false);
+  const [typography, setTypographyState] = useState<TypographySettings>({
+    fontScale: 1, fontFamily: "inter", lineHeight: 1.75, readingWidth: 768,
+  });
+  const messageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
   useEffect(() => {
     setMounted(true);
+    setTypographyState(loadTypography());
   }, []);
 
   // Load name + histories once, on the client only. The old shared history
@@ -382,6 +391,107 @@ export function ChatPanel({
       setSending(false);
       setFirstToken(false);
     }
+  }
+
+  /* Regenerate: drop the last assistant reply and re-ask the same user turn. */
+  function regenerate() {
+    if (sending || generating || limited) return;
+    let lastUserIdx = -1;
+    for (let i = chatHistory.length - 1; i >= 0; i--) {
+      if (chatHistory[i].role === "user") { lastUserIdx = i; break; }
+    }
+    if (lastUserIdx < 0) return;
+    const prompt = chatHistory[lastUserIdx].content;
+    const base = chatHistory.slice(0, lastUserIdx);
+    setChatHistory(base);
+    void sendFrom(prompt, base);
+  }
+
+  /* Shared send core with an explicit history base (used by regenerate). */
+  async function sendFrom(text: string, base: Msg[]) {
+    const message = text.trim();
+    if (!message || sending || generating || limited) return;
+    setError(null);
+    setChatHistory([...base, { role: "user" as const, content: message }]);
+    setSending(true);
+    setFirstToken(false);
+    let assistantAdded = false;
+    let full = "";
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, history: base.slice(-24) }),
+      });
+      if (!res.ok || !res.body) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error((data.message || `Request failed (${res.status})`) + (data.detail ? `, ${data.detail}` : ""));
+      }
+      assistantAdded = true;
+      setChatHistory((prev) => [...prev, { role: "assistant" as const, content: "" }]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      let streamError: string | null = null;
+      let finished = false;
+      while (!finished) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const events = buf.split("\n\n");
+        buf = events.pop() ?? "";
+        for (const ev of events) {
+          const line = ev.trim();
+          if (!line.startsWith("data:")) continue;
+          try {
+            const evt = JSON.parse(line.slice(5).trim()) as { delta?: string; error?: string; done?: boolean };
+            if (typeof evt.delta === "string" && evt.delta) {
+              full += evt.delta;
+              setFirstToken(true);
+              setChatHistory((prev) => {
+                const next = [...prev];
+                const last = next.length - 1;
+                if (next[last]?.role === "assistant") next[last] = { role: "assistant", content: full };
+                return next;
+              });
+            } else if (evt.error) {
+              streamError = String(evt.error);
+            } else if (evt.done) {
+              finished = true;
+            }
+          } catch { /* partial event */ }
+        }
+      }
+      if (streamError) throw new Error(streamError);
+      const finalHistory = [...base, { role: "user" as const, content: message }, { role: "assistant" as const, content: full.trim() || "…" }];
+      setChatHistory(finalHistory);
+    } catch (e) {
+      setChatHistory(base);
+      setError(e instanceof Error ? e.message : "Something went wrong. Try again.");
+    } finally {
+      setSending(false);
+      setFirstToken(false);
+    }
+  }
+
+  function draftEmailFrom(markdown: string) {
+    setInput(
+      `Turn the following into a professional email — subject line, short greeting, clear body and sign-off. Keep it concise and do not add facts that are not present.\n\n---\n\n${markdown}`,
+    );
+    textareaRef.current?.focus();
+  }
+
+  function exportConversation() {
+    const md = conversationToMarkdown(chatHistory);
+    void copyToClipboard(md).then((ok) => {
+      if (ok) {
+        downloadBlob("secureai-conversation.md", md, "text/markdown;charset=utf-8");
+      }
+    });
+  }
+
+  function setTypography(s: TypographySettings) {
+    setTypographyState(s);
   }
 
   /* Client-side reference-image resize: ≤1024px long edge, JPEG q0.85 —
@@ -700,7 +810,17 @@ export function ChatPanel({
           : "flex h-[calc(100vh-56px)] flex-col overflow-hidden px-5 py-6"
       }
     >
-      <div className="mx-auto flex w-full max-w-3xl min-h-0 flex-1 flex-col">
+      <div
+        className="mx-auto flex w-full min-h-0 flex-1 flex-col"
+        style={
+          {
+            maxWidth: `${typography.readingWidth}px`,
+            "--md-font-scale": typography.fontScale,
+            "--md-font-family": fontCss(typography.fontFamily),
+            "--md-line-height": typography.lineHeight,
+          } as React.CSSProperties
+        }
+      >
         {/* Top chrome: greeting rides in the hero when the thread is empty */}
         <div className="flex min-h-9 items-start justify-between gap-3">
           {visible.length > 0 ? (
@@ -720,18 +840,22 @@ export function ChatPanel({
               </p>
             </div>
           ) : null}
-          <button
-            type="button"
-            onClick={() => setEraseOpen(true)}
-            aria-label="Clear chat"
-            title="Clear chat"
-            className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground",
-              visible.length === 0 && "ml-auto",
-            )}
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <ChatControls
+              settings={typography}
+              onChange={setTypography}
+              onExportConversation={exportConversation}
+            />
+            <button
+              type="button"
+              onClick={() => setEraseOpen(true)}
+              aria-label="Clear chat"
+              title="Clear chat"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Mode switch */}
@@ -1025,7 +1149,19 @@ export function ChatPanel({
                     className="mt-0.5 h-5 w-5 shrink-0 rounded-full object-cover ring-1 ring-white/10"
                   />
                   <div className="min-w-0 flex-1">
-                    <Markdown>{m.content}</Markdown>
+                    <div ref={(el) => { messageRefs.current.set(i, el); }}>
+                      <Markdown streaming={sending && i === visible.length - 1}>{m.content}</Markdown>
+                    </div>
+                    {m.content && m.content.trim() && !(sending && i === visible.length - 1) ? (
+                      <MessageActions
+                        markdown={m.content}
+                        subject="Notes from Ashish Gupta"
+                        getRenderedHtml={() => messageRefs.current.get(i)?.innerHTML ?? ""}
+                        getRenderedElement={() => messageRefs.current.get(i) ?? null}
+                        onRegenerate={i === visible.length - 1 ? regenerate : undefined}
+                        onDraftEmail={() => draftEmailFrom(m.content)}
+                      />
+                    ) : null}
                   </div>
                 </div>
               ),

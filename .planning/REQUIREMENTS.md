@@ -28,6 +28,19 @@ Requirements for this milestone. Each maps to roadmap phases.
 - [x] **CHAT-04**: Visitor can start chatting immediately — no name prompt before the composer (chat page and widget both)
 - [x] **CHAT-05**: Visitor gets 50 chats per day per device — client-side counter in localStorage, same approach as v0.0.0.0.1 (no server-side tracking)
 
+## v0.0.0.0.3 Requirements
+
+### Rich markdown
+
+- [ ] **MD-01**: Every code block has an always-visible header bar with language label, line numbers, wrap toggle, Copy (with feedback), Download and Expand
+- [ ] **MD-02**: Note / Tip / Important / Warning / Caution / Danger callouts render brand-monochrome, in chat and blog
+- [ ] **MD-03**: LaTeX math (inline + display) and Mermaid diagrams render; headings get anchors; external links open safely
+- [ ] **MD-04**: Every assistant message has an always-visible action bar — Copy, Copy-as (Markdown / Plain text / HTML / JSON / Email), Download (.md/.txt/.html/.json/.pdf/.docx), Share, Email (mailto), Print, Draft-email prompt, Regenerate
+- [ ] **MD-05**: Chat header toolbar controls font size, font family, line spacing and reading width, persisted per device in localStorage
+- [ ] **MD-06**: `SYSTEM_PROMPT` asks for consistent, well-structured replies (sections, lists, tagged code fences, tables, callouts)
+- [ ] **MD-07**: Whole-conversation export is available; no server-side state is added
+- [ ] **MD-08**: Streaming replies degrade gracefully on partially-written fences, math and diagrams
+
 ## v2 Requirements
 
 Deferred to future releases. Tracked but not in current roadmap.

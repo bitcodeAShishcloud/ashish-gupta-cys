@@ -85,3 +85,19 @@ Phases execute in numeric order: 4 → 5 → 6
 | 4. Multi-Provider Chat with Automatic Failover | v0.0.0.0.2 | 2/2 | Complete    | 2026-11-07 |
 | 5. Production Deploy on Vercel + Key Hygiene | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |
 | 6. Chat Access Simplification | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |
+| 7. Rich Markdown Rendering & Export | v0.0.0.0.3 | 0/1 | In progress | - |
+
+## v0.0.0.0.3 — Rich Markdown Rendering & Export
+
+### Phase 7: Rich Markdown Rendering & Export
+**Goal**: Any reply renders cleanly — code blocks are copy-paste ready, math/diagrams/callouts work, and every message can be copied, shared or downloaded in multiple formats — in chat and blog alike.
+**Depends on**: Phase 6 (chat client)
+**Requirements**: MD-01 … MD-08
+**Decisions**: `.planning/phases/07-rich-markdown-and-export/07-CONTEXT.md` (7 style decisions locked by the owner)
+**Success Criteria**:
+  1. Code blocks show an always-visible header bar with language, line numbers, wrap, Copy, Download and Expand
+  2. Note/Warning/Tip/Danger callouts, LaTeX math and Mermaid diagrams render in both chat and blog
+  3. Every assistant message has an always-visible action bar: Copy, Copy-as (5 formats), Download (6 formats), Share, Email, Print, Draft email, Regenerate
+  4. Chat header toolbar controls font size, font family, line spacing and reading width, persisted per device
+  5. Whole-conversation export works; no server-side state added
+  6. Streaming replies never break on partially-written code fences or math
