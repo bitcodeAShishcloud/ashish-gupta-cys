@@ -334,10 +334,6 @@ export async function POST(req: NextRequest) {
   for (let i = 0; i < candidates.length; i++) {
     const candidate = candidates[i];
     const isLast = i === candidates.length - 1;
-    const remaining = Math.max(
-      5000,
-      Math.min(120000, FAILOVER_BUDGET_MS - (Date.now() - failoverStartedAt)),
-    );
 
     // Bounded single restart for a model-requested research pass. No bytes
     // reach the visitor before the probe commits, so a restart cannot
@@ -346,6 +342,14 @@ export async function POST(req: NextRequest) {
     let committed = false;
 
     for (let pass = 0; pass < 2 && !committed; pass++) {
+      // Recomputed per ATTEMPT, not per candidate: the research restart runs
+      // a second upstream attempt on the same candidate, so each attempt must
+      // draw from the shrinking shared pool to keep the worst case inside
+      // maxDuration = 180 (T-04-03).
+      const remaining = Math.max(
+        5000,
+        Math.min(120000, FAILOVER_BUDGET_MS - (Date.now() - failoverStartedAt)),
+      );
       const streamed = await streamProvider(candidate, upstream, { timeoutMs: remaining });
 
       if (streamed.ok && streamed.stream) {
