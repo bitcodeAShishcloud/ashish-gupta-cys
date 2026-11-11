@@ -16,10 +16,20 @@ function clip(text: string, max: number): string {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
 
+/* Canonical public origin. Overridable via PUBLIC_SITE_URL for previews —
+ * the fact sheet shares ABSOLUTE links from this origin, so the assistant
+ * can never invent a plausible-but-wrong domain (the reported bug). */
+const SITE_URL = (
+  process.env.PUBLIC_SITE_URL || "https://www.ashishcys.cyou"
+).replace(/\/+$/, "");
+
 export function buildKnowledgeBase(): string {
   const lines: string[] = [];
 
   lines.push("=== PORTFOLIO FACT SHEET (verified data — answer from this) ===");
+  lines.push(
+    `Site: ${SITE_URL} — every /blog/… path below lives on this domain. Share links EXACTLY as written here; never invent, shorten, or alter a domain.`,
+  );
   lines.push(
     `${PORTFOLIO.name} — ${PORTFOLIO.role}. ${clip(PORTFOLIO.tagline, 160)}`,
   );
@@ -47,7 +57,7 @@ export function buildKnowledgeBase(): string {
     if (p.tech?.length) bits.push(`tech: ${p.tech.join(", ")}`);
     if (p.live) bits.push(`live website: ${p.live}`);
     if (p.github) bits.push(`code: ${p.github}`);
-    if (p.caseStudy) bits.push(`case study: /blog/${p.caseStudy}`);
+    if (p.caseStudy) bits.push(`case study: ${SITE_URL}/blog/${p.caseStudy}`);
     lines.push(`- ${p.name} (${p.category ?? "project"}): ${bits.join(" | ")}`);
   }
 
@@ -63,7 +73,7 @@ export function buildKnowledgeBase(): string {
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, 8)) {
     lines.push(
-      `- "${post.title}" (${post.category}, ${post.date}): ${clip(post.excerpt, 140)} — /blog/${post.id}`,
+      `- "${post.title}" (${post.category}, ${post.date}): ${clip(post.excerpt, 140)} — ${SITE_URL}/blog/${post.id}`,
     );
   }
 
