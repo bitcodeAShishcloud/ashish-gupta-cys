@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowUp,
   ArrowUpRight,
   BadgeCheck,
   Bot,
   Check,
+  ChevronDown,
+  ChevronUp,
   Cpu,
   Download,
   Image as ImageIcon,
@@ -16,11 +18,13 @@ import {
   Monitor,
   Palette,
   Pencil,
+  Search,
   Send,
   ShieldCheck,
   Trash2,
   User,
   Video as VideoIcon,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -35,6 +39,7 @@ import {
 import { Markdown } from "@/components/markdown";
 import { ChatControls } from "@/components/chat-controls";
 import { MessageActions } from "@/components/message-actions";
+import { CommandPalette, type CommandItem } from "@/components/command-palette";
 import { loadTypography, fontCss, type TypographySettings } from "@/lib/typography";
 import { conversationToMarkdown, copyToClipboard, downloadBlob } from "@/lib/export-formats";
 import { detectMail, stripControlMarkers } from "@/lib/mail";
@@ -72,6 +77,8 @@ interface Msg {
   };
   /** Phase 8: true when the reply is an email/draft — drives the Send bar. */
   mail?: boolean;
+  /** Phase 9: research sources for this reply (web search results). */
+  sources?: { title: string; url: string }[];
 }
 
 const SUGGESTIONS = [
@@ -144,6 +151,38 @@ function aspectBox(aspect: string, variant: "page" | "widget") {
   return { width: Math.round(rw * s), height: Math.round(rh * s) };
 }
 
+/* A3: autocomplete suggestions from static chips + recent user messages */
+function getAutocompleteSuggestions(
+  input: string,
+  chatHistory: Msg[],
+  imageHistory: Msg[],
+  videoHistory: Msg[],
+  mode: string,
+): string[] {
+  const q = input.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  // Static suggestions
+  const statics = mode === "chat" ? SUGGESTIONS : mode === "video" ? VIDEO_SUGGESTIONS : IMAGE_SUGGESTIONS;
+  for (const s of statics) {
+    if (s.text.toLowerCase().includes(q) && !seen.has(s.text)) {
+      seen.add(s.text);
+      out.push(s.text);
+    }
+  }
+  // Recent user messages
+  const allHist = [...chatHistory, ...imageHistory, ...videoHistory];
+  for (const m of allHist) {
+    if (m.role === "user" && m.content.toLowerCase().includes(q) && !seen.has(m.content)) {
+      seen.add(m.content);
+      out.push(m.content.slice(0, 80));
+      if (out.length >= 8) break;
+    }
+  }
+  return out.slice(0, 8);
+}
+
 function todayKey(): string {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -186,6 +225,7 @@ export function ChatPanel({
   const [eraseOpen, setEraseOpen] = useState(false);
   const [limited, setLimited] = useState(false);
   const [firstToken, setFirstToken] = useState(false);
+  const pendingSourcesRef = useRef<{ title: string; url: string }[]>([]);
   const [mode, setMode] = useState<"chat" | "image" | "video">("chat");
   const [aspect, setAspect] = useState<string>("16:9");
   const [imgStyle, setImgStyle] = useState<string>("Auto");
@@ -217,6 +257,18 @@ export function ChatPanel({
   const [typography, setTypographyState] = useState<TypographySettings>({
     fontScale: 1, fontFamily: "inter", lineHeight: 1.75, readingWidth: 768,
   });
+  // A1: in-conversation search
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchIdx, setSearchIdx] = useState(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  // A3: autocomplete
+  const [acOpen, setAcOpen] = useState(false);
+  const [acItems, setAcItems] = useState<string[]>([]);
+  const [acIdx, setAcIdx] = useState(0);
+  // A5: command palette
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [cmdQuery, setCmdQuery] = useState("");
   const messageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
   useEffect(() => {
@@ -357,6 +409,7 @@ export function ChatPanel({
               error?: string;
               done?: boolean;
               type?: string;
+              sources?: { title: string; url: string }[];
             };
             if (evt.type === "mail") {
               setChatHistory((prev) => {
@@ -367,6 +420,9 @@ export function ChatPanel({
                 }
                 return next;
               });
+            }
+            if (evt.type === "sources" && Array.isArray(evt.sources)) {
+              pendingSourcesRef.current = evt.sources as { title: string; url: string }[];
             }
             if (typeof evt.delta === "string" && evt.delta) {
               full += evt.delta;
@@ -392,9 +448,11 @@ export function ChatPanel({
       if (streamError) throw new Error(streamError);
 
       const mailFlag = detectMail(full);
+      const sources = pendingSourcesRef.current.length > 0 ? pendingSourcesRef.current : undefined;
+      pendingSourcesRef.current = [];
       const finalHistory = [
         ...history,
-        { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag },
+        { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag, sources },
       ];
       setChatHistory(finalHistory);
       try {
@@ -473,7 +531,7 @@ export function ChatPanel({
           const line = ev.trim();
           if (!line.startsWith("data:")) continue;
           try {
-            const evt = JSON.parse(line.slice(5).trim()) as { delta?: string; error?: string; done?: boolean; type?: string };
+            const evt = JSON.parse(line.slice(5).trim()) as { delta?: string; error?: string; done?: boolean; type?: string; sources?: { title: string; url: string }[] };
             if (evt.type === "mail") {
               setChatHistory((prev) => {
                 const next = [...prev];
@@ -481,6 +539,9 @@ export function ChatPanel({
                 if (next[last]?.role === "assistant") next[last] = { ...next[last], mail: true };
                 return next;
               });
+            }
+            if (evt.type === "sources" && Array.isArray(evt.sources)) {
+              pendingSourcesRef.current = evt.sources as { title: string; url: string }[];
             }
             if (typeof evt.delta === "string" && evt.delta) {
               full += evt.delta;
@@ -501,7 +562,9 @@ export function ChatPanel({
       }
       if (streamError) throw new Error(streamError);
       const mailFlag = detectMail(full);
-      const finalHistory = [...base, { role: "user" as const, content: message }, { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag }];
+      const sources = pendingSourcesRef.current.length > 0 ? pendingSourcesRef.current : undefined;
+      pendingSourcesRef.current = [];
+      const finalHistory = [...base, { role: "user" as const, content: message }, { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag, sources }];
       setChatHistory(finalHistory);
     } catch (e) {
       setChatHistory(base);
@@ -818,6 +881,51 @@ export function ChatPanel({
     setEraseOpen(false);
   }
 
+
+  // A5: Command palette
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+        setCmdQuery("");
+      }
+      if (e.key === "Escape" && cmdOpen) {
+        setCmdOpen(false);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [cmdOpen]);
+
+  // A3: Autocomplete suggestions
+  const acSuggestions = searchQuery ? [] : getAutocompleteSuggestions(input, chatHistory, imageHistory, videoHistory, mode);
+
+  useEffect(() => {
+    if (input.trim().length >= 2) {
+      const items = getAutocompleteSuggestions(input, chatHistory, imageHistory, videoHistory, mode);
+      setAcItems(items);
+      setAcOpen(items.length > 0);
+      setAcIdx(0);
+    } else {
+      setAcOpen(false);
+      setAcItems([]);
+    }
+  }, [input, chatHistory, imageHistory, videoHistory, mode]);
+
+  // Ctrl+Shift+F for search
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "F") {
+        e.preventDefault();
+        setSearchOpen(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
   if (!mounted) {
     return variant === "widget" ? (
       <div className="h-full" />
@@ -831,6 +939,82 @@ export function ChatPanel({
   // name (returning visitor) is still used in the greetings when present.
   const visible =
     mode === "chat" ? chatHistory : mode === "video" ? videoHistory : imageHistory;
+
+  // ── A1: In-conversation search ──
+  const searchMatches = searchQuery.trim()
+    ? visible
+        .map((m, i) => (m.content.toLowerCase().includes(searchQuery.toLowerCase()) ? i : -1))
+        .filter((i) => i >= 0)
+    : [];
+  const searchMatchesCount = searchMatches.length;
+
+  const searchNext = useCallback(() => {
+    if (searchMatchesCount === 0) return;
+    const next = (searchIdx + 1) % searchMatchesCount;
+    setSearchIdx(next);
+    const msgEl = messageRefs.current.get(searchMatches[next]);
+    if (msgEl) msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [searchIdx, searchMatchesCount, searchMatches]);
+
+  const searchPrev = useCallback(() => {
+    if (searchMatchesCount === 0) return;
+    const prev = (searchIdx - 1 + searchMatchesCount) % searchMatchesCount;
+    setSearchIdx(prev);
+    const msgEl = messageRefs.current.get(searchMatches[prev]);
+    if (msgEl) msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [searchIdx, searchMatchesCount, searchMatches]);
+
+  // Highlight matches in the DOM
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+    // Remove old highlights
+    container.querySelectorAll("mark.search-hit").forEach((mark) => {
+      const parent = mark.parentNode;
+      if (parent) {
+        parent.replaceChild(document.createTextNode(mark.textContent ?? ""), mark);
+        parent.normalize();
+      }
+    });
+    if (!searchQuery.trim()) return;
+    const regex = new RegExp(searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT, null);
+    const textNodes: Text[] = [];
+    let node;
+    while ((node = walker.nextNode())) textNodes.push(node as Text);
+    for (const tn of textNodes) {
+      const text = tn.textContent ?? "";
+      const matches = [...text.matchAll(regex)];
+      if (matches.length === 0) continue;
+      const frag = document.createDocumentFragment();
+      let last = 0;
+      for (const m of matches) {
+        if (m.index! > last) {
+          frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        }
+        const mark = document.createElement("mark");
+        mark.className = "search-hit";
+        mark.textContent = m[0];
+        frag.appendChild(mark);
+        last = m.index! + m[0].length;
+      }
+      if (last < text.length) {
+        frag.appendChild(document.createTextNode(text.slice(last)));
+      }
+      tn.parentNode?.replaceChild(frag, tn);
+    }
+    // Scroll to first match
+    if (searchMatchesCount > 0 && searchIdx === 0) {
+      const msgEl = messageRefs.current.get(searchMatches[0]);
+      if (msgEl) msgEl.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [searchQuery, searchMatchesCount, searchMatches, searchIdx]);
+
+  // Reset searchIdx when query changes
+  useEffect(() => {
+    setSearchIdx(0);
+  }, [searchQuery]);
+
 
   // ── Chat view: full-height app, messages scroll internally ──
   return (
@@ -872,6 +1056,15 @@ export function ChatPanel({
             </div>
           ) : null}
           <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => { setSearchOpen((v) => !v); if (!searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50); }}
+              aria-label="Search messages"
+              title="Search (Ctrl+Shift+F)"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground"
+            >
+              <Search className="h-4 w-4" />
+            </button>
             <ChatControls
               settings={typography}
               onChange={setTypography}
@@ -936,6 +1129,38 @@ export function ChatPanel({
             </button>
           </div>
         </div>
+
+        {/* A1: In-conversation search bar */}
+        {searchOpen ? (
+          <div className="mb-3 flex items-center gap-2 rounded-xl border border-border/60 bg-card/30 px-3 py-2">
+            <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") { setSearchOpen(false); setSearchQuery(""); }
+              }}
+              placeholder="Search messages…"
+              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+            {searchQuery.trim() ? (
+              <span className="font-mono text-[10px] text-muted-foreground">
+                {searchIdx + 1} / {searchMatchesCount}
+              </span>
+            ) : null}
+            <button type="button" onClick={searchPrev} aria-label="Previous match" className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition hover:text-foreground" disabled={searchMatchesCount === 0}>
+              <ChevronUp className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={searchNext} aria-label="Next match" className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition hover:text-foreground" disabled={searchMatchesCount === 0}>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+            <button type="button" onClick={() => { setSearchOpen(false); setSearchQuery(""); }} aria-label="Close search" className="flex h-7 w-7 items-center justify-center rounded text-muted-foreground transition hover:text-foreground">
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ) : null}
 
         {/* Messages */}
         <div
@@ -1185,6 +1410,27 @@ export function ChatPanel({
                         {stripControlMarkers(m.content)}
                       </Markdown>
                     </div>
+                    {m.sources && m.sources.length > 0 ? (
+                      <details className="mt-2 rounded-lg border border-border/50 bg-white/[0.02]">
+                        <summary className="cursor-pointer px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground transition hover:text-foreground">
+                          Sources ({m.sources.length})
+                        </summary>
+                        <ul className="space-y-1 px-3 pb-2 pt-1">
+                          {m.sources.map((s, si) => (
+                            <li key={si} className="text-xs">
+                              <a
+                                href={s.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline underline-offset-2 hover:no-underline"
+                              >
+                                {s.title}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </details>
+                    ) : null}
                     {m.content && m.content.trim() && !(sending && i === visible.length - 1) ? (
                       <MessageActions
                         markdown={m.content}
@@ -1275,6 +1521,50 @@ export function ChatPanel({
         {/* Composer */}
         <div className="mt-4">
           <div ref={composerRef} className="relative">
+            {/* A3: Autocomplete dropdown */}
+            {acOpen && acItems.length > 0 ? (
+              <div className="absolute bottom-full left-0 right-0 z-30 mb-2 overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
+                {acItems.map((item, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setInput(item);
+                      setAcOpen(false);
+                      textareaRef.current?.focus();
+                    }}
+                    className={cn(
+                      "block w-full px-4 py-2.5 text-left text-sm transition",
+                      i === acIdx ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
+                    )}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {/* A3: Autocomplete dropdown */}
+            {acOpen && acItems.length > 0 ? (
+              <div className="absolute bottom-full left-0 right-0 z-30 mb-2 overflow-hidden rounded-xl border border-border/60 bg-card shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
+                {acItems.map((item, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      setInput(item);
+                      setAcOpen(false);
+                      textareaRef.current?.focus();
+                    }}
+                    className={cn(
+                      "block w-full px-4 py-2.5 text-left text-sm transition",
+                      i === acIdx ? "bg-white/[0.08] text-foreground" : "text-muted-foreground hover:bg-white/[0.04] hover:text-foreground",
+                    )}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             {openPanel === "aspect" ? (
               <div className="absolute bottom-full left-0 z-20 mb-2 w-72 rounded-xl border border-border/80 bg-background p-3 shadow-[0_18px_50px_rgba(0,0,0,0.6)]">
                 <div className="flex items-center justify-between">
@@ -1455,6 +1745,12 @@ export function ChatPanel({
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => {
+                    if (acOpen && acItems.length > 0) {
+                      if (e.key === "ArrowDown") { e.preventDefault(); setAcIdx((i) => Math.min(acItems.length - 1, i + 1)); return; }
+                      if (e.key === "ArrowUp") { e.preventDefault(); setAcIdx((i) => Math.max(0, i - 1)); return; }
+                      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); setInput(acItems[acIdx] ?? input); setAcOpen(false); return; }
+                      if (e.key === "Escape") { setAcOpen(false); return; }
+                    }
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
                       send(input);
@@ -1690,6 +1986,37 @@ export function ChatPanel({
           </p>
         </div>
       </div>
+
+      {/* A5: Command palette (Ctrl+K) */}
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        commands={[
+          { id: "clear", label: "Clear chat", hint: "erase all messages", run: () => setEraseOpen(true) },
+          { id: "export", label: "Export conversation", hint: "download as markdown", run: () => exportConversation() },
+          { id: "image", label: "Switch to Image mode", hint: "generate images", run: () => setMode("image") },
+          { id: "video", label: "Switch to Video mode", hint: "generate videos", run: () => setMode("video") },
+          { id: "chat", label: "Switch to Chat mode", hint: "text conversation", run: () => setMode("chat") },
+          { id: "research", label: "Research & draft", hint: "prospect research + cold email", run: () => { setMode("chat"); setInput("Research and write a cold email for: "); textareaRef.current?.focus(); } },
+          { id: "erase", label: "Erase all data", hint: "remove name, history, usage", run: () => setEraseOpen(true) },
+          { id: "search", label: "Search messages", hint: "Ctrl+Shift+F", run: () => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); } },
+        ]}
+      />
+
+      {/* A5: Command palette */}
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        commands={[
+          { id: "clear", label: "Clear chat", hint: "erase all messages", run: () => setEraseOpen(true) },
+          { id: "export", label: "Export conversation", hint: "download as markdown", run: () => exportConversation() },
+          { id: "image", label: "Switch to Image mode", hint: "generate images", run: () => setMode("image") },
+          { id: "video", label: "Switch to Video mode", hint: "generate videos", run: () => setMode("video") },
+          { id: "chat", label: "Switch to Chat mode", hint: "text conversation", run: () => setMode("chat") },
+          { id: "search", label: "Search messages", hint: "Ctrl+Shift+F", run: () => { setSearchOpen(true); setTimeout(() => searchInputRef.current?.focus(), 50); } },
+          { id: "erase", label: "Erase all data", hint: "remove name, history, usage", run: () => setEraseOpen(true) },
+        ]}
+      />
 
       <Dialog open={eraseOpen} onOpenChange={setEraseOpen}>
         <DialogContent>

@@ -353,6 +353,11 @@
 .md-table-wrap th, .md-table-wrap td { @apply border border-border px-3 py-2 text-left; }
 .md-table-wrap th { @apply bg-muted/50 font-semibold; }
 
+/* ── In-conversation search highlight ── */
+mark.search-hit {
+  @apply rounded-sm bg-warning/40 px-0.5 text-foreground;
+}
+
 /* ── Message action bar (always visible) ── */
 .md-actions {
   @apply mt-2 flex flex-wrap items-center gap-1 border-t border-border/40 pt-2;
