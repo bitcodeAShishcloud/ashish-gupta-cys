@@ -161,10 +161,11 @@ function makeStreamResponse(opts: {
   tailDecoder?: TextDecoder;
   dispose?: () => void;
   mailSignal: boolean;
+  sources?: { title: string; url: string }[];
   redact: (text: unknown) => string;
   scrubIdentity: (out: string) => string;
 }): Response {
-  const { reader, pending, tailBuffer, tailDecoder, dispose, mailSignal } = opts;
+  const { reader, pending, tailBuffer, tailDecoder, dispose, mailSignal, sources } = opts;
   return new Response(
     new ReadableStream<Uint8Array>({
       async start(controller) {
@@ -212,6 +213,7 @@ function makeStreamResponse(opts: {
             ),
           });
         } finally {
+          if (sources && sources.length > 0) push({ type: "sources", sources });
           push({ done: true });
           controller.close();
           dispose?.();
@@ -291,21 +293,21 @@ export async function POST(req: NextRequest) {
 
   let lastErr = { detail: "The AI provider failed to respond.", status: 502 };
 
-  // ── Research pre-pass (locked decision #11/#16) ──
-  // Explicit user intent OR a URL pasted in the composer. Never on every
-  // message. Model-judged necessity is handled by the [[RESEARCH: ...]]
-  // marker restart inside the candidate loop below. Failures are silent —
-  // the chat still answers, just without fresh data.
+  // Accumulated research sources — emitted to the client before `done` so
+  // the chat can render a "Sources" section under the assistant reply.
+  const allSources: { title: string; url: string }[] = [];
+
   // ── Research pre-pass (locked decision #11/#16) ──
   // Explicit user intent (URL pasted or outreach/research keywords). Never
-  // on every message. Model-judged necessity is handled by the
-  // [[RESEARCH: ...]] marker restart inside the candidate loop below.
+  // on every message. Model-judged necessity is handled by the [[RESEARCH: ...]]
+  // marker restart inside the candidate loop below.
   let researchContext = "";
   const intent = explicitResearch(message);
   if (intent.needed) {
     const r = await runResearch(intent.query, intent.urls);
     if (r.ok) {
       researchContext = formatResearchContext(r);
+      allSources.push(...r.sources);
     } else {
       researchContext =
         "\n\n## Research unavailable\n" +
@@ -368,10 +370,14 @@ export async function POST(req: NextRequest) {
             }
             streamed.dispose?.();
             const r = await runResearch(researchQuery);
-            const context = r.ok
-              ? formatResearchContext(r)
-              : "\n\n## Research unavailable\nSay you are not certain about any unverified figure and answer from the fact sheet only.";
-            upstream = buildUpstream(researchContext + context, candidate);
+            if (r.ok) {
+              allSources.push(...r.sources);
+              const context = formatResearchContext(r);
+              upstream = buildUpstream(researchContext + context, candidate);
+            } else {
+              const context = "\n\n## Research unavailable\nSay you are not certain about any unverified figure and answer from the fact sheet only.";
+              upstream = buildUpstream(researchContext + context, candidate);
+            }
             continue;
           }
 
@@ -382,6 +388,7 @@ export async function POST(req: NextRequest) {
             tailDecoder: probe.tailDecoder,
             dispose: streamed.dispose,
             mailSignal: head.includes(MAIL_MARKER),
+            sources: allSources.length > 0 ? allSources : undefined,
             redact,
             scrubIdentity,
           });
@@ -415,6 +422,7 @@ export async function POST(req: NextRequest) {
             start(controller) {
               if (isMail) controller.enqueue(sseEvent({ type: "mail" }));
               if (reply) controller.enqueue(sseEvent({ delta: reply }));
+              if (allSources.length > 0) controller.enqueue(sseEvent({ type: "sources", sources: allSources }));
               controller.enqueue(sseEvent({ done: true }));
               controller.close();
             },
