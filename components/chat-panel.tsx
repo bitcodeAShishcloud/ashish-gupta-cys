@@ -43,6 +43,13 @@ import { CommandPalette, type CommandItem } from "@/components/command-palette";
 import { loadTypography, fontCss, type TypographySettings } from "@/lib/typography";
 import { conversationToMarkdown, copyToClipboard, downloadBlob } from "@/lib/export-formats";
 import { detectMail, stripControlMarkers } from "@/lib/mail";
+import {
+  getDeviceToken, getDeviceName, setDeviceName, getRecoveryCode, setRecoveryCode,
+  initDevice, fetchConversations, createConversation, fetchConversation,
+  deleteConversation, updateConversation, saveMessage,
+  type ConversationSummary,
+} from "@/lib/conversations";
+import { ConversationSidebar } from "@/components/conversation-sidebar";
 import { cn } from "@/lib/utils";
 
 const NAME_KEY = "chat_user_name";
@@ -257,6 +264,17 @@ export function ChatPanel({
   const [typography, setTypographyState] = useState<TypographySettings>({
     fontScale: 1, fontFamily: "inter", lineHeight: 1.75, readingWidth: 768,
   });
+  // Multi-conversation state (device token + Turso, offline fallback)
+  const [deviceToken, setDeviceToken] = useState("");
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
+  const [activeConvId, setActiveConvId] = useState<string | null>(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [recoveryOpen, setRecoveryOpen] = useState(false);
+  const [recoveryInput, setRecoveryInput] = useState("");
+  const [deviceName, setDeviceNameState] = useState("");
+  const [deviceNameOpen, setDeviceNameOpen] = useState(false);
+  const [convRefreshKey, setConvRefreshKey] = useState(0);
   // A1: in-conversation search
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -271,10 +289,72 @@ export function ChatPanel({
   const [cmdQuery, setCmdQuery] = useState("");
   const messageRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
+  // Device token + Turso conversation loading (offline fallback)
   useEffect(() => {
     setMounted(true);
     setTypographyState(loadTypography());
+    const token = getDeviceToken();
+    setDeviceToken(token);
+    setDeviceNameState(getDeviceName());
+    const name = getDeviceName() || (typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 40) : "");
+    if (!getDeviceName() && name) setDeviceName(name);
+    initDevice(token, name).catch(() => {});
+    // Fetch conversations from Turso (offline fallback to localStorage)
+    fetchConversations(token).then((list) => {
+      if (list.length > 0) {
+        setConversations(list);
+        setIsOffline(false);
+      } else {
+        // Offline fallback: try localStorage
+        try {
+          const raw = localStorage.getItem(HISTORY_KEY);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setIsOffline(true);
+            }
+          }
+        } catch { /* ignore */ }
+      }
+    }).catch(() => setIsOffline(true));
   }, []);
+
+  // Load active conversation messages from Turso
+  useEffect(() => {
+    if (!deviceToken || !activeConvId) return;
+    fetchConversation(deviceToken, activeConvId).then((detail) => {
+      if (!detail) return;
+      const msgs = detail.messages;
+      const chat = msgs.filter((m) => m.kind === "text").map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        mail: m.mail,
+        sources: m.sources,
+      }));
+      const imgs = msgs.filter((m) => m.kind === "image").map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        kind: "image" as const,
+        image: undefined,
+        meta: undefined,
+      }));
+      const vids = msgs.filter((m) => m.kind === "video").map((m) => ({
+        role: m.role as "user" | "assistant",
+        content: m.content,
+        kind: "video" as const,
+      }));
+      setChatHistory(chat);
+      setImageHistory(imgs);
+      setVideoHistory(vids);
+    }).catch(() => {});
+  }, [deviceToken, activeConvId]);
+
+  // Auto-select most recent conversation on load
+  useEffect(() => {
+    if (conversations.length > 0 && !activeConvId) {
+      setActiveConvId(conversations[0].id);
+    }
+  }, [conversations, activeConvId]);
 
   // Load name + histories once, on the client only. The old shared history
   // key is split: image entries move to the image history, the rest stay chat.
@@ -455,6 +535,23 @@ export function ChatPanel({
         { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag, sources },
       ];
       setChatHistory(finalHistory);
+      // Persist to Turso (fire-and-forget, offline fallback)
+      if (deviceToken && activeConvId) {
+        void saveMessage(deviceToken, activeConvId, { role: "user", content: message, kind: "text" }).then(() => {
+          void saveMessage(deviceToken, activeConvId!, { role: "assistant", content: full.trim() || "…", kind: "text", mail: mailFlag, sources });
+        });
+        // Auto-title on first message
+        if (chatHistory.length === 0) {
+          const title = message.slice(0, 50).replace(/\n/g, " ");
+          void updateConversation(deviceToken, activeConvId, { title });
+          setConversations((prev) => prev.map((c) => (c.id === activeConvId ? { ...c, title } : c)));
+        }
+      } else {
+        // Offline fallback: localStorage
+        try {
+          localStorage.setItem(HISTORY_KEY, JSON.stringify(finalHistory.slice(-50)));
+        } catch { /* ignore */ }
+      }
       try {
         const next = usageToday() + 1;
         localStorage.setItem(
@@ -861,6 +958,46 @@ export function ChatPanel({
     return () => clearInterval(t);
   }, [videoHistory, mode]);
 
+  // Create a new conversation in Turso (or fallback to localStorage)
+  async function newConversation() {
+    if (!deviceToken) return;
+    const id = crypto.randomUUID();
+    const title = "New chat";
+    const result = await createConversation(deviceToken, id, title, mode);
+    if (result) {
+      setConversations((prev) => [
+        { id, title, mode: mode as "chat" | "image" | "video", pinned: false, createdAt: Date.now(), updatedAt: Date.now(), messageCount: 0 },
+        ...prev,
+      ]);
+      setActiveConvId(id);
+    } else {
+      // Offline fallback
+      setIsOffline(true);
+      setActiveConvId(null);
+    }
+    setChatHistory([]);
+    setImageHistory([]);
+    setVideoHistory([]);
+  }
+
+  // Switch to an existing conversation
+  async function switchConversation(id: string) {
+    setActiveConvId(id);
+  }
+
+  // Save a message to Turso (fire-and-forget, offline fallback)
+  async function persistMessage(msg: Msg) {
+    if (!deviceToken || !activeConvId) return;
+    await saveMessage(deviceToken, activeConvId, {
+      role: msg.role,
+      content: msg.content,
+      kind: msg.kind ?? "text",
+      mail: msg.mail,
+      sources: msg.sources,
+    });
+    setConvRefreshKey((k) => k + 1);
+  }
+
   function eraseData() {
     try {
       localStorage.removeItem(NAME_KEY);
@@ -1017,25 +1154,61 @@ export function ChatPanel({
 
 
   // ── Chat view: full-height app, messages scroll internally ──
+  // Recovery code dialog
+  // (rendered below)
+
   return (
     <div
       className={
         variant === "widget"
           ? "flex h-full flex-col overflow-hidden"
-          : "flex h-[calc(100vh-56px)] flex-col overflow-hidden px-5 py-6"
+          : "flex h-[calc(100vh-56px)] flex-row overflow-hidden"
       }
     >
+      {/* Sidebar (desktop) — ChatGPT style, only for page variant */}
+      {variant !== "widget" ? (
+        <div className="hidden md:block">
+          <ConversationSidebar
+            activeId={activeConvId}
+            onSelect={(id) => setActiveConvId(id)}
+            onNew={() => {
+              setActiveConvId(null);
+              setChatHistory([]);
+              setImageHistory([]);
+              setVideoHistory([]);
+            }}
+            collapsed={sidebarCollapsed}
+            onToggle={() => setSidebarCollapsed((v) => !v)}
+            refreshKey={convRefreshKey}
+          />
+        </div>
+      ) : null}
+
+      {/* Mobile drawer toggle */}
+      {variant !== "widget" && !sidebarCollapsed ? (
+        <div className="md:hidden">
+          {/* Mobile drawer overlay handled by sidebar component */}
+        </div>
+      ) : null}
+
       <div
-        className="mx-auto flex w-full min-h-0 flex-1 flex-col"
-        style={
-          {
-            maxWidth: `${typography.readingWidth}px`,
-            "--md-font-scale": typography.fontScale,
-            "--md-font-family": fontCss(typography.fontFamily),
-            "--md-line-height": typography.lineHeight,
-          } as React.CSSProperties
+        className={
+          variant === "widget"
+            ? "flex h-full flex-1 flex-col overflow-hidden"
+            : "flex min-h-0 flex-1 flex-col overflow-hidden px-5 py-6"
         }
       >
+        <div
+          className="mx-auto flex w-full min-h-0 flex-1 flex-col"
+          style={
+            {
+              maxWidth: `${typography.readingWidth}px`,
+              "--md-font-scale": typography.fontScale,
+              "--md-font-family": fontCss(typography.fontFamily),
+              "--md-line-height": typography.lineHeight,
+            } as React.CSSProperties
+          }
+        >
         {/* Top chrome: greeting rides in the hero when the thread is empty */}
         <div className="flex min-h-9 items-start justify-between gap-3">
           {visible.length > 0 ? (
@@ -2159,6 +2332,7 @@ export function ChatPanel({
           ) : null}
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }
