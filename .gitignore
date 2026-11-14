@@ -33,3 +33,4 @@ dev-server.mjs
 *.tsbuildinfo
 .next-serve.log
 AGENTS.md
+.workbuddy-ai/
