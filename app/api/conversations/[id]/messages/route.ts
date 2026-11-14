@@ -31,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     const own = await db.execute({
       sql: "SELECT 1 FROM conversations WHERE id = ? AND user_id = ?",
       args: [id, token],

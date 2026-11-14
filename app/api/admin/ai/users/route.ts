@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     const res = await db.execute({
       sql: `SELECT u.id, u.device_name, u.created_at, u.last_seen,
                    (SELECT COUNT(*) FROM conversations c WHERE c.user_id = u.id) AS conv_count,

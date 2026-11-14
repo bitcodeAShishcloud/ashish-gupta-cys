@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     const existing = await db.execute({
       sql: "SELECT id, device_name, created_at, last_seen FROM users WHERE id = ?",
       args: [token],

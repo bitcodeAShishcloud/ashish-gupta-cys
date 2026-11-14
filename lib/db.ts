@@ -11,12 +11,12 @@ import { createClient, type Client } from "@libsql/client";
 
 let _client: Client | null = null;
 
-export function getDb(): Client {
+export function getDb(): Client | null {
   if (_client) return _client;
   const url = process.env.TURSO_DATABASE_URL;
   const token = process.env.TURSO_AUTH_TOKEN;
   if (!url || !token) {
-    throw new Error("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN must be set.");
+    return null;
   }
   _client = createClient({ url, authToken: token });
   return _client;
@@ -31,6 +31,7 @@ let _schemaReady = false;
 export async function ensureSchema(): Promise<void> {
   if (_schemaReady) return;
   const db = getDb();
+  if (!db) return;
   await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,

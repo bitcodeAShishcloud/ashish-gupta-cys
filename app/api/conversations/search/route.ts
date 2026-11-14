@@ -18,7 +18,9 @@ export async function GET(req: NextRequest) {
   const q = (url.searchParams.get("q") ?? "").trim().slice(0, 100);
   if (!q) {
     // Return all conversations if no query
-    const res = await getDb().execute({
+    const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
+    const res = await db.execute({
       sql: `SELECT c.id, c.title, c.mode, c.pinned, c.created_at, c.updated_at,
                    (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id) AS msg_count
             FROM conversations c WHERE c.user_id = ? ORDER BY c.updated_at DESC`,
@@ -35,6 +37,7 @@ export async function GET(req: NextRequest) {
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     // Search in titles and message content
     const res = await db.execute({
       sql: `SELECT DISTINCT c.id, c.title, c.mode, c.pinned, c.created_at, c.updated_at,

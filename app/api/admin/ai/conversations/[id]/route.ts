@@ -20,6 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     const convRes = await db.execute({
       sql: `SELECT c.id, c.user_id, c.title, c.mode, c.pinned, c.created_at, c.updated_at,
                    u.device_name

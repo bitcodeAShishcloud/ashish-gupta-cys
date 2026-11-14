@@ -30,6 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     if (!(await ownsConversation(db, id, token))) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
@@ -75,6 +76,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     if (!(await ownsConversation(db, id, token))) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }
@@ -113,6 +115,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   try {
     await ensureSchema();
     const db = getDb();
+    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     if (!(await ownsConversation(db, id, token))) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
     }

@@ -90,11 +90,15 @@ export function setDeviceName(name: string): void {
 
 export async function initDevice(token: string, deviceName: string): Promise<void> {
   try {
-    await fetch("/api/device/init", {
+    const res = await fetch("/api/device/init", {
       method: "POST",
       headers: { "Content-Type": "application/json", "X-Device-Token": token },
       body: JSON.stringify({ token, deviceName }),
     });
+    if (!res.ok) {
+      // DB not configured or unavailable — silently fall back to localStorage
+      return;
+    }
   } catch {
     /* offline — ignore */
   }
