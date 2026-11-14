@@ -13,13 +13,40 @@ let _client: Client | null = null;
 
 export function getDb(): Client | null {
   if (_client) return _client;
-  const url = process.env.TURSO_DATABASE_URL;
-  const token = process.env.TURSO_AUTH_TOKEN;
+  // Accept a few common env-var names so the user doesn't have to guess
+  // which exact one the code expects.
+  const url =
+    process.env.TURSO_DATABASE_URL ||
+    process.env.TURSO_URL ||
+    process.env.TURSO_DB_URL ||
+    process.env.LIBSQL_URL;
+  const token =
+    process.env.TURSO_AUTH_TOKEN ||
+    process.env.TURSO_API_KEY ||
+    process.env.TURSO_TOKEN ||
+    process.env.LIBSQL_AUTH_TOKEN;
   if (!url || !token) {
     return null;
   }
   _client = createClient({ url, authToken: token });
   return _client;
+}
+
+export function dbEnvStatus(): { url: boolean; token: boolean } {
+  return {
+    url: Boolean(
+      process.env.TURSO_DATABASE_URL ||
+        process.env.TURSO_URL ||
+        process.env.TURSO_DB_URL ||
+        process.env.LIBSQL_URL,
+    ),
+    token: Boolean(
+      process.env.TURSO_AUTH_TOKEN ||
+        process.env.TURSO_API_KEY ||
+        process.env.TURSO_TOKEN ||
+        process.env.LIBSQL_AUTH_TOKEN,
+    ),
+  };
 }
 
 export function isDbConfigured(): boolean {

@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { getDb, ensureSchema, now } from "@/lib/db";
+import { getDb, ensureSchema, now, dbEnvStatus } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -29,7 +29,16 @@ export async function POST(req: NextRequest) {
   try {
     await ensureSchema();
     const db = getDb();
-    if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
+    if (!db) {
+      const status = dbEnvStatus();
+      return NextResponse.json(
+        {
+          error: "db_not_configured",
+          detail: `Missing: ${!status.url ? "TURSO_DATABASE_URL (or TURSO_URL)" : ""} ${!status.token ? "TURSO_AUTH_TOKEN (or TURSO_API_KEY)" : ""}`.trim(),
+        },
+        { status: 503 },
+      );
+    }
     const existing = await db.execute({
       sql: "SELECT id, device_name, created_at, last_seen FROM users WHERE id = ?",
       args: [token],
