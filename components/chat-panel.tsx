@@ -325,6 +325,9 @@ export function ChatPanel({
     fetchConversation(deviceToken, activeConvId).then((detail) => {
       if (!detail) return;
       const msgs = detail.messages;
+      // An empty server fetch (fresh conversation, messages still saving)
+      // must never wipe a thread that is live in the UI.
+      if (!msgs || msgs.length === 0) return;
       const chat = msgs.filter((m) => m.kind === "text").map((m) => ({
         role: m.role as "user" | "assistant",
         content: m.content,
@@ -442,12 +445,47 @@ export function ChatPanel({
     return () => clearInterval(t);
   }, [generating]);
 
+  /* Auto-create the active conversation on the first message. Without this,
+   * conversations were only created by the "+ New chat" button — a visitor
+   * who simply typed never got a conversation row, so the sidebar stayed
+   * empty ("No conversations yet"). Returns the ensured id, or null when
+   * server sync is unavailable (localStorage fallback takes over). */
+  async function ensureConversation(
+    firstText: string,
+    convMode: "chat" | "image" | "video",
+  ): Promise<string | null> {
+    if (!deviceToken) return null;
+    if (activeConvId) return activeConvId;
+    const id = crypto.randomUUID();
+    const title = firstText.slice(0, 50).replace(/\n/g, " ") || "New chat";
+    const result = await createConversation(deviceToken, id, title, convMode);
+    if (!result) {
+      setIsOffline(true);
+      return null;
+    }
+    setConversations((prev) => [
+      {
+        id,
+        title,
+        mode: convMode,
+        pinned: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        messageCount: 0,
+      },
+      ...prev,
+    ]);
+    setActiveConvId(id);
+    return id;
+  }
+
   async function send(text: string) {
     const message = text.trim();
     if (!message || sending || generating || limited) return;
     setError(null);
     // Fresh send — never inherit sources from an earlier (possibly failed) one.
     pendingSourcesRef.current = [];
+    const convId = await ensureConversation(message, "chat");
     const history = [...chatHistory, { role: "user" as const, content: message }];
     setChatHistory(history);
     setInput("");
@@ -537,17 +575,27 @@ export function ChatPanel({
         { role: "assistant" as const, content: full.trim() || "…", mail: mailFlag, sources },
       ];
       setChatHistory(finalHistory);
-      // Persist to Turso (fire-and-forget, offline fallback)
-      if (deviceToken && activeConvId) {
-        void saveMessage(deviceToken, activeConvId, { role: "user", content: message, kind: "text" }).then(() => {
-          void saveMessage(deviceToken, activeConvId!, { role: "assistant", content: full.trim() || "…", kind: "text", mail: mailFlag, sources });
-        });
-        // Auto-title on first message
-        if (chatHistory.length === 0) {
-          const title = message.slice(0, 50).replace(/\n/g, " ");
-          void updateConversation(deviceToken, activeConvId, { title });
-          setConversations((prev) => prev.map((c) => (c.id === activeConvId ? { ...c, title } : c)));
-        }
+      // Persist to Turso (fire-and-forget, offline fallback). convId comes
+      // from ensureConversation — created on this very message when needed.
+      if (deviceToken && convId) {
+        void saveMessage(deviceToken, convId, { role: "user", content: message, kind: "text" })
+          .then(() =>
+            saveMessage(deviceToken, convId!, {
+              role: "assistant",
+              content: full.trim() || "…",
+              kind: "text",
+              mail: mailFlag,
+              sources,
+            }),
+          )
+          .then(() => fetchConversations(deviceToken))
+          .then((list) => {
+            // Re-sync the sidebar from the server — the conversation was
+            // possibly created mid-send, so a stale local list would keep
+            // showing "No conversations yet".
+            if (list.length > 0) setConversations(list);
+          })
+          .catch(() => {});
       } else {
         // Offline fallback: localStorage
         try {
