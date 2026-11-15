@@ -1428,26 +1428,21 @@ export function ChatPanel({
         >
           {visible.length === 0 ? (
             <div className="flex min-h-full flex-col">
-              {/* Sorin-style hero: glowing orb + accented greeting */}
+              {/* Claude-style empty state: starburst mark + serif greeting */}
               <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
-                <div className="relative mb-6 h-20 w-20">
-                  <div
-                    className="absolute inset-0 rounded-full bg-primary/30 blur-2xl"
-                    aria-hidden
-                  />
-                  <img
-                    src="/favicon.webp"
-                    alt=""
-                    width={80}
-                    height={80}
-                    className="relative h-20 w-20 rounded-full object-cover ring-1 ring-white/10 shadow-[0_0_45px_hsl(var(--primary)/0.45)]"
-                  />
-                </div>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="claude-star mb-6 h-9 w-9"
+                  fill="currentColor"
+                  aria-hidden
+                >
+                  <path d="M11 2h2v7.2l5.1-5.1 1.4 1.4L14.8 11H22v2h-7.2l5.1 5.1-1.4 1.4-5.1-5.1V22h-2v-7.2l-5.1 5.1-1.4-1.4 5.1-5.1H2v-2h7.2L4.1 6.5l1.4-1.4L11 9.2V2z" />
+                </svg>
                 {variant === "widget" ? (
-                  <h2 className="font-display text-xl font-bold tracking-tight">
+                  <h2 className="claude-serif text-2xl font-normal tracking-tight text-foreground">
                     {name ? (
                       <>
-                        Hey, I&apos;m <span className="text-primary">{name}</span>.
+                        Hey, I&apos;m <span className="text-success">{name}</span>.
                         How can I help you today?
                       </>
                     ) : (
@@ -1455,10 +1450,10 @@ export function ChatPanel({
                     )}
                   </h2>
                 ) : (
-                  <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">
+                  <h1 className="claude-serif text-3xl font-normal tracking-tight text-foreground sm:text-4xl">
                     {name ? (
                       <>
-                        Hey, I&apos;m <span className="text-primary">{name}</span>.
+                        Hey, I&apos;m <span className="text-success">{name}</span>.
                         How can I help you today?
                       </>
                     ) : (
