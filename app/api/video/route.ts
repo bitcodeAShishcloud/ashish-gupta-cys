@@ -21,6 +21,18 @@ const SECONDS = new Set(["4", "5", "6", "7", "8", "9", "10", "11", "12"]);
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+/* PRES-01: no provider or model identity in the visitor-visible surface.
+ * Upstream error text can echo the model id, and the SSRF host-gate message
+ * embeds the provider hostname — scrub both before anything crosses to the
+ * browser (the chat route applies the same bar via scrubIdentity). */
+function publicDetail(detail: string | undefined, model: string): string | undefined {
+  if (!detail) return detail;
+  if (detail.includes("AI_ALLOWED_HOSTS") || detail.includes("are not allowed")) {
+    return "The video provider is not reachable right now.";
+  }
+  return model ? detail.split(model).join("[model]") : detail;
+}
+
 export async function POST(req: NextRequest) {
   if (!rateLimit("video:" + clientIp(req), VIDEO_RATE_LIMIT)) {
     return NextResponse.json(
@@ -57,7 +69,7 @@ export async function POST(req: NextRequest) {
       {
         error: "video_task_failed",
         message: "The video provider rejected the request.",
-        detail: result.detail,
+        detail: publicDetail(result.detail, target.provider.model),
       },
       { status: result.status && result.status >= 400 && result.status < 600 ? result.status : 502 },
     );
@@ -93,7 +105,11 @@ export async function GET(req: NextRequest) {
   const result = await getVideoTask(target, id);
   if (!result.ok) {
     return NextResponse.json(
-      { error: "status_failed", message: "Could not fetch the video status.", detail: result.detail },
+      {
+        error: "status_failed",
+        message: "Could not fetch the video status.",
+        detail: publicDetail(result.detail, target.provider.model),
+      },
       { status: 502 },
     );
   }
@@ -102,6 +118,6 @@ export async function GET(req: NextRequest) {
     status: result.status ?? "pending",
     progress: result.progress ?? 0,
     url: result.url ?? null,
-    detail: result.detail ?? null,
+    detail: publicDetail(result.detail, target.provider.model) ?? null,
   });
 }
