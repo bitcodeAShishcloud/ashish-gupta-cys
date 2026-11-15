@@ -84,5 +84,14 @@ export function buildKnowledgeBase(): string {
     "When a visitor asks for a project link, share the live website URL from this sheet directly.",
   );
 
-  return lines.join("\n");
+  /* Total-length cap: per-field clips bound individual entries, but the
+   * owner can grow content.ts without limit. 16,000 chars ≈ 4k tokens —
+   * well inside every configured provider's context window. Newest content
+   * (identity, experience, projects) is written first, so a truncation
+   * drops blog/contact entries last. */
+  const MAX_FACTSHEET_CHARS = 16000;
+  const sheet = lines.join("\n");
+  return sheet.length <= MAX_FACTSHEET_CHARS
+    ? sheet
+    : sheet.slice(0, MAX_FACTSHEET_CHARS).replace(/\n[^\n]*$/, "\n…(fact sheet truncated)");
 }
