@@ -1,5 +1,6 @@
 // GET /api/conversations/search?q=...  → search conversations by title + message content
 import { NextRequest, NextResponse } from "next/server";
+import { clientIp, rateLimit } from "@/lib/chat-http";
 import { getDb, ensureSchema, userIdForToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +13,9 @@ function deviceToken(req: NextRequest): string | null {
 }
 
 export async function GET(req: NextRequest) {
+  if (!rateLimit("conv-search:" + clientIp(req), 20)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const token = deviceToken(req);
   if (!token) return NextResponse.json({ error: "no_device" }, { status: 400 });
   const url = new URL(req.url);

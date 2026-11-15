@@ -24,6 +24,9 @@ async function ownsConversation(db: ReturnType<typeof getDb>, id: string, token:
 }
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!rateLimit("conv-read:" + clientIp(req), 60)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const { id } = await params;
   const token = deviceToken(req);
   if (!token) return NextResponse.json({ error: "no_device" }, { status: 400 });
@@ -69,6 +72,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!rateLimit("conv-write:" + clientIp(req), 30)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const { id } = await params;
   const token = deviceToken(req);
   if (!token) return NextResponse.json({ error: "no_device" }, { status: 400 });
@@ -109,6 +115,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  if (!rateLimit("conv-write:" + clientIp(req), 30)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const { id } = await params;
   const token = deviceToken(req);
   if (!token) return NextResponse.json({ error: "no_device" }, { status: 400 });

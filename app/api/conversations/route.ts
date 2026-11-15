@@ -18,6 +18,9 @@ function deviceToken(req: NextRequest): string | null {
 }
 
 export async function GET(req: NextRequest) {
+  if (!rateLimit("conv-list:" + clientIp(req), 30)) {
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
   const token = deviceToken(req);
   if (!token) {
     return NextResponse.json({ error: "no_device" }, { status: 400 });
