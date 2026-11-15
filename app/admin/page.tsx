@@ -84,8 +84,9 @@ export default function AdminPage() {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Test state — per provider row
-  const [testingId, setTestingId] = useState<string | null>(null);
+  // Test state — per provider row. A Set (not a single slot) so overlapping
+  // row tests each keep their own spinner (IN-01).
+  const [testingIds, setTestingIds] = useState<Record<string, boolean>>({});
   const [rowResults, setRowResults] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   async function checkAuth() {
@@ -163,7 +164,7 @@ export default function AdminPage() {
   }
 
   async function runTest(id: string) {
-    setTestingId(id);
+    setTestingIds((prev) => ({ ...prev, [id]: true }));
     setRowResults((prev) => {
       const next = { ...prev };
       delete next[id];
@@ -196,7 +197,11 @@ export default function AdminPage() {
     } catch {
       setRowResults((prev) => ({ ...prev, [id]: { ok: false, text: "Network error while testing." } }));
     } finally {
-      setTestingId(null);
+      setTestingIds((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
   }
 
@@ -307,9 +312,9 @@ export default function AdminPage() {
                             size="sm"
                             className="font-mono"
                             onClick={() => runTest(p.id)}
-                            disabled={testingId === p.id}
+                            disabled={!!testingIds[p.id]}
                           >
-                            {testingId === p.id ? (
+                            {testingIds[p.id] ? (
                               <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                             ) : (
                               <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
