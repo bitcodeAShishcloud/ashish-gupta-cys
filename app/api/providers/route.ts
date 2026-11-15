@@ -70,8 +70,17 @@ export async function POST(req: NextRequest) {
     );
   }
   if (!target || !target.apiKey || !target.model) {
+    // Targeted standby rows deserve an accurate message — the generic
+    // "no active provider" copy misled admins who explicitly picked one.
+    const missing = !target ? "provider" : !target.apiKey ? "API key" : "model";
     return NextResponse.json(
-      { error: "provider_not_configured", message: "No active provider with an API key is configured." },
+      {
+        error: "provider_not_configured",
+        message: target
+          ? `Provider "${target.name}" has no ${missing} configured.`
+          : "No active provider with an API key is configured.",
+        status: 503,
+      },
       { status: 503 },
     );
   }
