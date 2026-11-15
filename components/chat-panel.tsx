@@ -352,22 +352,12 @@ export function ChatPanel({
     }).catch(() => {});
   }, [deviceToken, activeConvId]);
 
-  // Auto-select most recent conversation on load
-  useEffect(() => {
-    if (conversations.length > 0 && !activeConvId) {
-      setActiveConvId(conversations[0].id);
-    }
-  }, [conversations, activeConvId]);
-
-  // Load name + histories once, on the client only. The old shared history
-  // key is split: image entries move to the image history, the rest stay chat.
-  // Histories load UNCONDITIONALLY — since the name gate was removed
-  // (Phase 6), most visitors have no stored name, and gating this block on
-  // the name made every anonymous conversation vanish on refresh.
-  useEffect(() => {
+  /* Claude-style landing: a returning visitor lands on a FRESH chat — old
+   * conversations live in the sidebar and load only on click. When the
+   * server conversation sync is unavailable, the offline fallback loads the
+   * locally stored history instead. */
+  function loadLocalHistories() {
     try {
-      const n = localStorage.getItem(NAME_KEY);
-      if (n) setName(n);
       const valid = (m: Msg) =>
         m &&
         (m.role === "user" || m.role === "assistant") &&
@@ -396,9 +386,42 @@ export function ChatPanel({
           setVideoHistory(parsed.filter(valid).slice(-24));
         }
       }
-      setLimited(usageToday() >= DAILY_LIMIT);
     } catch {
       /* storage unavailable, start fresh */
+    }
+  }
+
+  useEffect(() => {
+    setMounted(true);
+    setTypographyState(loadTypography());
+    const token = getDeviceToken();
+    setDeviceToken(token);
+    setDeviceNameState(getDeviceName());
+    const name = getDeviceName() || (typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 40) : "");
+    if (!getDeviceName() && name) setDeviceName(name);
+    initDevice(token, name).catch(() => {});
+    fetchConversations(token)
+      .then((list) => {
+        if (list.length > 0) {
+          setConversations(list);
+          setIsOffline(false);
+          // Fresh landing — no history auto-load. The sidebar is the archive.
+        } else {
+          // Offline / sync unavailable: local history takes its place.
+          setIsOffline(true);
+          loadLocalHistories();
+        }
+      })
+      .catch(() => {
+        setIsOffline(true);
+        loadLocalHistories();
+      });
+    try {
+      const n = localStorage.getItem(NAME_KEY);
+      if (n) setName(n);
+      setLimited(usageToday() >= DAILY_LIMIT);
+    } catch {
+      /* ignore */
     }
   }, []);
 
@@ -1010,30 +1033,24 @@ export function ChatPanel({
     return () => clearInterval(t);
   }, [videoHistory, mode]);
 
-  // Create a new conversation in Turso (or fallback to localStorage)
-  async function newConversation() {
-    if (!deviceToken) return;
-    const id = crypto.randomUUID();
-    const title = "New chat";
-    const result = await createConversation(deviceToken, id, title, mode);
-    if (result) {
-      setConversations((prev) => [
-        { id, title, mode: mode as "chat" | "image" | "video", pinned: false, createdAt: Date.now(), updatedAt: Date.now(), messageCount: 0 },
-        ...prev,
-      ]);
-      setActiveConvId(id);
-    } else {
-      // Offline fallback
-      setIsOffline(true);
-      setActiveConvId(null);
-    }
+  /* "+ New chat" — Claude-style: clear the view only. The conversation row
+   * is created automatically on the first message (ensureConversation), so
+   * no orphan "New chat" rows are written to the database. */
+  function newConversation() {
+    setActiveConvId(null);
     setChatHistory([]);
     setImageHistory([]);
     setVideoHistory([]);
+    setMode("chat");
+    setError(null);
+    setInput("");
   }
 
-  // Switch to an existing conversation
-  async function switchConversation(id: string) {
+  // Switch to an existing conversation — auto-switch to its mode so a chat
+  // conversation never opens inside Image or Video mode.
+  function switchConversation(id: string) {
+    const conv = conversations.find((c) => c.id === id);
+    if (conv) setMode(conv.mode as "chat" | "image" | "video");
     setActiveConvId(id);
   }
 
@@ -1225,12 +1242,9 @@ export function ChatPanel({
         <div className="hidden md:block">
           <ConversationSidebar
             activeId={activeConvId}
-            onSelect={(id) => setActiveConvId(id)}
+            onSelect={switchConversation}
             onNew={() => {
-              setActiveConvId(null);
-              setChatHistory([]);
-              setImageHistory([]);
-              setVideoHistory([]);
+              newConversation();
             }}
             collapsed={sidebarCollapsed}
             onToggle={() => setSidebarCollapsed((v) => !v)}

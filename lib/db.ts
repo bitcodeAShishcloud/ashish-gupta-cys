@@ -26,6 +26,24 @@ export function userIdForToken(token: string): string {
 
 let _client: Client | null = null;
 
+/* Turso free-tier endpoints occasionally drop connections
+ * (UND_ERR_CONNECT_TIMEOUT / ECONNRESET). One retry after a short delay
+ * absorbs most blips. Wrapped transparently around the client's execute
+ * methods so every call site gets it without per-route changes. */
+const RETRYABLE = new Set(["UND_ERR_CONNECT_TIMEOUT", "ECONNRESET", "ETIMEDOUT"]);
+
+function withRetry<T>(fn: () => Promise<T>): Promise<T> {
+  return fn().catch((err: { cause?: { code?: string }; code?: string; message?: string }) => {
+    const code = err?.cause?.code ?? err?.code ?? "";
+    if (!RETRYABLE.has(code)) throw err;
+    return new Promise<T>((resolve, reject) => {
+      setTimeout(() => {
+        fn().then(resolve).catch(reject);
+      }, 400);
+    });
+  });
+}
+
 export function getDb(): Client | null {
   if (_client) return _client;
   // Accept a few common env-var names so the user doesn't have to guess
@@ -43,7 +61,22 @@ export function getDb(): Client | null {
   if (!url || !token) {
     return null;
   }
-  _client = createClient({ url, authToken: token });
+  const client = createClient({ url, authToken: token });
+  // Retry-transparent client: execute/executeMultiple/batch get one
+  // reconnect attempt on transient connect failures.
+  _client = new Proxy(client, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (
+        (prop === "execute" || prop === "executeMultiple" || prop === "batch") &&
+        typeof value === "function"
+      ) {
+        return (...callArgs: unknown[]) =>
+          withRetry(() => (value as (...a: unknown[]) => Promise<unknown>).apply(target, callArgs));
+      }
+      return value;
+    },
+  }) as Client;
   return _client;
 }
 
