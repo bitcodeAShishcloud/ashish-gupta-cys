@@ -446,6 +446,8 @@ export function ChatPanel({
     const message = text.trim();
     if (!message || sending || generating || limited) return;
     setError(null);
+    // Fresh send — never inherit sources from an earlier (possibly failed) one.
+    pendingSourcesRef.current = [];
     const history = [...chatHistory, { role: "user" as const, content: message }];
     setChatHistory(history);
     setInput("");
@@ -596,6 +598,8 @@ export function ChatPanel({
     const message = text.trim();
     if (!message || sending || generating || limited) return;
     setError(null);
+    // Fresh send — never inherit sources from an earlier (possibly failed) one.
+    pendingSourcesRef.current = [];
     setChatHistory([...base, { role: "user" as const, content: message }]);
     setSending(true);
     setFirstToken(false);
