@@ -4,10 +4,25 @@
  * required; if either is missing, all DB calls throw and the chat falls back
  * to localStorage (offline mode).
  *
+ * The device token is a bearer credential: it is NEVER stored raw. Routes
+ * convert the presented token via userIdForToken() and only the SHA-256 hash
+ * is persisted (users.id / conversations.user_id), so a database leak alone
+ * cannot impersonate any visitor.
+ *
  * Schema is created lazily on first connection via ensureSchema().
  */
 
+import { createHash } from "crypto";
 import { createClient, type Client } from "@libsql/client";
+
+/**
+ * Deterministic, irreversible user id for a presented device token. The raw
+ * token lives only in the visitor's localStorage and travels only in the
+ * X-Device-Token request header; the database stores only this hash.
+ */
+export function userIdForToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
 
 let _client: Client | null = null;
 

@@ -3,7 +3,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { getDb, ensureSchema, now } from "@/lib/db";
+import { getDb, ensureSchema, now, userIdForToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     const own = await db.execute({
       sql: "SELECT 1 FROM conversations WHERE id = ? AND user_id = ?",
-      args: [id, token],
+      args: [id, userIdForToken(token)],
     });
     if (own.rows.length === 0) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });

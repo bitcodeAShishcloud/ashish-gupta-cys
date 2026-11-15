@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { getDb, ensureSchema, now } from "@/lib/db";
+import { getDb, ensureSchema, now, userIdForToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -18,7 +18,7 @@ function deviceToken(req: NextRequest): string | null {
 async function ownsConversation(db: ReturnType<typeof getDb>, id: string, token: string): Promise<boolean> {
   const res = await db.execute({
     sql: "SELECT 1 FROM conversations WHERE id = ? AND user_id = ?",
-    args: [id, token],
+    args: [id, userIdForToken(token)],
   });
   return res.rows.length > 0;
 }

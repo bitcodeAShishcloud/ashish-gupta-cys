@@ -2,10 +2,11 @@
 // POST /api/conversations  { title?, mode?, id? } → create a conversation
 //
 // Auth: X-Device-Token header (the device token is the user identity).
+// Only the SHA-256 hash of the token is stored or queried (userIdForToken).
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { getDb, ensureSchema, now, newId } from "@/lib/db";
+import { getDb, ensureSchema, now, newId, userIdForToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -31,7 +32,7 @@ export async function GET(req: NextRequest) {
             FROM conversations c
             WHERE c.user_id = ?
             ORDER BY c.pinned DESC, c.updated_at DESC`,
-      args: [token],
+      args: [userIdForToken(token)],
     });
     const conversations = res.rows.map((r) => ({
       id: String(r.id),
@@ -69,12 +70,12 @@ export async function POST(req: NextRequest) {
     // Ensure user exists
     await db.execute({
       sql: "INSERT OR IGNORE INTO users (id, created_at, last_seen) VALUES (?, ?, ?)",
-      args: [token, now(), now()],
+      args: [userIdForToken(token), now(), now()],
     });
     await db.execute({
       sql: `INSERT INTO conversations (id, user_id, title, mode, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [id, token, title, mode, now(), now()],
+      args: [id, userIdForToken(token), title, mode, now(), now()],
     });
     return NextResponse.json({ id, title, mode, createdAt: now() });
   } catch (err) {

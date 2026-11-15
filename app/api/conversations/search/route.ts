@@ -1,6 +1,6 @@
 // GET /api/conversations/search?q=...  → search conversations by title + message content
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, ensureSchema } from "@/lib/db";
+import { getDb, ensureSchema, userIdForToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       sql: `SELECT c.id, c.title, c.mode, c.pinned, c.created_at, c.updated_at,
                    (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.id) AS msg_count
             FROM conversations c WHERE c.user_id = ? ORDER BY c.updated_at DESC`,
-      args: [token],
+      args: [userIdForToken(token)],
     });
     return NextResponse.json({
       conversations: res.rows.map((r) => ({
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
             LEFT JOIN messages m ON m.conversation_id = c.id
             WHERE c.user_id = ? AND (c.title LIKE ? OR m.content LIKE ?)
             ORDER BY c.updated_at DESC`,
-      args: [token, `%${q}%`, `%${q}%`],
+      args: [userIdForToken(token), `%${q}%`, `%${q}%`],
     });
     return NextResponse.json({
       conversations: res.rows.map((r) => ({

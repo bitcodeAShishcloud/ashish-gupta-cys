@@ -7,7 +7,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { getDb, ensureSchema, now, dbEnvStatus } from "@/lib/db";
+import { getDb, ensureSchema, now, dbEnvStatus, userIdForToken } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
@@ -41,14 +41,14 @@ export async function POST(req: NextRequest) {
     }
     const existing = await db.execute({
       sql: "SELECT id, device_name, created_at, last_seen FROM users WHERE id = ?",
-      args: [token],
+      args: [userIdForToken(token)],
     });
 
     if (existing.rows.length > 0) {
       const row = existing.rows[0];
       await db.execute({
         sql: "UPDATE users SET last_seen = ?, device_name = COALESCE(?, device_name) WHERE id = ?",
-        args: [now(), deviceName, token],
+        args: [now(), deviceName, userIdForToken(token)],
       });
       return NextResponse.json({
         id: String(row.id),
@@ -61,10 +61,10 @@ export async function POST(req: NextRequest) {
 
     await db.execute({
       sql: "INSERT INTO users (id, device_name, created_at, last_seen) VALUES (?, ?, ?, ?)",
-      args: [token, deviceName, now(), now()],
+      args: [userIdForToken(token), deviceName, now(), now()],
     });
     return NextResponse.json({
-      id: token,
+      id: userIdForToken(token),
       deviceName: deviceName ?? "",
       createdAt: now(),
       lastSeen: now(),
