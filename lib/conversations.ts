@@ -48,11 +48,15 @@ function genToken(): string {
 
 function genRecoveryCode(): string {
   // 16-char human-readable code: XXXX-XXXX-XXXX-XXXX
+  // crypto.getRandomValues (CSPRNG) — Math.random is predictable and this
+  // code is credential-grade if the recovery flow gets wired.
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const buf = new Uint32Array(16);
+  crypto.getRandomValues(buf);
   let out = "";
   for (let i = 0; i < 16; i++) {
     if (i > 0 && i % 4 === 0) out += "-";
-    out += chars[Math.floor(Math.random() * chars.length)];
+    out += chars[buf[i] % chars.length];
   }
   return out;
 }
