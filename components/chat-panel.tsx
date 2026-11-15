@@ -17,6 +17,7 @@ import {
   MessageSquare,
   Monitor,
   Palette,
+  PanelLeft,
   Pencil,
   Search,
   Send,
@@ -241,6 +242,10 @@ export function ChatPanel({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [vAspect, setVAspect] = useState<string>("16:9");
   const [vSeconds, setVSeconds] = useState<string>("5");
+  /* Mobile conversations drawer (<md) — the desktop sidebar is hidden on
+   * small screens, which left mobile visitors with no way to reach their
+   * old conversations at all. */
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   /* Latest videoHistory for async callbacks — the poll handler reads this
    * ref instead of closing over state, so persistence and the usage counter
    * run OUTSIDE the setState updater (side effects in updaters re-run on
@@ -1300,6 +1305,15 @@ export function ChatPanel({
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
+              onClick={() => setMobileNavOpen(true)}
+              aria-label="Open conversations"
+              title="Conversations"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:hidden"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
               onClick={() => { setSearchOpen((v) => !v); if (!searchOpen) setTimeout(() => searchInputRef.current?.focus(), 50); }}
               aria-label="Search messages"
               title="Search (Ctrl+Shift+F)"
@@ -2259,6 +2273,35 @@ export function ChatPanel({
           { id: "erase", label: "Erase all data", hint: "remove name, history, usage", run: () => setEraseOpen(true) },
         ]}
       />
+
+      {/* Mobile conversations drawer (<md): the desktop sidebar is hidden on
+          small screens, so this overlay is the only way to reach old chats. */}
+      {mobileNavOpen && variant !== "widget" ? (
+        <div className="fixed inset-0 z-[70] md:hidden" role="dialog" aria-modal="true" aria-label="Conversations">
+          <button
+            type="button"
+            aria-label="Close conversations"
+            onClick={() => setMobileNavOpen(false)}
+            className="absolute inset-0 bg-black/60"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col border-r border-border bg-background shadow-[0_0_80px_rgba(0,0,0,0.8)]">
+            <ConversationSidebar
+              activeId={activeConvId}
+              onSelect={(id) => {
+                switchConversation(id);
+                setMobileNavOpen(false);
+              }}
+              onNew={() => {
+                newConversation();
+                setMobileNavOpen(false);
+              }}
+              collapsed={false}
+              onToggle={() => setMobileNavOpen(false)}
+              refreshKey={convRefreshKey}
+            />
+          </div>
+        </div>
+      ) : null}
 
       <Dialog open={eraseOpen} onOpenChange={setEraseOpen}>
         <DialogContent>
