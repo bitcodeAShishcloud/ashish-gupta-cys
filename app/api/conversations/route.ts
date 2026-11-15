@@ -62,7 +62,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "no_device" }, { status: 400 });
   }
   const body = await readJsonBody(req);
-  const id = String(body.id ?? "").trim() || newId();
+  const requested = String(body.id ?? "").trim();
+  // Client-supplied ids are primary keys — bound their shape. An unbounded or
+  // colliding id would surface as a raw 503 (and act as a cross-user
+  // existence oracle); anything malformed is rejected up front.
+  const id = requested || newId();
+  if (!/^[A-Za-z0-9-]{8,64}$/.test(id)) {
+    return NextResponse.json({ error: "bad_id" }, { status: 400 });
+  }
   const title = String(body.title ?? "Untitled").trim().slice(0, 80) || "Untitled";
   const mode = ["chat", "image", "video"].includes(String(body.mode)) ? String(body.mode) : "chat";
 
@@ -75,11 +82,19 @@ export async function POST(req: NextRequest) {
       sql: "INSERT OR IGNORE INTO users (id, created_at, last_seen) VALUES (?, ?, ?)",
       args: [userIdForToken(token), now(), now()],
     });
-    await db.execute({
-      sql: `INSERT INTO conversations (id, user_id, title, mode, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [id, userIdForToken(token), title, mode, now(), now()],
-    });
+    try {
+      await db.execute({
+        sql: `INSERT INTO conversations (id, user_id, title, mode, created_at, updated_at)
+              VALUES (?, ?, ?, ?, ?, ?)`,
+        args: [id, userIdForToken(token), title, mode, now(), now()],
+      });
+    } catch (insertErr) {
+      const e = insertErr as { message?: string };
+      if (e?.message && /UNIQUE|PRIMARY KEY/i.test(e.message)) {
+        return NextResponse.json({ error: "already_exists" }, { status: 409 });
+      }
+      throw insertErr;
+    }
     return NextResponse.json({ id, title, mode, createdAt: now() });
   } catch (err) {
     console.error("[conversations POST]", err);
