@@ -45,9 +45,12 @@ export function detectMail(text: string): boolean {
 }
 
 /** Explicit/user-driven research intent. Server-side trigger, never every
- * message. URLs in the composer count as the manual "paste a link" path. */
+ * message. URLs in the composer count as the manual "paste a link" path.
+ * IN-06: the trigger was tightened — generic words like "website", "clinic"
+ * or "google" alone fired paid You.com calls on ordinary messages. Only
+ * explicit research/outreach phrasing (or a pasted URL) triggers it now. */
 const RESEARCH_INTENT =
-  /\b(research|look up|search (for|about|the web)|find (info|information|details|out) about|web search|google|cold email|outreach|prospect|draft (an? )?email (for|to)|write (an? )?(email|cold email) (for|to)|clinic|practice|reviews?|website)\b/i;
+  /\b(research|look up|look into|search (the web|online|for)|find (info|information|details) (about|on)|web search|latest (news|info|updates) (about|on)|cold email|outreach|prospect(ing)?|draft (an? )?email (for|to)|write (an? )?(email|cold email) (for|to))\b/i;
 
 export function explicitResearch(message: string): {
   needed: boolean;
