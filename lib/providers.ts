@@ -834,10 +834,11 @@ export async function getVideoTask(
 
   const retrievalUrl = `${retrievalBase}/agnesapi?video_id=${encodeURIComponent(taskId)}&model_name=${encodeURIComponent(provider.model)}`;
   const urlError = validateProviderUrl(retrievalUrl);
-  if (urlError) return { ok: false, detail: urlError };
+  if (urlError) return { ok: false, httpStatus: 503, detail: urlError };
   if (!hostIsAllowed(new URL(retrievalUrl).hostname.toLowerCase())) {
     return {
       ok: false,
+      httpStatus: 503,
       detail: `Provider host "${new URL(retrievalUrl).hostname}" is not in the AI_ALLOWED_HOSTS whitelist.`,
     };
   }
