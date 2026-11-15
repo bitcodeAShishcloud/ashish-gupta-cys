@@ -1283,25 +1283,9 @@ export function ChatPanel({
             } as React.CSSProperties
           }
         >
-        {/* Top chrome: greeting rides in the hero when the thread is empty */}
-        <div className="flex min-h-9 items-start justify-between gap-3">
-          {visible.length > 0 ? (
-            <div className="min-w-0">
-              {variant === "widget" ? (
-                <h2 className="font-display text-base font-semibold leading-snug tracking-tight">
-                  Hey{name ? ` ${name}` : ""} — what are you curious about?
-                </h2>
-              ) : (
-                <h1 className="font-display text-xl font-bold tracking-tight">
-                  Hey{name ? ` ${name}` : ""} — what are you curious about?
-                </h1>
-              )}
-              <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-success" />
-                <span className="truncate">online · replies instantly</span>
-              </p>
-            </div>
-          ) : null}
+        {/* Top chrome: controls only, right-aligned. The greeting lives in
+            the empty state — an active thread stays clean (Claude-style). */}
+        <div className="flex min-h-9 items-center justify-end gap-2">
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
