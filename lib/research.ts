@@ -36,6 +36,13 @@ function safeDomain(raw: string): string | null {
   }
 }
 
+/* Only plain web URLs may become source links. Upstream hits are third-party
+ * data — anything else (javascript:, data:, file:, …) must never reach the
+ * client, where sources are rendered as clickable <a href> values. */
+function isWebUrl(raw: string): boolean {
+  return /^https?:\/\//i.test(raw);
+}
+
 function clean(s: unknown): string {
   return String(s ?? "")
     .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "")
@@ -110,13 +117,13 @@ export async function runResearch(
         .filter(Boolean)
         .slice(0, 3);
 
-      const block = `- ${title}${url ? ` (${url})` : ""}\n${passages
+      const block = `- ${title}${url && isWebUrl(url) ? ` (${url})` : ""}\n${passages
         .map((p) => `  ${p}`)
         .join("\n")}`;
       if (used + block.length > MAX_CONTEXT) break;
       lines.push(block);
       used += block.length;
-      if (url) sources.push({ title, url });
+      if (url && isWebUrl(url)) sources.push({ title, url });
     }
 
     if (!lines.length) {
