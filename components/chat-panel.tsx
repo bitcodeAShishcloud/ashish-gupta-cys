@@ -1283,8 +1283,10 @@ export function ChatPanel({
             } as React.CSSProperties
           }
         >
-        {/* Top chrome: controls only, right-aligned. The greeting lives in
-            the empty state — an active thread stays clean (Claude-style). */}
+        {/* Top chrome: controls only on the EMPTY landing — an active thread
+            stays pure messages (Claude-style). Search stays on Ctrl+Shift+F,
+            clear lives in the command palette (Ctrl+K). */}
+        {visible.length === 0 ? (
         <div className="flex min-h-9 items-center justify-end gap-2">
           <div className="flex shrink-0 items-center gap-2">
             <button
@@ -1321,6 +1323,7 @@ export function ChatPanel({
             </button>
           </div>
         </div>
+        ) : null}
 
         {/* Mode switch */}
         <div className="mt-3 flex justify-center">
