@@ -118,7 +118,7 @@ const jsFlag = `document.documentElement.classList.add('js')`;
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <style dangerouslySetInnerHTML={{ __html: criticalCss }} />
         <script dangerouslySetInnerHTML={{ __html: jsFlag }} />

@@ -1067,14 +1067,6 @@ export function ChatPanel({
     return () => document.removeEventListener("keydown", onKey);
   }, []);
 
-  if (!mounted) {
-    return variant === "widget" ? (
-      <div className="h-full" />
-    ) : (
-      <div className="mx-auto max-w-3xl px-5 py-16" />
-    );
-  }
-
   // ── Chat view: full-height app, messages scroll internally ──
   // Phase 6: no name gate — visitors land straight in the chat. A stored
   // name (returning visitor) is still used in the greetings when present.
@@ -1156,8 +1148,19 @@ export function ChatPanel({
     setSearchIdx(0);
   }, [searchQuery]);
 
+  /* Phase 6 mounted guard — deliberately placed AFTER every hook. The
+   * search callbacks/effects added by Phase 8 landed below this return in
+   * an earlier edit, producing a Rules-of-Hooks violation (React #310) that
+   * blanked the production chat page. Hook order must never depend on
+   * `mounted`. */
+  if (!mounted) {
+    return variant === "widget" ? (
+      <div className="h-full" />
+    ) : (
+      <div className="mx-auto max-w-3xl px-5 py-16" />
+    );
+  }
 
-  // ── Chat view: full-height app, messages scroll internally ──
   // Recovery code dialog
   // (rendered below)
 
