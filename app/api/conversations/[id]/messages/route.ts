@@ -27,7 +27,23 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!content) return NextResponse.json({ error: "no_content" }, { status: 400 });
   const kind = ["text", "image", "video"].includes(String(body.kind)) ? String(body.kind) : "text";
   const mail = body.mail === true ? 1 : 0;
-  const sources = body.sources ? JSON.stringify(body.sources) : null;
+  /* sources must be a bounded array of {title,url} strings — the column is
+   * client-writable, so an unbounded payload would let any token holder pour
+   * arbitrary bytes into the owner's Turso storage per request. */
+  let sources: string | null = null;
+  if (Array.isArray(body.sources)) {
+    const cleaned = body.sources
+      .slice(0, 8)
+      .map((s) => {
+        const item = (s ?? {}) as { title?: unknown; url?: unknown };
+        return {
+          title: String(item.title ?? "").slice(0, 200),
+          url: String(item.url ?? "").slice(0, 500),
+        };
+      })
+      .filter((s) => s.title || s.url);
+    if (cleaned.length > 0) sources = JSON.stringify(cleaned);
+  }
   try {
     await ensureSchema();
     const db = getDb();
