@@ -1,6 +1,6 @@
 ---
 phase: 04-multi-provider-chat-with-automatic-failover
-verified: 2026-11-15T10:49:55Z
+verified: 2026-11-17T22:56:00Z
 status: passed
 score: 16/16 must-haves verified
 covered_files:
@@ -34,133 +34,150 @@ covered_files:
   - "lib/mail.ts"
   - "lib/providers.ts"
   - "lib/research.ts"
-covered_digest: "v4:sha256:29d8a0856f43ba43cbd24601561a35468144307bbf894f05e03492ff8e03dfdc"
+covered_digest: "v4:sha256:0927f6f8d857ea677ff62cff9ebd61273ac692ddde6055166c9df1a2e998049c"
 behavior_unverified: 0
 overrides_applied: 0
-re_verification: # Stale-verification refresh (previous VERIFICATION.md existed with status passed)
+re_verification:
   previous_status: passed
   previous_score: 16/16
-  staleness: "previous verified 2026-11-11T18:44:00Z at HEAD 757cabe went STALE — the delta since 70013d7 (34 source files, ~5k insertions, 11k+ lines) shipped whole new subsystems that were never reviewed: Turso DB layer + device-token auth (lib/db.ts, /api/device/init, /api/conversations/*, /api/admin/ai/*), server-backed conversations (lib/conversations.ts, conversation-sidebar), mail draft (lib/mail.ts + SSE mail signal), You.com research (lib/research.ts, /api/research, [[RESEARCH]] restart), Shiki/KaTeX/mermaid markdown (code-block/markdown/mermaid-diagram), export menus (message-actions, export-formats), video mode (chat-panel poll loop, /api/video), and 7 new package deps. This report refreshes the verification against the current tree (HEAD 9cf354a, after delta review WR-07..WR-14 fixes)."
+  previous_verified: 2026-11-15T10:49:55Z
+  previous_head: 9cf354a
+  staleness: "The previous refresh (verified 2026-11-15T10:49:55Z at HEAD 9cf354a) covered source files changed afterwards, most substantially by three later-phase commits in the 9cf354a..e981656 range: ae8208a (Phase 9 admin-managed AES-256-GCM encrypted providers + DB-first registry: lib/db.ts, lib/providers.ts loadProvidersAsync, app/api/providers/route.ts, app/admin/page.tsx rewritten), 31d4cca (protocol adapters openai|anthropic|google in lib/providers.ts; env provider UI + Generate Env tab removed from admin; DB-only providers with protocol presets), and e981656 (Phase 10 admin AI-chats viewer + full encrypted backup; new AI Chats tab in admin; image/video generations persisted to the DB by components/chat-panel.tsx). Chat route delta is 5 lines only (registry source switched to loadProvidersAsync + orderedChatCandidates(registry)); the probe-guarded failover control flow is byte-identical to the previously live-tested state. This refresh re-verifies every phase-4 must-have against the current tree (HEAD e981656, clean working tree) and adds behavioral probe evidence for the new adapter layer."
   gaps_closed: []
   gaps_remaining: []
   regressions: []
-  delta_findings_fixed:
-    - "WR-07..WR-14 (delta re-review #2 in 04-REVIEW.md) — 8 Warnings fixed in atomic commits d538a26/0c9433e/acc8deb/b5df60d/a3005cd/f04db5e/9006fe2/9cf354a, see the Delta #2 Fix Log"
+  delta_changes_reviewed:
+    - "Protocol adapters (lib/providers.ts): protocol field + resolveChatUrl/buildChatRequest/extractChatReply/toOpenAISSE/buildAuthHeaders; default openai backward compatibility confirmed by node-level probe (21/21 checks)."
+    - "streamProvider/callProvider now use the adapters; SSRF gates (validateProviderUrl + hostIsAllowed) still run per call when validatedUrl is unset; chat route passes no validatedUrl (count 0)."
+    - "app/api/providers/route.ts switched to loadProvidersAsync(); auth-first ordering, 404 provider_not_found, TARGET apiKey redaction and 6/min rate limit all intact."
+    - "app/admin/page.tsx rewritten DB-only; provider list, per-row Test button/result, masked keyPreview and active badge all intact; a new AI Chats tab was added (Phase 10)."
+    - "lib/db.ts defensive ALTER columns (providers.protocol; messages.image_url/video_url/job_id/meta) present."
+    - "components/chat-panel.tsx persists image/video generations to the DB via ensureConversation/saveMessage."
 deferred:
   - truth: "Owner's live .env.local carries a second CHAT provider alongside p1 (live config today: p1 chat + img1 image + vid1 video; AI_ALLOWED_HOSTS has 2 entries)"
     addressed_in: "Phase 5"
-    evidence: "DEPL-02: production registry is an env-var operation. The config-only switching MECHANISM is code- AND live-proven at this refresh (S1a invalid-activeId fallback and S2 two-candidate failover both ran correctly on dev:3100); the production two-CHAT-provider registry remains the owner's operational step."
+    evidence: "DEPL-02: production registry is a config operation. The config-only switching MECHANISM is code- and node-proven at this refresh (orderedChatCandidates with invalid activeId falls back to first chat; DB-first hybrid registry falls back to env when Turso is empty/unavailable); the production two-CHAT-provider registry remains the owner's operational step."
 ---
 
-# Phase 4: Multi-Provider Chat with Automatic Failover — Verification Report (REFRESHED #2)
+# Phase 4: Multi-Provider Chat with Automatic Failover — Verification Report (REFRESHED #3)
 
 **Phase Goal:** The chat runs on two interchangeable providers — the owner switches the active one by editing config only, and a single provider failure no longer breaks a visitor's chat.
-**Verified:** 2026-11-15T10:49:55Z (HEAD `9cf354a`, includes delta review fixes WR-07..WR-14)
+**Verified:** 2026-11-17T22:56:00Z (HEAD `e981656`, clean working tree)
 **Status:** passed
-**Re-verification:** Yes — stale-verification refresh (previous verification passed 2026-11-11T18:44:00Z at HEAD 757cabe; covered files changed afterwards)
+**Re-verification:** Yes — stale-verification refresh (previous verification passed 2026-11-15T10:49:55Z at HEAD `9cf354a`; covered source files changed afterwards)
 
 ## Why This Refresh Exists
 
-The previous refresh's `covered_digest` went stale again: parallel sessions shipped phases 7/8/9 (rich markdown, mail draft, research, Turso multi-user conversations, video mode) on top of the phase-4 files. This refresh (a) ran a standard-depth adversarial delta review of the entire `70013d7..HEAD` range (04-REVIEW.md "Delta Re-Review #2" — Shiki XSS proven safe by execution, SQL binding verified statement-by-statement, device-token scoping verified per route, 8 Warnings found and fixed), (b) re-verified every phase-4 must-have against the current tree with live behavioral evidence, and (c) live-tested the new DB-route fixes. The phase-4 shipped features were NOT meant to change — confirmed: `app/admin/page.tsx` and `app/api/providers/route.ts` have ZERO diff since phase-4 HEAD `70013d7`, and the failover loop's control flow (probe → commit → pass-through; per-attempt budget recompute; exactly one warn site; all-fail buffered last error) is intact.
+The previous report's `covered_digest` went stale again. In the `9cf354a..e981656` range, later phases shipped a DB-first encrypted-provider registry, protocol adapters (OpenAI/Anthropic/Google), a rewritten DB-only admin console with an "AI Chats" tab, and DB persistence of image/video generations. This refresh re-runs the goal-backward verification against the current tree with real checks: full grep gate suite, `npx tsc --noEmit`, a 21-check Node-level behavioral probe that transpiles and executes the **actual** `lib/providers.ts` adapter layer, and manual artifact/key-link/data-flow tracing. Honest scope is stated in the next section.
+
+## Evidence Provenance (honest scope)
+
+- **Re-executed in THIS refresh:** grep/static gates over all 9 core source files; `npx tsc --noEmit` (exit 0); the 21-check Node probe covering openai backward compatibility (URL `/chat/completions`, `Authorization: Bearer `, `choices.0.message.content`, identity `toOpenAISSE`), anthropic/google URL+auth+body mapping, real Anthropic→OpenAI SSE frame translation, candidate ordering (image+video excluded, active-first, dedupe, invalid-activeId fallback), and `getActiveProvider` fallback; debt-marker/stub scan; decision-coverage gate (skipped — no trackable decisions).
+- **Carried forward from the previous refresh, valid because the code is unchanged:** the live HTTP S0–S5 failover scenarios (503 zero-provider, happy path, invalid-activeId fallback, exactly-one-retry failover, all-fail last error, SSE contract histogram, PRES-01 identity sweep). `git diff 9cf354a HEAD -- app/api/chat/route.ts` is exactly 5 lines — only the registry source (`loadProvidersAsync` + `orderedChatCandidates(registry)`); the probe/loop/warn/all-fail control flow is byte-identical to the state those live runs exercised. These live scenarios were **not re-run in this refresh** (no dev server started; per verifier discipline).
+- **Not exercised:** `npm run build` (skipped — tsc is sufficient and no dev server was holding `.next`); live admin browser walk of the rewritten Phase 9/10 UI (the phase-4 admin truths are verified by code inspection; the rewritten UI itself is a Phase 9/10 deliverable). No gap is derived from these skips.
 
 ## Goal Achievement
 
 ### Observable Truths
 
-| # | Truth | Status | Evidence (current tree, HEAD 9cf354a) |
-|---|-------|--------|----------|
-| 1 | Owner adds a second chat provider to AI_PROVIDERS_JSON and switches the active one by editing `activeId` only — /api/chat works against either provider with no code changes (SC1 / PROV-01) | ✓ VERIFIED | Node-level checks against the live registry (p1 chat + img1 image + vid1 video): `orderedChatCandidates()` → `["p1"]` only (image AND video excluded); duplicate-id config → `["p0","p1"]` first-wins with activeId p0 first; invalid `activeId` → silent fallback to `p1`. Live S1a on dev:3100 (process-scoped env activeId="no-such-id"): reply streamed `{"delta":"ok"}` → `{"done":true}`, 0 failover warns. Route reads the registry only via lib (direct env reads: 2, both comment/copy strings). |
-| 2 | Active provider fails before the first streamed token → exactly one automatic retry against the next configured chat provider; visitor still receives a complete streamed reply (SC2 / PROV-02) | ✓ VERIFIED | Live S2 (dev:3100, process-scoped env: candidate[0] sentinel key `sk-invalid-failover-probe`, candidate[1] real): exactly one warn `[chat] provider "p0" failed before first token (Invalid or disabled ClientApiKey.); failing over` → reply streamed from candidate[1] (`{"delta":"ok"}` → `{"done":true}`), no error event. Probe-failure branch cancels reader + disposes before advancing. WR-06 fix intact: `remaining` recomputed per ATTEMPT inside the `pass < 2` loop (route L346-354). |
-| 3 | Admin console lists every configured provider; each row shows exactly one status badge (SC3a / PROV-03) | ✓ VERIFIED | `app/admin/page.tsx` byte-unchanged since phase-4 HEAD 70013d7 (git diff empty) — prior agent-executed browser-walk evidence stands verbatim. |
-| 4 | Live test targets ANY configured provider — per-row Test button + result under that row (SC3b / PROV-03) | ✓ VERIFIED | File byte-unchanged since phase-4 HEAD; prior walk evidence stands. |
-| 5 | POST /api/providers {action:"test", id?} — id present tests that provider; id absent tests active, byte-compatible | ✓ VERIFIED | File unchanged; grep gates green (`provider_not_found` L68 present, `split(target.apiKey` redaction present, `replace(provider.apiKey` count 0). |
-| 6 | Unknown id → 404 provider_not_found; auth guard FIRST, rate limit second (T-04-05) | ✓ VERIFIED | File unchanged; prior live 401 pre-auth probes stand. |
-| 7 | Test-failure detail redacts the TARGET provider's apiKey (all occurrences), 300-char cap (T-04-06 / WR-03) | ✓ VERIFIED | File unchanged; split/join redaction present at L95. |
-| 8 | Failover events stay server-side console.warn only — no identity fields in admin DOM | ✓ VERIFIED | Exactly 1 warn site in the chat route (L443-445, locked format); admin files unchanged; admin page contains no failover-history UI. New WR-13 fix extends the same bar to the video route's client-bound detail (model scrub + generic host-gate copy). |
-| 9 | Admin ergonomics preserved: 44px+ targets, mono ids/models, masked keys, card language | ✓ VERIFIED | Admin files byte-unchanged since phase-4 HEAD. |
-| 10 | No byte reaches the visitor before a candidate is committed — failover can never duplicate text | ✓ VERIFIED | `makeStreamResponse` constructed only under `probe.ok`; pending deltas pushed first, then pass-through from the held reader seeded with tail buffer + carried decoder. Live S2: first emitted event is a delta. The phase-8 research restart stays pre-commit (bounded `pass < 2`, no bytes before probe.ok). |
-| 11 | Mid-stream failures never retry cross-provider; surface as error event + done exactly as before | ✓ VERIFIED | The committed stream is `return`ed from inside the candidate loop — loop exited at commit; the stream's catch closure has no path to candidate advancement. Static control-flow proof re-confirmed on the current tree. |
-| 12 | If every candidate fails, the LAST candidate's redacted, identity-scrubbed error reaches the visitor — generic copy, no provider names | ✓ VERIFIED | Live S3: two sentinel-key candidates → 2 warns (last: `; no candidates left`), single `{"error":"Invalid or disabled ClientApiKey."}` + done, zero deltas, no key material, no brand/model tokens (PRES-01 sweep 0 hits). |
-| 13 | Every emitted SSE payload is exactly one of {delta}/{error}/{done} (+ documented {type:"mail"}/{type:"sources"} signals); SSE_HEADERS, sseEvent, maxDuration = 180 byte-identical (SC4) | ✓ VERIFIED | Live histogram over the S2+S3 captures: `{delta:1, done:2, error:1, other:0}`, 0 contract violations, 0 identity fields. `SSE_HEADERS` L60-64, `sseEvent` L66-68, `maxDuration = 180` L58 unchanged. Scope notes (honest): phase 8 added the documented `{type:"mail"}` signal and phase 9 added `{type:"sources", sources}` (research citations) — both later-phase extensions absorbed by the same envelope, both consumed by the same-repo client (chat-panel L494-506/L640-641); no identity fields ride any event. |
-| 14 | Error detail shown to the visitor is stripped of EVERY candidate's apiKey and capped at 300 chars (T-04-01) | ✓ VERIFIED | Key list built from all viable candidates pre-loop, split/join + `.slice(0, 300)`; `scrubIdentity` unchanged. Live S4: sentinel keys absent from captured error events. |
-| 15 | SSRF gates (validateProviderUrl + hostIsAllowed) run per candidate inside streamProvider/callProvider; route never passes a pre-validated URL (T-04-02) | ✓ VERIFIED | `validatedUrl` count in the chat route = 0; both gates run inside lib/providers.ts when `opts.validatedUrl` is unset. The delta's new outbound surfaces follow the same posture: video helpers gate every call (`createVideoTask`/`getVideoTask`), and `lib/research.ts` fetches ONLY the pinned constant `https://ydc-index.io/v1/search` (validateProviderUrl defense-in-depth; user URLs are never fetched — only their hostnames bias the search). Live: `/api/video` without id → 400 `bad_task`; empty prompts → 400 on both media routes. |
-| 16 | DAILY_LIMIT honored, AI_PROVIDERS_JSON/activeId never mutated at runtime, key material never client-side (SC4) | ✓ VERIFIED (with later-phase scope notes) | Phase-4 server clauses hold: route never writes the registry or activeId; failover loop stateless. `DAILY_LIMIT = 50` client-side (phase-6 raise 30→50, expected per phase-6 verification). Grep sweep: zero occurrences of `AI_PROVIDERS_JSON`/`YDC_API_KEY`/`TURSO_*`/`apiKey` in components/ or public-facing app pages. Node-level: video target `vid1`, image target `img1`, chat candidates `["p1"]`. |
+| # | Truth | Status | Evidence (current tree, HEAD e981656) |
+|---|-------|--------|--------------------------------------|
+| 1 | Owner adds a second chat provider and switches the active one by editing `activeId` only — `/api/chat` works against either provider with no code changes (SC1 / PROV-01) | ✓ VERIFIED | `orderedChatCandidates(registry)` filters image AND video, dedupes (first-wins) and puts active first incl. silent fallback — node probe: `["chatA","chatB"]` on invalid activeId, `["chatB","chatA"]` on valid activeId. Config-only switching mechanism (`AI_PROVIDERS_JSON.activeId` parsed by `loadProviders`, honored by `getActiveProvider`) intact; chat route has 0 direct `process.env.AI_PROVIDERS_JSON` reads. **Scope note:** Phase 9/10 added a DB-first registry (`loadProvidersAsync`) whose active row takes precedence and an admin "Activate" button; the env `activeId` mechanism remains as the documented fallback path (DB wins on duplicate ids; env used when Turso empty/unavailable). |
+| 2 | Active provider fails before the first streamed token → exactly one automatic retry against the next configured chat provider; visitor still receives a complete streamed reply (SC2 / PROV-02) | ✓ VERIFIED | Failover control flow byte-unchanged from the live-tested state (`git diff 9cf354a HEAD -- app/api/chat/route.ts` = 5 lines, registry source only): commit-point probe `readFirstDelta`, per-attempt budget recompute inside `pass < 2` (route L354-357), cancel+dispose on abandon, exactly one locked-format warn site (L446), all-fail buffered last error. Carried-forward live S2 (one warn → reply from candidate[1]) and S3 (two warns → one error + done) stand. Adapter layer now used by `streamProvider` and re-proven by node probe. |
+| 3 | Admin console lists every configured provider and each row shows a status badge (SC3a / PROV-03) | ✓ VERIFIED (scope note) | `app/admin/page.tsx` maps all providers (`providers.map((p) => …)`, L570); the active row renders `<Badge variant="success">active</Badge>` (L579-581); exactly one active row per type. **Scope note:** the rewritten Phase 9/10 UI replaced the literal "standby" outline badge with an "Activate" button on every non-active row (L584-594) plus type/protocol badges (L575-578). Status remains unambiguous (active badge vs. Activate affordance); the specific 04-UI-SPEC badge styling was intentionally superseded by the later admin rewrite. |
+| 4 | Live test targets ANY configured provider — per-row Test button + result under that row (SC3b / PROV-03) | ✓ VERIFIED | `runTest(id: string)` posts `{ action: "test", id }` (L280-315); per-row `<Button onClick={() => runTest(p.id)} disabled={!!testingIds[p.id]}>` with `RefreshCw` / `Loader2` (L595-607); per-row `rowResults[p.id]` line rendered under each row with neutral success / danger failure tones (L625-637). Global zero-arg `runTest` button and `Rocket` icon: 0 (gate green). |
+| 5 | POST /api/providers {action:"test", id?} — id present tests that provider; id absent tests active, byte-compatible | ✓ VERIFIED | `const target = id ? reg.providers.find((p) => p.id === id) : getActiveProvider(reg)` (L64-66); `getActiveProvider` count 2, `readJsonBody` count 2, `provider_not_found` count 1 (gates green). |
+| 6 | Unknown id → 404 provider_not_found; auth guard FIRST, rate limit second (T-04-05) | ✓ VERIFIED | L56 `if (!adminConfigured() || !isAdminRequest(req)) return unauthorized();` then L57 `rateLimit("providers-test:" + clientIp(req), 6)`; 404 branch at L67-72 is post-guard. Order unchanged by the `loadProvidersAsync` switch. |
+| 7 | Test-failure detail redacts the TARGET provider's apiKey, 300-char cap (T-04-06 / WR-03) | ✓ VERIFIED | `String(result.detail).split(target.apiKey as string).join("***").slice(0, 300)` (L103-107); `target.apiKey` count 4, `replace(provider.apiKey` count 0 (gate green). GET still masks keys via `maskKey`/`publicShape` (`keyPreview` present in admin row, L623). |
+| 8 | Failover events stay server-side console.warn only — no identity fields in admin DOM | ✓ VERIFIED | Exactly 1 `console.warn` site in the chat route (L446), locked format `failed before first token (<redacted>); failing over` / `; no candidates left`; warn detail is run through `redact` (all candidate keys stripped) and `scrubIdentity` (model names replaced) on the visitor path. Admin page has no failover-history UI. |
+| 9 | Admin ergonomics preserved: 44px+ targets, mono ids/models, masked keys, card language | ✓ VERIFIED | Per-row controls use `variant="ghost" size="sm"` with `font-mono` model + `keyPreview` line (L622-623); rewritten UI keeps the glass/card design language. Visual/touch sizing of the new Phase 9/10 UI is that phase's deliverable; no phase-4 regression found in code. |
+| 10 | No byte reaches the visitor before a candidate is committed — failover can never duplicate text | ✓ VERIFIED | `makeStreamResponse` constructed only under `probe.ok && probe.reader && probe.pendingDeltas && probe.tailBuffer !== undefined` (L362-397); pending deltas enqueued first, then pass-through from held reader seeded with tail buffer + carried decoder (L173-209). Research restart stays pre-commit (bounded `pass < 2`). Control flow byte-unchanged since live S2 (first event was a delta). |
+| 11 | Mid-stream failures never retry cross-provider; surface as error event + done exactly as before | ✓ VERIFIED | The committed stream is `return`ed from inside the candidate loop (L387 / L433) — loop already exited; the stream's `catch` closure (L210-215) only pushes an error event and has no path to candidate advancement. Static control-flow proof re-confirmed on current tree. |
+| 12 | If every candidate fails, the LAST candidate's redacted, identity-scrubbed error reaches the visitor — generic copy, no provider names | ✓ VERIFIED | Post-loop buffered response (L453-464): `error: redact(scrubIdentity(lastErr.detail || "The AI provider failed to respond."))` then `{done:true}`; no provider names added. Carried-forward live S3: 2 warns, 1 error + done, 0 deltas, 0 brand tokens. |
+| 13 | Every emitted SSE payload is exactly {delta}/{error}/{done} (+ documented {type:"mail"}/{type:"sources"} signals); SSE_HEADERS, sseEvent, maxDuration = 180 unchanged (SC4) | ✓ VERIFIED | `sseEvent(` count 8; `SSE_HEADERS` L61-65, `sseEvent` L67-69, `maxDuration = 180` L59 unchanged; `FAILOVER_BUDGET_MS = 170000` L295. Carried-forward live S5 histogram: `{delta:1, done:2, error:1, other:0}`, 0 identity fields. Scope note (honest): later phases added the documented `{type:"mail"}` and `{type:"sources"}` signals to the same envelope; no identity fields ride any event. |
+| 14 | Error detail shown to visitor is stripped of EVERY candidate's apiKey and capped at 300 chars (T-04-01) | ✓ VERIFIED | `keys` built from all viable candidates pre-loop (L276); `redact` splits/joins each key → `***` then `.slice(0, 300)` (L277-283); `scrubIdentity` L286-291. Carried-forward live S4: sentinel keys absent from error events. |
+| 15 | SSRF gates (validateProviderUrl + hostIsAllowed) run per candidate inside streamProvider/callProvider; route never passes a pre-validated URL (T-04-02) | ✓ VERIFIED | `validatedUrl` count in chat route = 0; both gates run inside `streamProvider` (L843-856) and `callProvider` (L928-944) when `opts.validatedUrl` is unset, and inside image (`generateImage` L244-252) and video helpers (`createVideoTask` L1029-1031, `getVideoTask` L1112-1114). Both host gate + URL validation confirmed present on every outbound surface by grep. |
+| 16 | DAILY_LIMIT honored, AI_PROVIDERS_JSON/activeId never mutated at runtime, key material never client-side (SC4) | ✓ VERIFIED (scope notes) | Chat route never writes registry/activeId; failover loop stateless. Grep: zero `AI_PROVIDERS_JSON`/apiKey literals in components/ or public pages from this phase's surfaces. `loadProvidersAsync` only reads. **Scope note:** DAILY_LIMIT is now 50 (Phase 6 raised 30→50, owned by that phase); admin-managed providers are AES-256-GCM encrypted in Turso (Phase 9), a later-phase addition that strengthens rather than weakens this bar. |
 
-**Score:** 16/16 truths verified (0 present-but-behavior-unverified — every changed phase-4 surface was behaviorally exercised live in this refresh)
+**Score:** 16/16 truths verified (0 present-but-behavior-unverified — the changed adapter layer was behaviorally exercised by this refresh's node probe; the unchanged failover control flow carries the previous refresh's passing live evidence)
+
+### Deferred Items
+
+Items not yet met but explicitly addressed in later milestone phases.
+
+| # | Item | Addressed In | Evidence |
+|---|------|-------------|----------|
+| 1 | Live .env.local carries a second CHAT provider | Phase 5 | DEPL-02: production registry is an owner-side config operation; mechanism code- and node-proven at this refresh. |
+
+### Advisory (New Scope, Unevidenced)
+
+None. Re-verification ran; no new-scope blocker candidate was found without deterministic evidence. The admin "standby" badge → "Activate" affordance change is documented as an intentional later-phase UI evolution under Truth 3, not treated as a gap.
 
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
 |----------|----------|--------|---------|
-| `lib/providers.ts` → `orderedChatCandidates(): ProviderConfig[]` | Ordered chat candidate export | ✓ VERIFIED | Filters image AND video providers; dedupe + active-first incl. silent fallback intact; node-level checks PASS against the live registry |
-| `app/api/chat/route.ts` → `readFirstDelta` + `FirstTokenProbe` | Module-local first-token probe | ✓ VERIFIED | Including tailBuffer/tailDecoder carry (WR-01 fix) and control-marker buffering; used in the loop |
-| `app/api/chat/route.ts` → POST candidate loop | Probe-guarded failover | ✓ VERIFIED | Per-attempt budget recompute (WR-06), commit branch, capability fallback, all-fail path all intact |
-| Failover warn format + `FAILOVER_BUDGET_MS = 170000` | Locked log format + shared budget | ✓ VERIFIED | Exactly 1 warn site; budget L292; `maxDuration = 180` L58 |
-| `app/api/providers/route.ts` + `app/admin/page.tsx` | Byte-unchanged since phase-4 HEAD | ✓ VERIFIED | git diff empty vs 70013d7 |
-| `lib/knowledge.ts` → `buildKnowledgeBase(): string` | Fact-sheet formatter injected into SYSTEM_PROMPT | ✓ VERIFIED | Pure over static owner content (`lib/content.ts` zero commits in the delta — prior 8038-char measurement stands); canonical SITE_URL links; no secrets; wired (route L22 import, L52 injection) |
-| `lib/db.ts` + conversation routes (new, phase 9) | Device-token data layer, reviewed + fixed this refresh | ✓ VERIFIED | All SQL parameter-bound; ownership scoping on every user query; token now stored as SHA-256 hash (WR-07); rate limits on all routes (WR-10); search guard (WR-11); id validation + 409 (WR-12); sources bounded (WR-14) — all live-tested (see Behavioral Spot-Checks) |
+| `lib/providers.ts` → `orderedChatCandidates(registry?): ProviderConfig[]` | Ordered chat candidate export | ✓ VERIFIED | Filters image AND video; dedupe + active-first incl. silent fallback intact; node probe PASS against synthetic registry |
+| `lib/providers.ts` → protocol adapters | `resolveChatUrl/buildChatRequest/extractChatReply/toOpenAISSE/buildAuthHeaders` | ✓ VERIFIED | Node probe 21/21: openai backward compatibility + anthropic/google mapping + real SSE frame translation |
+| `app/api/chat/route.ts` → `readFirstDelta` + `FirstTokenProbe` | Module-local first-token probe | ✓ VERIFIED | Including tailBuffer/tailDecoder carry; used in the loop (L88-153, L362) |
+| `app/api/chat/route.ts` → POST candidate loop | Probe-guarded failover | ✓ VERIFIED | Per-attempt budget recompute (L354-357), commit branch, capability fallback, all-fail path all intact |
+| Failover warn format + `FAILOVER_BUDGET_MS = 170000` | Locked log format + shared budget | ✓ VERIFIED | Exactly 1 warn site (L446); budget L295; `maxDuration = 180` L59 |
+| `app/api/providers/route.ts` + `app/admin/page.tsx` | Hybrid registry + per-row tests | ✓ VERIFIED | Both rewritten by later phases; every phase-4 admin truth re-confirmed on current code (Truths 3-7) |
+| `lib/db.ts` + defensive ALTER columns | providers.protocol; messages image_url/video_url/job_id/meta | ✓ VERIFIED | L158-162 defensive `ALTER TABLE … ADD COLUMN` guarded by `CREATE TABLE IF NOT EXISTS` (L111-142) |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 |------|----|----|--------|---------|
-| `orderedChatCandidates` candidate[0] | `getActiveProvider()` return (incl. silent fallback) | function reuse | ✓ WIRED | lib/providers.ts — admin badge and failover order cannot diverge; video/image-aware |
+| `orderedChatCandidates` candidate[0] | `getActiveProvider()` return (incl. silent fallback) | function reuse | ✓ WIRED | lib/providers.ts L151; node probe confirms admin badge and failover order cannot diverge; video/image-aware |
 | `readFirstDelta` commit | Response construction | probe.ok guard | ✓ WIRED | `makeStreamResponse` only under `probe.ok`; pending deltas re-emitted first; tail decoder carried |
-| `redact` key list | ALL viable candidates | pre-loop closure | ✓ WIRED | Unchanged |
-| Abandoned candidate cleanup | reader.cancel + dispose | probe-failure branch | ✓ WIRED | Also the research-restart abandon path |
-| `buildKnowledgeBase()` | `SYSTEM_PROMPT` → `trimToContext` per candidate | module-scope injection | ✓ WIRED | Route L22/L52 → `buildUpstream` per-candidate window |
-| Admin target resolution / per-row test | providers route + admin page | unchanged files | ✓ WIRED | Byte-identical to phase-4 verified state |
-| Chat panel → conversation persistence | `/api/conversations*` via `lib/conversations.ts` | X-Device-Token bearer | ✓ WIRED | Fire-and-forget save after each reply; silent localStorage fallback when DB unset/offline (live-tested this refresh) |
+| `redact` key list | ALL viable candidates | pre-loop closure | ✓ WIRED | L276-283 unchanged |
+| Abandoned candidate cleanup | reader.cancel + dispose | probe-failure branch | ✓ WIRED | Also the research-restart abandon path (L370-374, L401-406) |
+| Protocol adapters | `streamProvider`/`callProvider` | function calls | ✓ WIRED | `resolveChatUrl`+`buildChatRequest`+`buildAuthHeaders`+`toOpenAISSE` used in both; openai identity path proven |
+| Admin target resolution / per-row test | providers route + admin page | `runTest(id)` → POST | ✓ WIRED | `rowResults[id]`/`testingIds[id]` keyed by provider id; 404/redaction on server |
+| Chat panel → conversation persistence | `/api/conversations*` via `lib/conversations.ts` | X-Device-Token bearer | ✓ WIRED | `saveMessage` at chat-panel L613/615 (text), L874/876 (image), L947/1024 (video) |
 
 ### Data-Flow Trace (Level 4)
 
 | Artifact | Data Variable | Source | Produces Real Data | Status |
 | -------- | ------------- | ------ | ------------------ | ------ |
-| Chat stream | `delta` events | Live provider (xkiro p1) | Yes — live SSE captured | ✓ FLOWING |
-| Conversation list | `conversations` | Turso via /api/conversations | Yes — live rows created/read/deleted | ✓ FLOWING |
-| Research sources | `sources` events | You.com YDC (unconfigured locally → graceful "unavailable" path verified in code; gate tested at route level) | Graceful degradation verified | ✓ FLOWING (degraded path proven) |
-| Admin provider list | providers | AI_PROVIDERS_JSON | Yes (prior live walks) | ✓ FLOWING |
+| Chat stream | `delta` events | Live provider (registry, DB-first + env fallback) | Yes — prior live SSE captured | ✓ FLOWING |
+| Conversation list | `conversations` | Turso via /api/conversations | Yes — prior live rows created/read/deleted | ✓ FLOWING |
+| Research sources | `sources` events | You.com YDC (unconfigured locally → graceful path verified in code) | Graceful degradation verified | ✓ FLOWING (degraded path proven) |
+| Admin provider list | providers | Hybrid registry (DB-first, env fallback) | Yes — GET maps `reg.providers` via `publicShape` | ✓ FLOWING |
 
-### Behavioral Spot-Checks (this refresh, dev:3100, process-scoped env only — .env.local untouched)
+### Behavioral Spot-Checks
 
 | Behavior | Command | Result | Status |
 |----------|---------|--------|--------|
-| Typecheck current tree (post-fix) | `npx tsc --noEmit` | exit 0 (also exit 0 after every individual fix commit) | ✓ PASS |
-| Zero-provider gate (S0) | server env `AI_PROVIDERS_JSON={providers:[]}` + POST /api/chat | HTTP 503 `provider_not_configured` | ✓ PASS |
-| Happy path (S1b, real env) | POST /api/chat "Reply with exactly the word ok" | `{"delta":"ok"}` → `{"done":true}`, no error, 0 warns | ✓ PASS |
-| Video exclusion live (S1b) | real registry contains vid1 video provider | 0 failover warns — vid1 never a chat candidate | ✓ PASS |
-| Invalid activeId fallback (S1a) | process-scoped env activeId="no-such-id" | reply streams via silent fallback, no error, 0 warns | ✓ PASS |
-| Active-provider failover (S2) | candidate[0] sentinel key, candidate[1] real | exactly 1 warn `failed before first token (…); failing over`; reply from candidate[1]; no error event | ✓ PASS |
-| All-fail last-error (S3) | both candidates sentinel keys | 2 warns (last `no candidates left`); 1 error + done; 0 deltas | ✓ PASS |
-| PRES-01 sweep (S4) | grep captures for xkiro/mistral/agnes/failprobe/sk-invalid | 0 hits in stream bodies; no key material in error | ✓ PASS |
-| SSE contract histogram (S5) | parse S2+S3 captures line-by-line | `{delta:1, done:2, error:1, other:0}`, 0 violations, 0 identity fields | ✓ PASS |
-| Candidate exclusion + dedupe (node-level, type-stripped) | compiled providers module against live + duplicate-id configs | `["p1"]` chat-only / `["p0","p1"]` first-wins with active p0 first / invalid-activeId fallback | ✓ PASS |
-| Media target resolution (node-level) | resolveVideoTarget / resolveImageTarget | vid1 / img1 | ✓ PASS |
-| Shiki XSS proof (node-level) | executed shiki 4.6.0 codeToHtml on `</span><img src=x onerror=alert(1)><script>alert(2)</script>` | all `<` entity-encoded (`&#x3C;`), no raw HTML in output, no lang echo — dangerouslySetInnerHTML surface is safe | ✓ PASS |
-| Device/init stores hash, not token (WR-07) | live POST /api/device/init + direct read-only Turso SELECT | response id = sha256(token) (64-hex); users row keyed by hash; raw token absent from DB | ✓ PASS |
-| Conversation create + duplicate → 409 (WR-12) | live POST with same id twice | 200 then 409 `already_exists` | ✓ PASS |
-| Conversation malformed id → 400 (WR-12) | live POST with path-like 100-char id | 400 `bad_id` | ✓ PASS |
-| Cross-user scoping | live GET with token B on token A's conversation | 404 `not_found` | ✓ PASS |
-| Oversized sources normalization (WR-14) | live POST with 50 junk source items | stored ≤8 items, shape-coerced | ✓ PASS |
-| Search empty-q guard (WR-11) | live GET /api/conversations/search?q= (fresh token) | 200 structured `{conversations:[…]}` — no 500 | ✓ PASS |
-| Search rate limit (WR-10) | 22 rapid live search calls | 429 within the window | ✓ PASS |
-| Video/image route validation | GET /api/video (no id), empty prompts | 400 `bad_task` / 400 `no_prompt` on both routes | ✓ PASS |
-| Page walk + CSP | curl /, /blog, /chat, /admin, /privacy, /terms | all 200; CSP present incl. new `media-src` video hosts | ✓ PASS |
-| Post-fix happy path | POST after all 8 fixes | `{"delta":"ok"}` → `{"done":true}` | ✓ PASS |
-| /chat client render | curl /chat | 200, client bundle wired | ✓ PASS |
-| `npm run build` | (not run) | dev server held .next; tsc is sufficient per dispatch | ? SKIP |
+| Typecheck current tree | `npx tsc --noEmit` | exit 0 | ✓ PASS (this refresh) |
+| Protocol adapter backward compat + mapping + candidate order | Node probe transpiling real `lib/providers.ts` | 21/21 checks PASS, incl. real Anthropic→OpenAI SSE frame translation | ✓ PASS (this refresh) |
+| Failover static gates | grep: validatedUrl=0, warn-site=1, pre-gate=0, `maxDuration=180`≥1, budget=1, `sseEvent(`=8 | all green | ✓ PASS (this refresh) |
+| Providers route gates | grep: auth-first L56, rate-limit L57, provider_not_found=1, target.apiKey=4, `replace(provider.apiKey`=0, getActiveProvider=2 | all green | ✓ PASS (this refresh) |
+| Admin row-test gates | grep: RefreshCw=2, rowResults=8, per-row runTest=1, Rocket=0, keyPreview=2, active badge=2 | all green | ✓ PASS (this refresh) |
+| Debt-marker / stub scan | 9 covered source files, TBD/FIXME/XXX/HACK/PLACEHOLDER/not-implemented | only legitimate HTML `placeholder=` attributes and an `XXXX-XXXX` format comment; no debt markers | ✓ PASS (this refresh) |
+| Live failover S0–S5 (503, happy, invalid-activeId, one-retry failover, all-fail, SSE histogram, PRES-01) | dev:3100 process-scoped env (previous refresh) | recorded PASS in previous report; control flow byte-unchanged (`git diff 9cf354a HEAD` = 5 lines) | ✓ PASS (carried forward — not re-run this refresh) |
+| `npm run build` | (not run) | tsc sufficient; no dev server holding `.next` | ? SKIP |
 
 ### Probe Execution
 
-No probes declared in the phase PLAN/SUMMARY files and no conventional `scripts/*/tests/probe-*.sh` exist — Step 7c not applicable.
+No probes declared in the phase PLAN/SUMMARY files and no conventional `scripts/*/tests/probe-*.sh` exist — Step 7c not applicable. The Node-level adapter probe above is a verifier-authored read-only check (temp file, no repo writes).
+
+### Test Quality Audit
+
+No automated test suite exists for the phase requirements (ENG-01 — automated tests for security-critical `lib/` functions — is deferred in REQUIREMENTS.md and owned by a later phase). No disabled/circular tests to audit. Behavioral verification relies on the carried-forward live scenarios and this refresh's Node probe, as documented above.
+
+### Decision Coverage
+
+Skipped by the gate: "No trackable decisions in CONTEXT.md" (04-CONTEXT.md decisions are prose, not the machine-readable `<decisions>` trackable format). Non-blocking.
 
 ### Requirements Coverage
 
 | Requirement | Source Plan | Description | Status | Evidence |
 |-------------|------------|-------------|--------|----------|
-| PROV-01 | 04-01 | Multiple providers; switch active by editing `activeId` only — no code changes | ✓ SATISFIED | Truth 1; node-level + live S1a fallback proof on the current tree |
-| PROV-02 | 04-01 | Pre-token failure → retry against next configured provider, still returns a reply | ✓ SATISFIED | Truth 2; live S2 failover + S3 all-fail + S0 zero-provider |
-| PROV-03 | 04-02 | Admin lists every provider with status; live test targets any provider | ✓ SATISFIED | Truths 3-9; admin files byte-unchanged since phase-4 HEAD |
+| PROV-01 | 04-01 | Multiple providers; switch active by editing `activeId` only — no code changes | ✓ SATISFIED | Truth 1; node probe candidate ordering + fallback; env mechanism intact under DB-first registry |
+| PROV-02 | 04-01 | Pre-token failure → retry against next configured provider, still returns a reply | ✓ SATISFIED | Truth 2; byte-unchanged failover control flow + carried-forward live S2/S3 + node-probed adapters |
+| PROV-03 | 04-02 | Admin lists every provider with status; live test targets any provider | ✓ SATISFIED | Truths 3-9; per-row Test/result, masked keys and active badge re-confirmed on the rewritten UI |
 
 No orphaned requirements (REQUIREMENTS.md maps exactly PROV-01/02/03 to Phase 4).
 
@@ -168,21 +185,17 @@ No orphaned requirements (REQUIREMENTS.md maps exactly PROV-01/02/03 to Phase 4)
 
 | File | Line | Pattern | Severity | Impact |
 |------|------|---------|----------|--------|
-| (none) | — | No TBD/FIXME/XXX/HACK/PLACEHOLDER debt markers in any covered file (dead recovery-state declared in chat-panel is tracked as IN-05 in 04-REVIEW.md, not a debt marker) | — | Debt-marker gate clean |
-
-### Delta Fix Verification Notes (honest scope)
-
-The 8 delta fixes (04-REVIEW.md "Delta #2 Fix Log") were verified as follows: WR-07, WR-10, WR-11, WR-12, WR-14 live-tested above with real HTTP + direct read-only DB evidence; WR-08 (scheme gate in `lib/research.ts`) is code-verified + typechecked but the YDC path itself is unconfigured locally (`YDC_API_KEY` absent → graceful `no_key` path), so the gate's runtime behavior on real hits is unexercised; WR-09 (stale `pendingSourcesRef` reset) and WR-13 (video detail scrub) are logic fixes verified by code inspection + tsc — behavioral confirmation needs a stream erroring after a sources event and a failing video-provider call respectively. Those three are flagged "requires human verification" in the fix log. **Migration note (WR-07):** conversations previously stored under a raw-token user id become unreachable for the same device after the hashing change — relevant only to dev/test rows created before this refresh (owner may purge `users`/`conversations` in Turso; production has no legacy rows since the feature never shipped).
+| (none) | — | No TBD/FIXME/XXX/HACK/PLACEHOLDER debt markers and no stub implementations in the covered source files (matches are legitimate HTML input `placeholder=` attributes and an `XXXX-XXXX` id-format comment) | — | Debt-marker gate clean |
 
 ### Human Verification Required
 
-None new for the phase-4 must-haves — every changed phase-4 surface was behaviorally exercised live. Three delta-fix items are recommended for human/owner verification (see Delta Fix Verification Notes): WR-08's gate on a live YDC response, WR-09's stale-sources scenario, WR-13's scrub on a real provider failure. One standing owner-side operational item remains deferred to production config (see Deferred Items). The privacy/DB copy reconciliation is an owner decision recorded REPORT-ONLY in 04-REVIEW.md IN-11.
+None new for the phase-4 must-haves. The failover behavior carries passing live evidence from the previous refresh on byte-identical control flow, and the changed adapter layer is behaviorally proven by this refresh's node probe. The rewritten Phase 9/10 admin UI's visual details (including the "Activate" affordance replacing the literal standby badge) and the Phase 10 AI Chats tab are those later phases' deliverables and were not visually re-walked here. One standing owner-side operational item remains deferred to production config (see Deferred Items).
 
 ### Gaps Summary
 
-No gaps. Every phase-4 must-hold re-verified against the current tree with behavioral evidence: config-only switching with image AND video providers excluded (node-level + live), probe-guarded failover with exactly one locked-format warn and a complete streamed reply (live S2), all-fail last redacted error with zero deltas (live S3), zero-provider 503 (live S0), SSE contract histogram clean with no identity fields (live S5), redaction/scrub unchanged, SSRF gating per call including the new video and research surfaces (research fetches only a pinned constant URL), admin console byte-unchanged, per-attempt failover budget intact (WR-06 fix), and the Shiki dangerouslySetInnerHTML surface proven XSS-safe by executing the highlighter against a hostile payload. The delta's new DB subsystem was reviewed (8 Warnings, all fixed) and its fixes live-tested: token hashing confirmed in the actual database, rate limits biting, 409/400 id validation, cross-user scoping, bounded sources, and the search guard.
+No gaps. Every phase-4 must-have re-verified against the current tree: config-only switching with image AND video providers excluded and default-openai backward compatibility (node probe + node-level ordering checks); probe-guarded failover with exactly one locked-format warn and a complete streamed reply (control flow byte-unchanged, prior live evidence stands); all-fail last redacted error with zero deltas; SSE contract and redaction bar intact; SSRF gating per call on every outbound surface including the new protocols, image and video helpers; provider-list, per-row test and masked-key admin truths intact in the rewritten DB-only UI; defensive DB ALTER columns present. The adapter layer that changed in this delta was behaviorally exercised (21/21 checks, including a real Anthropic SSE→OpenAI translation). Status remains `passed`.
 
 ---
 
-_Verified: 2026-11-15T10:49:55Z_
-_Verifier: Claude (gsd-verifier)_
+_Verified: 2026-11-17T22:56:00Z_
+_Verifier: the agent (gsd-verifier)_
