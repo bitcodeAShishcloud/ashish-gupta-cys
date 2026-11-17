@@ -130,3 +130,18 @@ Phases execute in numeric order: 4 → 5 → 6
   4. DB-first + env-fallback loading — chat keeps working when Turso is unavailable (current 401 case)
   5. One active provider per type; outbound SSRF gates and rate limits unchanged
   6. SSE contract and visitor experience unchanged; failover still works
+
+## v0.0.0.0.4 — Admin AI Chats Viewer + Full Backup
+
+### Phase 10: Admin AI Chats Viewer + Full Backup
+**Goal**: Every visitor's full chat history — text, images, video, mail drafts, research sources and device metadata — is visible to the admin from the database, and the whole dataset can be exported as one backup.
+**Depends on**: Phase 9 (Turso + encrypted provider keys)
+**Requirements**: CHATVIEW-01 … CHATVIEW-04, BACKUP-01 … BACKUP-02 (see REQUIREMENTS.md)
+**Decisions**: `.planning/phases/10-admin-ai-chats-backup/10-CONTEXT.md` — 3 decisions locked (device hash + metadata only, encrypted keys in backup, media URL + metadata only)
+**Success Criteria**:
+  1. Admin tab lists all devices (name, truncated SHA-256 hash, metadata) → their conversations → full chat view
+  2. Text, image preview, video preview, mail badge, sources and generation metadata all render in the admin viewer
+  3. Image/video generations are persisted to the DB as URL + metadata (never base64 bytes)
+  4. Full backup JSON includes all users, conversations, messages and providers with keys still encrypted
+  5. Raw device tokens are never stored or displayed; server never fetches provider media
+  6. Visitor SSE contract and experience unchanged; all admin routes session-guarded and rate-limited

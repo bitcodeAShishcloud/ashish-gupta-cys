@@ -8,6 +8,7 @@ import {
   Edit2,
   Loader2,
   LogOut,
+  MessageSquare,
   Plus,
   RefreshCw,
   Save,
@@ -22,6 +23,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { AdminAiChats } from "@/components/admin/ai-chats";
 import { cn } from "@/lib/utils";
 
 type Protocol = "openai" | "anthropic" | "google";
@@ -347,7 +355,18 @@ export default function AdminPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-3">
+      <div className="mt-8">
+        <Tabs defaultValue="providers">
+          <TabsList>
+            <TabsTrigger value="providers">
+              <Cpu className="mr-1.5 h-4 w-4" /> Providers
+            </TabsTrigger>
+            <TabsTrigger value="chats">
+              <MessageSquare className="mr-1.5 h-4 w-4" /> AI Chats
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="providers" className="mt-6">
+            <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -671,6 +690,12 @@ export default function AdminPage() {
             </ul>
           </CardContent>
         </Card>
+            </div>
+          </TabsContent>
+          <TabsContent value="chats" className="mt-6">
+            <AdminAiChats />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

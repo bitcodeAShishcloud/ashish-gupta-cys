@@ -251,6 +251,10 @@ export function ChatPanel({
    * run OUTSIDE the setState updater (side effects in updaters re-run on
    * every replay, which double-counted the daily limit). */
   const videoHistoryRef = useRef<Msg[]>([]);
+  /** Guard so a re-armed poll effect never writes the same finished video twice. */
+  const persistedVideoJobsRef = useRef<Set<string>>(new Set());
+  /** Conversation that owns the current video task (set before the first poll). */
+  const videoConvIdRef = useRef<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [openPanel, setOpenPanel] = useState<
     "aspect" | "style" | "tier" | "vAspect" | "vSeconds" | null
@@ -811,6 +815,9 @@ export function ChatPanel({
   async function runGeneration(prompt: string, s: { aspect: string; style: string; tier: string; images: string[] }) {
     if (!prompt || generating || sending || limited) return;
     setError(null);
+    // Phase 10: image generations get a real conversation row so the admin
+    // viewer can see the full prompt + result. Offline → convId is null.
+    const convId = await ensureConversation(prompt, "image");
     const userMsg: Msg = { role: "user", content: prompt };
     const history = [...imageHistory, userMsg];
     setImageHistory(history);
@@ -856,6 +863,31 @@ export function ChatPanel({
       } catch {
         /* ignore */
       }
+      // Phase 10: persist the prompt + result to Turso. Only a URL is stored —
+      // base64 payloads stay in the browser, never in the backup/DB.
+      if (deviceToken && convId) {
+        const imageUrl = /^https:\/\//i.test(data.image)
+          ? data.image
+          : imgMsg.jobId
+            ? `/api/image/download?id=${encodeURIComponent(imgMsg.jobId)}`
+            : undefined;
+        void saveMessage(deviceToken, convId, { role: "user", content: prompt, kind: "image" })
+          .then(() =>
+            saveMessage(deviceToken, convId!, {
+              role: "assistant",
+              content: revised || "",
+              kind: "image",
+              imageUrl,
+              jobId: imgMsg.jobId,
+              meta: imgMsg.meta as unknown as Record<string, unknown>,
+            }),
+          )
+          .then(() => fetchConversations(deviceToken))
+          .then((list) => {
+            if (list.length > 0) setConversations(list);
+          })
+          .catch(() => {});
+      }
     } catch (e) {
       setImageHistory((prev) => {
         const next = [...prev];
@@ -884,6 +916,8 @@ export function ChatPanel({
     const prompt = input.trim();
     if (!prompt || generating || sending || limited) return;
     setError(null);
+    const convId = await ensureConversation(prompt, "video");
+    videoConvIdRef.current = convId;
     const userMsg: Msg = { role: "user", content: prompt };
     const history = [...videoHistory, userMsg];
     setVideoHistory(history);
@@ -909,6 +943,10 @@ export function ChatPanel({
         meta: { prompt, aspect: vAspect, seconds: vSeconds, createdAt: Date.now() },
       };
       setVideoHistory([...history, vidMsg]);
+      if (deviceToken && convId) {
+        void saveMessage(deviceToken, convId, { role: "user", content: prompt, kind: "video" })
+          .catch(() => {});
+      }
     } catch (e) {
       setVideoHistory((prev) => {
         const next = [...prev];
@@ -978,6 +1016,20 @@ export function ChatPanel({
               : m,
           );
           setVideoHistory(next);
+          // Phase 10: persist the finished video (URL + metadata) exactly once.
+          const convId = videoConvIdRef.current;
+          if (deviceToken && convId && !persistedVideoJobsRef.current.has(jobId)) {
+            persistedVideoJobsRef.current.add(jobId);
+            const finished = next.find((m) => m.kind === "video" && m.jobId === jobId);
+            void saveMessage(deviceToken, convId, {
+              role: "assistant",
+              content: "",
+              kind: "video",
+              videoUrl: d.url as string,
+              jobId,
+              meta: finished?.meta as unknown as Record<string, unknown>,
+            }).catch(() => {});
+          }
           // Persist first; count usage only when the completion actually
           // stuck — a failed write would otherwise recount on every mount.
           let persisted = false;
@@ -1057,19 +1109,6 @@ export function ChatPanel({
     const conv = conversations.find((c) => c.id === id);
     if (conv) setMode(conv.mode as "chat" | "image" | "video");
     setActiveConvId(id);
-  }
-
-  // Save a message to Turso (fire-and-forget, offline fallback)
-  async function persistMessage(msg: Msg) {
-    if (!deviceToken || !activeConvId) return;
-    await saveMessage(deviceToken, activeConvId, {
-      role: msg.role,
-      content: msg.content,
-      kind: msg.kind ?? "text",
-      mail: msg.mail,
-      sources: msg.sources,
-    });
-    setConvRefreshKey((k) => k + 1);
   }
 
   function eraseData() {

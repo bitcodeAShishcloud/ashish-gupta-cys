@@ -204,7 +204,17 @@ export async function searchConversations(
 export async function saveMessage(
   token: string,
   conversationId: string,
-  msg: { role: string; content: string; kind?: string; mail?: boolean; sources?: { title: string; url: string }[] },
+  msg: {
+    role: string;
+    content: string;
+    kind?: string;
+    mail?: boolean;
+    sources?: { title: string; url: string }[];
+    imageUrl?: string;
+    videoUrl?: string;
+    jobId?: string;
+    meta?: Record<string, unknown>;
+  },
 ): Promise<number | null> {
   try {
     const res = await fetch(`/api/conversations/${conversationId}/messages`, {
@@ -216,6 +226,10 @@ export async function saveMessage(
         kind: msg.kind ?? "text",
         mail: msg.mail ?? false,
         sources: msg.sources,
+        imageUrl: msg.imageUrl,
+        videoUrl: msg.videoUrl,
+        jobId: msg.jobId,
+        meta: msg.meta,
       }),
     });
     if (!res.ok) throw new Error("save failed");

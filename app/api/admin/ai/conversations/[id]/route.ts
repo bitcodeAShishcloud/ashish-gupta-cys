@@ -23,7 +23,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!db) return NextResponse.json({ error: "db_not_configured" }, { status: 503 });
     const convRes = await db.execute({
       sql: `SELECT c.id, c.user_id, c.title, c.mode, c.pinned, c.created_at, c.updated_at,
-                   u.device_name
+                   u.device_name, u.created_at AS device_created_at, u.last_seen
             FROM conversations c LEFT JOIN users u ON u.id = c.user_id
             WHERE c.id = ?`,
       args: [id],
@@ -33,7 +33,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     const conv = convRes.rows[0];
     const msgRes = await db.execute({
-      sql: "SELECT id, role, content, kind, mail, sources, created_at FROM messages WHERE conversation_id = ? ORDER BY created_at ASC",
+      sql: `SELECT id, role, content, kind, mail, sources,
+                    image_url, video_url, job_id, meta, created_at
+             FROM messages WHERE conversation_id = ? ORDER BY created_at ASC`,
       args: [id],
     });
     return NextResponse.json({
@@ -41,6 +43,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         id: String(conv.id),
         userId: String(conv.user_id),
         deviceName: String(conv.device_name ?? ""),
+        deviceCreatedAt: Number(conv.device_created_at ?? 0),
+        deviceLastSeen: Number(conv.last_seen ?? 0),
         title: String(conv.title),
         mode: String(conv.mode),
         pinned: Number(conv.pinned) === 1,
@@ -54,6 +58,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         kind: String(r.kind),
         mail: Number(r.mail) === 1,
         sources: r.sources ? JSON.parse(String(r.sources)) : undefined,
+        imageUrl: r.image_url ? String(r.image_url) : undefined,
+        videoUrl: r.video_url ? String(r.video_url) : undefined,
+        jobId: r.job_id ? String(r.job_id) : undefined,
+        meta: r.meta ? JSON.parse(String(r.meta)) : undefined,
         createdAt: Number(r.created_at),
       })),
     });

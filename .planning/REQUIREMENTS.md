@@ -106,6 +106,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SEC-01 | Phase 5 | Complete |
 | CHAT-04 | Phase 6 | Complete |
 | CHAT-05 | Phase 6 | Complete |
+| CHATVIEW-01 | Phase 10 | Complete — admin device→conversation→chat viewer |
+| CHATVIEW-02 | Phase 10 | Complete — text/image/video/mail/sources render with device metadata |
+| CHATVIEW-03 | Phase 10 | Complete — image/video outputs persisted as URL + metadata |
+| BACKUP-01 | Phase 10 | Complete — full dataset JSON export |
+| BACKUP-02 | Phase 10 | Complete — provider keys stay encrypted (`enc:v1:...`) in backup |
 
 **Coverage:**
 - v1 requirements: 9 total
