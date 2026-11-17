@@ -10,7 +10,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { createVideoTask, getVideoTask, resolveVideoTarget } from "@/lib/providers";
+import { createVideoTask, getVideoTask, resolveVideoTarget, loadProvidersAsync } from "@/lib/providers";
 
 const VIDEO_RATE_LIMIT = Number(process.env.VIDEO_RATE_LIMIT) || 3; // creates / min / IP
 const STATUS_RATE_LIMIT = Number(process.env.VIDEO_STATUS_RATE_LIMIT) || 30; // polls / min / IP
@@ -52,7 +52,7 @@ export async function POST(req: NextRequest) {
   const aspect = ASPECTS.has(String(body.aspect ?? "")) ? String(body.aspect) : "16:9";
   const seconds = SECONDS.has(String(body.seconds ?? "")) ? String(body.seconds) : "5";
 
-  const target = resolveVideoTarget();
+  const target = resolveVideoTarget(await loadProvidersAsync());
   if (!target) {
     return NextResponse.json(
       {
@@ -94,7 +94,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const target = resolveVideoTarget();
+  const target = resolveVideoTarget(await loadProvidersAsync());
   if (!target) {
     return NextResponse.json(
       { error: "provider_not_configured", message: "No video provider is configured." },

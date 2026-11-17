@@ -1,4 +1,6 @@
 import net from "node:net";
+import { getDb, ensureSchema } from "@/lib/db";
+import { decryptKey } from "@/lib/crypto";
 
 /*
  * AI provider config is supplied via the AI_PROVIDERS_JSON env var:
@@ -56,8 +58,68 @@ export function loadProviders(): ProviderRegistry {
   }
 }
 
-export function getActiveProvider(): ProviderConfig | null {
-  const reg = loadProviders();
+/* ── Phase 9: hybrid provider registry (DB-first, env fallback) ──
+ * Admin-managed providers live in Turso with encrypted keys. If the DB is
+ * empty/unavailable (e.g. the current 401), the env registry is used so the
+ * public chat never goes down. A short cache avoids a DB query per request. */
+type RegistryCache = { at: number; reg: ProviderRegistry };
+let _registryCache: RegistryCache | null = null;
+const REGISTRY_TTL = 10_000;
+
+export function invalidateProviderCache(): void {
+  _registryCache = null;
+}
+
+export async function loadProvidersAsync(): Promise<ProviderRegistry> {
+  const now = Date.now();
+  if (_registryCache && now - _registryCache.at < REGISTRY_TTL) return _registryCache.reg;
+  const envReg = loadProviders();
+  try {
+    await ensureSchema();
+    const db = getDb();
+    if (!db) {
+      _registryCache = { at: now, reg: envReg };
+      return envReg;
+    }
+    const res = await db.execute("SELECT * FROM providers ORDER BY created_at ASC");
+    const dbProviders: ProviderConfig[] = res.rows.map((r) => {
+      const get = (k: string) => r[k] as string | number | null;
+      const str = (k: string) => (get(k) == null ? undefined : String(get(k)));
+      const num = (k: string) => (get(k) == null ? undefined : Number(get(k)));
+      return {
+        id: String(get("id")),
+        name: String(get("name")),
+        baseUrl: String(get("base_url")),
+        apiKey: decryptKey(String(get("api_key") ?? "")),
+        model: String(get("model")),
+        ...(str("type") ? { type: str("type") } : {}),
+        ...(num("context_window") ? { contextWindow: num("context_window") } : {}),
+        ...(num("max_output") ? { maxOutput: num("max_output") } : {}),
+        ...(str("endpoint") ? { endpoint: str("endpoint") } : {}),
+        ...(str("auth_header") ? { authHeader: str("auth_header") } : {}),
+        ...(str("auth_prefix") ? { authPrefix: str("auth_prefix") } : {}),
+        ...(str("response_field") ? { responseField: str("response_field") } : {}),
+      };
+    });
+    // DB wins on duplicate ids; env-only entries remain as fallback.
+    const byId = new Map<string, ProviderConfig>();
+    for (const p of envReg.providers) byId.set(p.id, p);
+    for (const p of dbProviders) byId.set(p.id, p);
+    const providers = Array.from(byId.values());
+    const activeRow = dbProviders.find((p) => (p as unknown as { active?: number }).active === 1);
+    const activeId = activeRow?.id ?? envReg.activeId ?? providers[0]?.id ?? "";
+    const reg = { activeId, providers };
+    _registryCache = { at: now, reg };
+    return reg;
+  } catch (err) {
+    console.error("[providers] DB load failed, using env registry:", (err as Error).message?.slice(0, 120));
+    _registryCache = { at: now, reg: envReg };
+    return envReg;
+  }
+}
+
+export function getActiveProvider(registry?: ProviderRegistry): ProviderConfig | null {
+  const reg = registry ?? loadProviders();
   const chat = reg.providers.find(
     (p) => p.id === reg.activeId && !isImageProvider(p) && !isVideoProvider(p),
   );
@@ -75,10 +137,10 @@ export function getActiveProvider(): ProviderConfig | null {
  * providers in AI_PROVIDERS_JSON array order. Image providers are never
  * candidates; duplicate ids dedupe with the first occurrence winning.
  */
-export function orderedChatCandidates(): ProviderConfig[] {
-  const reg = loadProviders();
+export function orderedChatCandidates(registry?: ProviderRegistry): ProviderConfig[] {
+  const reg = registry ?? loadProviders();
   const chat = reg.providers.filter((p) => !isImageProvider(p) && !isVideoProvider(p));
-  const active = getActiveProvider();
+  const active = getActiveProvider(reg);
   if (!active) return chat;
   const ordered = [active, ...chat];
   const seen = new Set<string>();
@@ -107,12 +169,12 @@ export function isVideoProvider(p: ProviderConfig): boolean {
  * with it), retrieval URL = baseUrl + /agnesapi?video_id=…&model_name=….
  * Returns null when no video provider with a key is configured.
  */
-export function resolveVideoTarget(): {
+export function resolveVideoTarget(registry?: ProviderRegistry): {
   provider: ProviderConfig;
   createUrl: string;
   retrievalBase: string;
 } | null {
-  const reg = loadProviders();
+  const reg = registry ?? loadProviders();
   const video = reg.providers.find((p) => isVideoProvider(p) && p.apiKey);
   if (!video) return null;
   const base = normalizeBaseUrl(video.baseUrl);
@@ -128,8 +190,8 @@ export function resolveVideoTarget(): {
  * /chat/completions suffix is swapped for /images/generations, or
  * /images/generations is appended.
  */
-export function resolveImageTarget(): { provider: ProviderConfig; url: string } | null {
-  const reg = loadProviders();
+export function resolveImageTarget(registry?: ProviderRegistry): { provider: ProviderConfig; url: string } | null {
+  const reg = registry ?? loadProviders();
   const explicit = reg.providers.find((p) => isImageProvider(p) && p.apiKey);
   if (explicit) {
     return { provider: explicit, url: normalizeBaseUrl(explicit.baseUrl) };

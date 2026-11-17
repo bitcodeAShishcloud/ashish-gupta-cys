@@ -13,6 +13,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
 import {
+  loadProvidersAsync,
   orderedChatCandidates,
   trimToContext,
   callProvider,
@@ -256,7 +257,9 @@ export async function POST(req: NextRequest) {
   });
 
   // Failover candidates: active provider first, then remaining chat providers.
-  const candidates = orderedChatCandidates().filter((p) => p.apiKey && p.model);
+  // Phase 9: use the hybrid DB-first registry so admin-managed providers work.
+  const registry = await loadProvidersAsync();
+  const candidates = orderedChatCandidates(registry).filter((p) => p.apiKey && p.model);
   if (candidates.length === 0) {
     return NextResponse.json(
       {

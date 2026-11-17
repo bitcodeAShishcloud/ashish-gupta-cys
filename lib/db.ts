@@ -133,8 +133,22 @@ export async function ensureSchema(): Promise<void> {
       sources TEXT,
       created_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS providers (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      base_url TEXT NOT NULL,
+      api_key TEXT NOT NULL,
+      model TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'chat',
+      active INTEGER NOT NULL DEFAULT 0,
+      context_window INTEGER,
+      max_output INTEGER,
+      endpoint TEXT, auth_header TEXT, auth_prefix TEXT, response_field TEXT,
+      created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS idx_conv_user ON conversations(user_id, updated_at);
     CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS idx_providers_type_active ON providers(type, active);
   `);
   _schemaReady = true;
 }

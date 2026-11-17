@@ -11,7 +11,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonBody, clientIp, rateLimit } from "@/lib/chat-http";
-import { generateImage, resolveImageTarget, validateProviderUrl } from "@/lib/providers";
+import { generateImage, resolveImageTarget, validateProviderUrl, loadProvidersAsync } from "@/lib/providers";
 
 const RATE_LIMIT = Number(process.env.IMAGE_RATE_LIMIT) || 6; // requests / min / IP
 const MAX_PROMPT = 1000;
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
   }
   const aspect = String(body.aspect ?? "16:9");
 
-  const target = resolveImageTarget();
+  const target = resolveImageTarget(await loadProvidersAsync());
   if (!target) {
     return NextResponse.json(
       {

@@ -6,13 +6,17 @@ import {
   Check,
   Copy,
   Cpu,
+  Edit2,
   Loader2,
   LogOut,
   Plus,
   RefreshCw,
+  Save,
   ShieldCheck,
+  Star,
   Trash2,
   Wrench,
+  X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -37,6 +41,13 @@ interface ProviderShape {
   maxOutput: number;
   hasKey: boolean;
   keyPreview: string;
+  // Phase 9 fields (from /api/admin/providers)
+  type?: string;
+  active?: boolean;
+  authHeader?: string;
+  authPrefix?: string;
+  responseField?: string;
+  dbManaged?: boolean;
 }
 
 interface Draft {
@@ -88,6 +99,17 @@ export default function AdminPage() {
   // row tests each keep their own spinner (IN-01).
   const [testingIds, setTestingIds] = useState<Record<string, boolean>>({});
   const [rowResults, setRowResults] = useState<Record<string, { ok: boolean; text: string }>>({});
+  // Phase 9: admin-managed encrypted providers
+  const [dbProviders, setDbProviders] = useState<ProviderShape[]>([]);
+  const [encryptionReady, setEncryptionReady] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [formMsg, setFormMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [pDraft, setPDraft] = useState({
+    id: "", name: "", baseUrl: "", apiKey: "", model: "", type: "chat",
+    contextWindow: "", maxOutput: "", endpoint: "", authHeader: "", authPrefix: "", responseField: "",
+  });
 
   async function checkAuth() {
     setChecking(true);
@@ -101,6 +123,15 @@ export default function AdminPage() {
           setProviders(Array.isArray(pd.providers) ? pd.providers : []);
           setActiveId(String(pd.activeId || ""));
         }
+        // Phase 9: admin-managed DB providers (keys masked)
+        try {
+          const dr = await fetch("/api/admin/providers", { cache: "no-store" });
+          if (dr.ok) {
+            const dd = await dr.json();
+            setDbProviders(Array.isArray(dd.providers) ? dd.providers : []);
+            setEncryptionReady(Boolean(dd.encryptionConfigured));
+          }
+        } catch { /* DB unavailable — env providers still shown above */ }
       } else {
         router.replace("/admin/login");
         return;
@@ -205,6 +236,90 @@ export default function AdminPage() {
     }
   }
 
+  // ── Phase 9: admin-managed provider CRUD ──
+  function resetPDraft() {
+    setPDraft({ id: "", name: "", baseUrl: "", apiKey: "", model: "", type: "chat",
+      contextWindow: "", maxOutput: "", endpoint: "", authHeader: "", authPrefix: "", responseField: "" });
+    setEditId(null);
+    setShowAdd(false);
+    setFormMsg(null);
+  }
+
+  function startEdit(p: ProviderShape) {
+    setPDraft({
+      id: p.id, name: p.name, baseUrl: p.baseUrl, apiKey: "", model: p.model,
+      type: p.type || "chat",
+      contextWindow: p.contextWindow ? String(p.contextWindow) : "",
+      maxOutput: p.maxOutput ? String(p.maxOutput) : "",
+      endpoint: p.endpoint || "", authHeader: p.authHeader || "",
+      authPrefix: p.authPrefix ?? "", responseField: p.responseField || "",
+    });
+    setEditId(p.id);
+    setShowAdd(true);
+    setFormMsg(null);
+  }
+
+  async function saveProvider() {
+    setSaving(true);
+    setFormMsg(null);
+    try {
+      const isEdit = Boolean(editId);
+      const url = isEdit ? `/api/admin/providers/${encodeURIComponent(editId!)}` : "/api/admin/providers";
+      const payload: Record<string, unknown> = {
+        name: pDraft.name.trim(), baseUrl: pDraft.baseUrl.trim(), model: pDraft.model.trim(),
+        type: pDraft.type,
+        contextWindow: pDraft.contextWindow, maxOutput: pDraft.maxOutput,
+        endpoint: pDraft.endpoint, authHeader: pDraft.authHeader,
+        authPrefix: pDraft.authPrefix, responseField: pDraft.responseField,
+      };
+      if (!isEdit) payload.id = pDraft.id.trim();
+      if (pDraft.apiKey.trim()) payload.apiKey = pDraft.apiKey.trim();
+      const res = await fetch(url, {
+        method: isEdit ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      setFormMsg({ ok: true, text: isEdit ? "Provider updated." : "Provider added & encrypted." });
+      resetPDraft();
+      const dr = await fetch("/api/admin/providers", { cache: "no-store" });
+      if (dr.ok) { const dd = await dr.json(); setDbProviders(dd.providers || []); }
+    } catch (e) {
+      setFormMsg({ ok: false, text: e instanceof Error ? e.message : "Save failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function setActiveProvider(p: ProviderShape) {
+    try {
+      const res = await fetch(`/api/admin/providers/${encodeURIComponent(p.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: true }),
+      });
+      if (!res.ok) throw new Error("Failed to set active.");
+      const dr = await fetch("/api/admin/providers", { cache: "no-store" });
+      if (dr.ok) { const dd = await dr.json(); setDbProviders(dd.providers || []); }
+      setFormMsg({ ok: true, text: `${p.name} is now the active ${p.type || "chat"} provider.` });
+    } catch (e) {
+      setFormMsg({ ok: false, text: e instanceof Error ? e.message : "Failed." });
+    }
+  }
+
+  async function deleteProvider(p: ProviderShape) {
+    if (!confirm(`Delete provider "${p.name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/providers/${encodeURIComponent(p.id)}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete.");
+      setDbProviders((prev) => prev.filter((x) => x.id !== p.id));
+      setFormMsg({ ok: true, text: `${p.name} deleted.` });
+    } catch (e) {
+      setFormMsg({ ok: false, text: e instanceof Error ? e.message : "Delete failed." });
+    }
+  }
+
   async function logout() {
     try {
       await fetch("/api/admin/logout", { method: "POST" });
@@ -258,6 +373,114 @@ export default function AdminPage() {
           </TabsList>
 
           <TabsContent value="providers" className="mt-6">
+            {/* Phase 9: admin-managed encrypted providers */}
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between gap-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <ShieldCheck className="h-4 w-4 text-primary" /> Saved providers (encrypted)
+                  </CardTitle>
+                  <Button size="sm" variant="outline" onClick={() => { resetPDraft(); setShowAdd(true); }} disabled={!encryptionReady}>
+                    <Plus className="mr-1.5 h-3.5 w-3.5" /> Add provider
+                  </Button>
+                </div>
+                {!encryptionReady ? (
+                  <p className="mt-2 text-xs text-danger">
+                    Set <code className="font-mono">PROVIDER_ENCRYPTION_KEY</code> on the server to save providers.
+                  </p>
+                ) : null}
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {formMsg ? (
+                  <div className={cn("rounded-md border px-3 py-2 text-xs", formMsg.ok ? "border-border/60 text-muted-foreground" : "border-danger/40 bg-danger/10 text-danger")}>
+                    {formMsg.ok ? "✓ " : "✗ "}{formMsg.text}
+                  </div>
+                ) : null}
+
+                {showAdd ? (
+                  <div className="rounded-lg border border-border/60 bg-white/[0.02] p-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-medium">{editId ? "Edit provider" : "New provider"}</p>
+                      <button type="button" onClick={resetPDraft} aria-label="Close form" className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {(["id", "name", "baseUrl", "apiKey", "model"] as const).map((k) => (
+                        <div key={k}>
+                          <Label className="font-mono text-[11px]">{k}</Label>
+                          <Input
+                            type={k === "apiKey" ? "password" : "text"}
+                            value={(pDraft as Record<string, string>)[k]}
+                            onChange={(e) => setPDraft((d) => ({ ...d, [k]: e.target.value }))}
+                            placeholder={k === "id" ? "p2" : k === "baseUrl" ? "https://api.example.com/v1" : k === "apiKey" ? (editId ? "leave blank to keep" : "sk-…") : ""}
+                            disabled={k === "id" && Boolean(editId)}
+                            className="mt-1 font-mono text-xs"
+                          />
+                        </div>
+                      ))}
+                      <div>
+                        <Label className="font-mono text-[11px]">type</Label>
+                        <select
+                          value={pDraft.type}
+                          onChange={(e) => setPDraft((d) => ({ ...d, type: e.target.value }))}
+                          className="mt-1 w-full rounded-md border border-border bg-background px-2 py-2 font-mono text-xs"
+                        >
+                          <option value="chat">chat</option><option value="image">image</option><option value="video">video</option>
+                        </select>
+                      </div>
+                      {(["contextWindow", "maxOutput"] as const).map((k) => (
+                        <div key={k}>
+                          <Label className="font-mono text-[11px]">{k}</Label>
+                          <Input value={(pDraft as Record<string, string>)[k]} onChange={(e) => setPDraft((d) => ({ ...d, [k]: e.target.value }))} placeholder="optional" className="mt-1 font-mono text-xs" />
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-3 flex justify-end">
+                      <Button size="sm" onClick={saveProvider} disabled={saving || !pDraft.name.trim() || !pDraft.baseUrl.trim() || !pDraft.model.trim() || (!editId && !pDraft.apiKey.trim())}>
+                        {saving ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Save className="mr-1.5 h-3.5 w-3.5" />}
+                        {editId ? "Save changes" : "Save & encrypt"}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {dbProviders.length === 0 && !showAdd ? (
+                  <p className="text-sm text-muted-foreground">No saved providers yet. Add one to manage providers without Vercel env vars.</p>
+                ) : (
+                  dbProviders.map((p) => (
+                    <div key={p.id} className="glass rounded-lg p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-semibold text-foreground">{p.name}</span>
+                          <Badge variant="outline" className="font-mono text-[10px]">{p.type || "chat"}</Badge>
+                          {p.active ? <Badge variant="success" className="text-[10px]">active</Badge> : null}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {!p.active ? (
+                            <Button variant="ghost" size="sm" className="font-mono text-[11px]" onClick={() => setActiveProvider(p)} title="Set active for this type">
+                              <Star className="mr-1 h-3.5 w-3.5" /> Activate
+                            </Button>
+                          ) : null}
+                          <Button variant="ghost" size="sm" onClick={() => runTest(p.id)} disabled={!!testingIds[p.id]} title="Test provider">
+                            {testingIds[p.id] ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => startEdit(p)} title="Edit"><Edit2 className="h-3.5 w-3.5" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => deleteProvider(p)} title="Delete" className="text-danger"><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+                      </div>
+                      <div className="mt-1.5 font-mono text-[11px] text-muted-foreground">
+                        {p.model} · {p.keyPreview || "no key"}
+                      </div>
+                      {rowResults[p.id] ? (
+                        <div className={cn("mt-2 rounded-md border px-2 py-1.5 font-mono text-[11px]", rowResults[p.id].ok ? "border-border/60 text-muted-foreground" : "border-danger/40 bg-danger/10 text-danger")}>
+                          {rowResults[p.id].ok ? "✓ " : "✗ "}{rowResults[p.id].text}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid gap-6 lg:grid-cols-2">
               <Card>
                 <CardHeader>
