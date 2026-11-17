@@ -107,6 +107,7 @@ export async function loadProvidersAsync(): Promise<ProviderRegistry> {
         ...(str("auth_header") ? { authHeader: str("auth_header") } : {}),
         ...(str("auth_prefix") ? { authPrefix: str("auth_prefix") } : {}),
         ...(str("response_field") ? { responseField: str("response_field") } : {}),
+        ...(str("size_mode") ? { sizeMode: str("size_mode") } : {}),
       };
     });
     // DB wins on duplicate ids; env-only entries remain as fallback.

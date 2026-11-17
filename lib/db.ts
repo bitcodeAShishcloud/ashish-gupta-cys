@@ -144,7 +144,7 @@ export async function ensureSchema(): Promise<void> {
       active INTEGER NOT NULL DEFAULT 0,
       context_window INTEGER,
       max_output INTEGER,
-      endpoint TEXT, auth_header TEXT, auth_prefix TEXT, response_field TEXT,
+      endpoint TEXT, auth_header TEXT, auth_prefix TEXT, response_field TEXT, size_mode TEXT,
       created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_conv_user ON conversations(user_id, updated_at);
@@ -156,6 +156,7 @@ export async function ensureSchema(): Promise<void> {
   // treat as success so repeated boots (and older DBs) are safe.
   for (const [table, column, decl] of [
     ["providers", "protocol", "TEXT NOT NULL DEFAULT 'openai'"],
+    ["providers", "size_mode", "TEXT"],
     ["messages", "image_url", "TEXT"],
     ["messages", "video_url", "TEXT"],
     ["messages", "job_id", "TEXT"],

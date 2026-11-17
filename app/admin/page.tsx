@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   Cpu,
+  Download,
   Edit2,
   Loader2,
   LogOut,
@@ -119,6 +120,7 @@ export default function AdminPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [migrating, setMigrating] = useState(false);
   const [formMsg, setFormMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [pDraft, setPDraft] = useState<ProviderDraft>(EMPTY_DRAFT);
 
@@ -128,6 +130,22 @@ export default function AdminPage() {
     const data = await res.json();
     setProviders(Array.isArray(data.providers) ? data.providers : []);
     setEncryptionReady(Boolean(data.encryptionConfigured));
+  }
+
+  async function migrateProviders() {
+    setMigrating(true);
+    setFormMsg(null);
+    try {
+      const res = await fetch("/api/admin/providers/migrate", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      setFormMsg({ ok: true, text: data.message || "Providers imported." });
+      await loadProviders();
+    } catch (e) {
+      setFormMsg({ ok: false, text: e instanceof Error ? e.message : "Import failed." });
+    } finally {
+      setMigrating(false);
+    }
   }
 
   async function checkAuth() {
@@ -373,18 +391,34 @@ export default function AdminPage() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <ShieldCheck className="h-4 w-4 text-primary" /> Providers
               </CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  resetPDraft();
-                  setShowAdd(true);
-                  setProtocol("openai");
-                }}
-                disabled={!encryptionReady}
-              >
-                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add provider
-              </Button>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  title="Copy legacy AI_PROVIDERS_JSON providers into the encrypted DB registry"
+                  onClick={() => void migrateProviders()}
+                  disabled={migrating || !encryptionReady}
+                >
+                  {migrating ? (
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Download className="mr-1.5 h-3.5 w-3.5" />
+                  )}
+                  Import env
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    resetPDraft();
+                    setShowAdd(true);
+                    setProtocol("openai");
+                  }}
+                  disabled={!encryptionReady}
+                >
+                  <Plus className="mr-1.5 h-3.5 w-3.5" /> Add provider
+                </Button>
+              </div>
             </div>
             {!encryptionReady ? (
               <p className="mt-2 text-xs text-danger">
@@ -649,6 +683,13 @@ export default function AdminPage() {
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm text-muted-foreground">
+              <li className="flex gap-2">
+                <span className="text-primary">▸</span>
+                <span>
+                  Old providers in the server env var can be pulled in with{" "}
+                  <strong className="text-foreground">Import env</strong> — keys are encrypted on the way in.
+                </span>
+              </li>
               <li className="flex gap-2">
                 <span className="text-primary">▸</span>
                 <span>
