@@ -55,6 +55,17 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 > **All design decisions locked:** 16 owner answers across 4 rounds in `08-CONTEXT.md`. No open design questions remain. The only outstanding work is operational (key rotation + env/allowlist config).
 
+## v0.0.0.0.5 Requirements (Phase 9 — admin-managed encrypted providers)
+
+- [ ] **PROVADM-01**: Admin can add, edit, delete and set-active chat/image/video providers from the admin panel with no Vercel env edit or redeploy
+- [ ] **PROVADM-02**: Every provider API key is encrypted at rest in Turso with AES-256-GCM (`enc:v1:...` format), never plain text
+- [ ] **PROVADM-03**: Full keys never appear in any browser-facing response; admin UI shows only masked fingerprints
+- [ ] **PROVADM-04**: `PROVIDER_ENCRYPTION_KEY` is the only new env var; a DB dump without it yields no usable keys
+- [ ] **PROVADM-05**: Provider loading is DB-first with env fallback — the public chat keeps working when Turso is unavailable
+- [ ] **PROVADM-06**: Exactly one active provider per type; SSRF gates + rate limits unchanged; SSE contract and visitor experience unchanged
+
+> **All decisions locked:** 4 owner answers in `09-CONTEXT.md`. No open design questions. Turso token 401 is handled by the fallback path (owner fixes token operationally).
+
 ## v2 Requirements
 
 Deferred to future releases. Tracked but not in current roadmap.

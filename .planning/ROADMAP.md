@@ -87,6 +87,7 @@ Phases execute in numeric order: 4 → 5 → 6
 | 6. Chat Access Simplification | v0.0.0.0.2 | 1/1 | Complete    | 2026-11-07 |
 | 7. Rich Markdown Rendering & Export | v0.0.0.0.3 | 0/1 | In progress | - |
 | 8. Mail/Draft Replies, Send Action & Prospect Research | v0.0.0.0.3 | 0/1 | Not started | - |
+| 9. Admin-Managed Encrypted Providers | v0.0.0.0.3 | 0/1 | Not started | - |
 
 ## v0.0.0.0.3 — Rich Markdown Rendering & Export
 
@@ -115,3 +116,16 @@ Phases execute in numeric order: 4 → 5 → 6
   4. Mail type is signalled by a structured SSE event with a content-detection fallback; streaming never flashes between bars
   5. A same-origin, SSRF-gated research route can fetch prospect info; the assistant produces a personalized draft from it
   6. No visitor data stored server-side; no new colours or hover-only affordances
+
+### Phase 9: Admin-Managed Encrypted Providers
+**Goal**: The owner adds/edits/sets-active chat/image/video providers from the admin panel at runtime — no Vercel env edit, no redeploy — with every API key encrypted at rest (AES-256-GCM), masked in the UI, and the public chat unaffected.
+**Depends on**: Phase 4 (failover contract, zero visitor impact), Phase 9 DB layer (Turso from multi-user work)
+**Requirements**: PROVADM-01 … PROVADM-06 (see REQUIREMENTS.md)
+**Decisions**: `.planning/phases/09-admin-managed-encrypted-providers/09-CONTEXT.md` — 4 decisions locked (encryption key env, DB-priority hybrid, per-type active, fallback-first sequencing)
+**Success Criteria**:
+  1. Admin can add, edit, delete and set-active providers for chat/image/video without touching Vercel env or redeploying
+  2. Every provider API key stored encrypted (`enc:v1:...`) in Turso; only masked fingerprints appear in the admin UI and all API responses
+  3. `PROVIDER_ENCRYPTION_KEY` is the only new env var; a DB dump without it yields no usable keys
+  4. DB-first + env-fallback loading — chat keeps working when Turso is unavailable (current 401 case)
+  5. One active provider per type; outbound SSRF gates and rate limits unchanged
+  6. SSE contract and visitor experience unchanged; failover still works

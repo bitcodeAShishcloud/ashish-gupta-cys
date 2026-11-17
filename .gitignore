@@ -34,3 +34,5 @@ dev-server.mjs
 .next-serve.log
 AGENTS.md
 .workbuddy-ai/
+.vercel
+.env*
