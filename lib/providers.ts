@@ -16,12 +16,19 @@ import { decryptKey } from "@/lib/crypto";
  * authPrefix, responseField) allow custom providers.
  */
 
+/** Wire protocol a provider speaks. The adapter layer normalises all three
+ *  into the OpenAI-shaped SSE the visitor client already understands, so the
+ *  chat route and browser contract never change. */
+export type ProviderProtocol = "openai" | "anthropic" | "google";
+
 export interface ProviderConfig {
   id: string;
   name: string;
   baseUrl: string;
   apiKey?: string;
   model: string;
+  /** Protocol preset. Defaults to "openai" for backward compatibility. */
+  protocol?: ProviderProtocol;
   endpoint?: string;
   authHeader?: string;
   authPrefix?: string;
@@ -92,6 +99,7 @@ export async function loadProvidersAsync(): Promise<ProviderRegistry> {
         baseUrl: String(get("base_url")),
         apiKey: decryptKey(String(get("api_key") ?? "")),
         model: String(get("model")),
+        ...(str("protocol") ? { protocol: str("protocol") as ProviderProtocol } : {}),
         ...(str("type") ? { type: str("type") } : {}),
         ...(num("context_window") ? { contextWindow: num("context_window") } : {}),
         ...(num("max_output") ? { maxOutput: num("max_output") } : {}),
@@ -528,6 +536,263 @@ export function trimToContext(
   return [...msgs, ...picked];
 }
 
+/* ── Protocol adapters (OpenAI-compatible / Anthropic / Google) ──
+ * One normalisation layer for all three wire formats. Everything downstream
+ * (chat route, SSE parser, browser) keeps seeing OpenAI-shaped chunks. */
+interface ProtocolPreset {
+  endpoint: string;
+  streamEndpoint: string;
+  authHeader: string;
+  authPrefix: string;
+  extraHeaders: Record<string, string>;
+}
+
+const PROTOCOL_PRESETS: Record<ProviderProtocol, ProtocolPreset> = {
+  openai: {
+    endpoint: "/chat/completions",
+    streamEndpoint: "/chat/completions",
+    authHeader: "Authorization",
+    authPrefix: "Bearer ",
+    extraHeaders: {},
+  },
+  anthropic: {
+    endpoint: "/messages",
+    streamEndpoint: "/messages",
+    authHeader: "x-api-key",
+    authPrefix: "",
+    extraHeaders: { "anthropic-version": "2023-06-01" },
+  },
+  google: {
+    // Model lives in the path for Gemini; see resolveChatUrl().
+    endpoint: ":generateContent",
+    streamEndpoint: ":streamGenerateContent?alt=sse",
+    authHeader: "x-goog-api-key",
+    authPrefix: "",
+    extraHeaders: {},
+  },
+};
+
+export function protocolOf(provider: ProviderConfig): ProviderProtocol {
+  const p = String(provider.protocol || "openai").toLowerCase();
+  return p === "anthropic" || p === "google" ? p : "openai";
+}
+
+/** Preset fields for the admin UI — so a single dropdown fills the rest. */
+export function protocolPreset(protocol: ProviderProtocol): {
+  endpoint: string; authHeader: string; authPrefix: string; responseField: string;
+} {
+  const p = PROTOCOL_PRESETS[protocol] || PROTOCOL_PRESETS.openai;
+  return {
+    endpoint: protocol === "google" ? ":generateContent" : p.endpoint,
+    authHeader: p.authHeader,
+    authPrefix: p.authPrefix,
+    responseField:
+      protocol === "anthropic"
+        ? "content.0.text"
+        : protocol === "google"
+          ? "candidates.0.content.parts.0.text"
+          : "choices.0.message.content",
+  };
+}
+
+export function resolveChatUrl(
+  provider: ProviderConfig,
+  opts: { stream?: boolean; validatedUrl?: string } = {},
+): string {
+  if (opts.validatedUrl) return opts.validatedUrl;
+  const protocol = protocolOf(provider);
+  const base = normalizeBaseUrl(provider.baseUrl);
+  const preset = PROTOCOL_PRESETS[protocol];
+  if (protocol === "google") {
+    const modelsBase = base.replace(/\/models\/?$/, "");
+    const model = encodeURIComponent(provider.model);
+    const suffix = opts.stream
+      ? ":streamGenerateContent?alt=sse"
+      : ":generateContent";
+    return `${modelsBase}/models/${model}${suffix}`;
+  }
+  const custom = provider.endpoint && provider.endpoint.trim()
+    ? normalizeEndpoint(provider.endpoint)
+    : null;
+  const endpoint = custom || (opts.stream ? preset.streamEndpoint : preset.endpoint);
+  return base + (endpoint || preset.endpoint);
+}
+
+export function buildChatRequest(
+  provider: ProviderConfig,
+  messages: { role: string; content: string }[],
+  maxOutput: number,
+  stream: boolean,
+): Record<string, unknown> {
+  const protocol = protocolOf(provider);
+  if (protocol === "anthropic") {
+    const system = messages
+      .filter((m) => m.role === "system")
+      .map((m) => m.content)
+      .join("\n\n");
+    const chatMessages = messages
+      .filter((m) => m.role !== "system")
+      .map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content,
+      }));
+    const body: Record<string, unknown> = {
+      model: provider.model,
+      messages: chatMessages,
+      max_tokens: maxOutput,
+      temperature: 0.7,
+    };
+    if (system) body.system = system;
+    if (stream) body.stream = true;
+    return body;
+  }
+  if (protocol === "google") {
+    const system = messages
+      .filter((m) => m.role === "system")
+      .map((m) => m.content)
+      .join("\n\n");
+    const contents = messages
+      .filter((m) => m.role !== "system")
+      .map((m) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }],
+      }));
+    const body: Record<string, unknown> = {
+      contents,
+      generationConfig: { maxOutputTokens: maxOutput, temperature: 0.7 },
+    };
+    if (system) body.systemInstruction = { parts: [{ text: system }] };
+    return body;
+  }
+  return {
+    model: provider.model,
+    messages,
+    temperature: 0.7,
+    max_tokens: maxOutput,
+    ...(stream ? { stream: true } : {}),
+  };
+}
+
+export function extractChatReply(
+  provider: ProviderConfig,
+  data: unknown,
+): string | null {
+  const protocol = protocolOf(provider);
+  const explicit = provider.responseField && String(provider.responseField).trim();
+  let reply: unknown = explicit ? resolvePath(data, String(explicit)) : undefined;
+  if (reply == null || reply === "") {
+    if (protocol === "anthropic") {
+      reply = resolvePath(data, "content.0.text");
+    } else if (protocol === "google") {
+      reply =
+        resolvePath(data, "candidates.0.content.parts.0.text") ??
+        resolvePath(data, "candidates.0.content.parts.0");
+    } else {
+      reply =
+        resolvePath(data, "choices.0.message.content") ??
+        resolvePath(data, "choices.0.text");
+    }
+  }
+  if (reply == null || reply === "") {
+    const anyData = data as Record<string, unknown> | null;
+    reply =
+      anyData?.reply ?? anyData?.response ?? anyData?.answer ?? anyData?.message;
+  }
+  return typeof reply === "string" && reply.trim() ? reply : null;
+}
+
+/** Auth + protocol headers shared by chat, image and video calls. */
+export function buildAuthHeaders(
+  provider: ProviderConfig,
+  url: string,
+  accept?: string,
+): Record<string, string> {
+  const c = providerDefaults(provider);
+  const preset = PROTOCOL_PRESETS[protocolOf(provider)];
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (accept) headers.Accept = accept;
+  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
+  for (const [k, v] of Object.entries(preset.extraHeaders)) headers[k] = v;
+  try {
+    if (/openrouter\.ai$/i.test(new URL(url).hostname)) {
+      headers["HTTP-Referer"] = process.env.PUBLIC_SITE_URL || "https://localhost";
+      headers["X-Title"] = "Ashish Gupta Portfolio Chat";
+    }
+  } catch {
+    /* url is already validated by the caller */
+  }
+  return headers;
+}
+
+/** Translate Anthropic/Gemini SSE frames into OpenAI-style `choices[0].delta.content`
+ *  frames. OpenAI streams pass through untouched. The chat route's existing
+ *  parser and the browser client therefore stay byte-for-byte compatible. */
+export function toOpenAISSE(
+  provider: ProviderConfig,
+  upstream: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
+  const protocol = protocolOf(provider);
+  if (protocol === "openai") return upstream;
+
+  const reader = upstream.getReader();
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
+  let tail = "";
+
+  const frame = (raw: string): string => {
+    let obj: unknown;
+    try {
+      obj = JSON.parse(raw);
+    } catch {
+      return "";
+    }
+    let delta: unknown;
+    if (protocol === "anthropic") {
+      const a = obj as {
+        type?: string;
+        delta?: { type?: string; text?: string };
+        content_block?: { type?: string; text?: string };
+      };
+      if (a?.type === "content_block_delta") delta = a.delta?.text;
+      else if (a?.type === "content_block_start") delta = a.content_block?.text;
+    } else {
+      const g = obj as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      delta = g?.candidates?.[0]?.content?.parts?.[0]?.text;
+    }
+    if (typeof delta !== "string" || !delta) return "";
+    return `data: ${JSON.stringify({ choices: [{ delta: { content: delta } }] })}\n\n`;
+  };
+
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        const last = tail.trim();
+        if (last.startsWith("data:")) {
+          const out = frame(last.slice(5).trim());
+          if (out) controller.enqueue(encoder.encode(out));
+        }
+        controller.close();
+        return;
+      }
+      tail += decoder.decode(value, { stream: true });
+      let idx: number;
+      while ((idx = tail.indexOf("\n")) >= 0) {
+        const line = tail.slice(0, idx).trim();
+        tail = tail.slice(idx + 1);
+        if (!line.startsWith("data:")) continue;
+        const out = frame(line.slice(5).trim());
+        if (out) controller.enqueue(encoder.encode(out));
+      }
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+}
+
 export interface ResolvedProvider {
   endpoint: string;
   authHeader: string;
@@ -539,10 +804,11 @@ export interface ResolvedProvider {
 
 export function providerDefaults(provider: ProviderConfig): ResolvedProvider {
   const d = provider;
+  const preset = PROTOCOL_PRESETS[protocolOf(d)];
   return {
-    endpoint: normalizeEndpoint(d.endpoint) || "/chat/completions",
-    authHeader: String(d.authHeader || "").trim() || "Authorization",
-    authPrefix: d.authPrefix === undefined ? "Bearer " : String(d.authPrefix),
+    endpoint: normalizeEndpoint(d.endpoint) || preset.endpoint,
+    authHeader: String(d.authHeader || "").trim() || preset.authHeader,
+    authPrefix: d.authPrefix === undefined ? preset.authPrefix : String(d.authPrefix),
     responseField: d.responseField ? String(d.responseField) : null,
     maxOutput: Math.min(196608, Math.max(100, Number(d.maxOutput) || 900)),
     contextWindow: Math.min(2000000, Math.max(2000, Number(d.contextWindow) || 32000)),
@@ -574,12 +840,11 @@ export async function streamProvider(
   opts: { timeoutMs?: number; validatedUrl?: string } = {},
 ): Promise<ProviderStreamResult> {
   const c = providerDefaults(provider);
-  let url = opts.validatedUrl;
-  if (!url) {
+  if (!opts.validatedUrl) {
     const baseErr = validateProviderUrl(provider.baseUrl);
     if (baseErr) return { ok: false, status: 503, detail: baseErr };
-    url = normalizeBaseUrl(provider.baseUrl) + c.endpoint;
   }
+  const url = resolveChatUrl(provider, { stream: true, validatedUrl: opts.validatedUrl });
 
   const targetHost = new URL(url).hostname.toLowerCase();
   if (!hostIsAllowed(targetHost)) {
@@ -595,32 +860,14 @@ export async function streamProvider(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 120000);
 
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    Accept: "text/event-stream",
-  };
-  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
-  try {
-    if (/openrouter\.ai$/i.test(new URL(url).hostname)) {
-      headers["HTTP-Referer"] = process.env.PUBLIC_SITE_URL || "https://localhost";
-      headers["X-Title"] = "Ashish Gupta Portfolio Chat";
-    }
-  } catch {
-    /* url is already validated */
-  }
+  const headers = buildAuthHeaders(provider, url, "text/event-stream");
 
   try {
     const res = await fetch(url, {
       method: "POST",
       headers,
       signal: controller.signal,
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        temperature: 0.7,
-        max_tokens: c.maxOutput,
-        stream: true,
-      }),
+      body: JSON.stringify(buildChatRequest(provider, messages, c.maxOutput, true)),
     });
 
     if (!res.ok) {
@@ -654,7 +901,9 @@ export async function streamProvider(
 
     return {
       ok: true,
-      stream: res.body,
+      // Anthropic/Gemini frames are translated to the OpenAI-shaped deltas
+      // the chat route already parses — no visitor-facing change.
+      stream: toOpenAISSE(provider, res.body),
       dispose: () => clearTimeout(timer),
     };
   } catch (err) {
@@ -676,12 +925,11 @@ export async function callProvider(
   // The fetch target is only ever a pre-validated public https URL (see
   // resolveChatTarget / validateProviderUrl). Callers may pass a trusted
   // validatedUrl; otherwise we derive + validate from the provider base URL.
-  let url = opts.validatedUrl;
-  if (!url) {
+  if (!opts.validatedUrl) {
     const baseErr = validateProviderUrl(provider.baseUrl);
     if (baseErr) return { ok: false, status: 503, detail: baseErr };
-    url = normalizeBaseUrl(provider.baseUrl) + c.endpoint;
   }
+  const url = resolveChatUrl(provider, { validatedUrl: opts.validatedUrl });
   const maxTokens = opts.maxOutput ?? c.maxOutput;
 
   // Enforce the positive host allowlist (AI_ALLOWED_HOSTS). If the var is set,
@@ -698,28 +946,14 @@ export async function callProvider(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 60000);
 
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  headers[c.authHeader] = c.authPrefix + String(provider.apiKey || "");
-  try {
-    if (/openrouter\.ai$/i.test(new URL(url).hostname)) {
-      headers["HTTP-Referer"] = process.env.PUBLIC_SITE_URL || "https://localhost";
-      headers["X-Title"] = "Ashish Gupta Portfolio Chat";
-    }
-  } catch {
-    /* url is already validated */
-  }
+  const headers = buildAuthHeaders(provider, url);
 
   try {
     const res = await fetch(url, {
       method: "POST",
       headers,
       signal: controller.signal,
-      body: JSON.stringify({
-        model: provider.model,
-        messages,
-        temperature: 0.7,
-        max_tokens: maxTokens,
-      }),
+      body: JSON.stringify(buildChatRequest(provider, messages, maxTokens, false)),
     });
 
     const text = await res.text();
@@ -738,36 +972,15 @@ export async function callProvider(
       return { ok: false, status: res.status, detail };
     }
 
-    let reply: unknown;
-    if (c.responseField) {
-      reply = resolvePath(data, c.responseField);
-      if (reply === undefined || reply === null || reply === "") {
-        return {
-          ok: false,
-          status: 502,
-          detail: `Response did not contain the configured responseField "${c.responseField}".`,
-        };
-      }
-    } else {
-      reply = resolvePath(data, "choices.0.message.content");
-      if (reply === undefined || reply === null || reply === "") {
-        const anyData = data as Record<string, unknown>;
-        reply =
-          resolvePath(data, "choices.0.text") ??
-          anyData?.reply ??
-          anyData?.response ??
-          anyData?.answer ??
-          anyData?.message;
-      }
-      if (typeof reply !== "string" || reply.trim() === "") {
-        return {
-          ok: false,
-          status: 502,
-          detail: `Unrecognized response shape${
-            data ? ` (keys: ${Object.keys(data as object).join(", ")})` : ""
-          }. Set "responseField" if the provider is not OpenAI-compatible.`,
-        };
-      }
+    const reply = extractChatReply(provider, data);
+    if (reply == null) {
+      return {
+        ok: false,
+        status: 502,
+        detail: `Unrecognized ${protocolOf(provider)} response shape${
+          data ? ` (keys: ${Object.keys(data as object).join(", ")})` : ""
+        }. Check the protocol preset or set a custom responseField.`,
+      };
     }
 
     return { ok: true, reply: String(reply).slice(0, 12000) };

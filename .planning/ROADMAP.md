@@ -88,6 +88,7 @@ Phases execute in numeric order: 4 → 5 → 6
 | 7. Rich Markdown Rendering & Export | v0.0.0.0.3 | 0/1 | In progress | - |
 | 8. Mail/Draft Replies, Send Action & Prospect Research | v0.0.0.0.3 | 0/1 | Not started | - |
 | 9. Admin-Managed Encrypted Providers | v0.0.0.0.3 | 0/1 | Not started | - |
+| 10. Admin AI Chats Viewer + Full Backup | v0.0.0.0.4 | 0/1 | Not started | - |
 
 ## v0.0.0.0.3 — Rich Markdown Rendering & Export
 

@@ -13,6 +13,8 @@ import { invalidateProviderCache } from "@/lib/providers";
 export const dynamic = "force-dynamic";
 export const maxDuration = 10;
 
+const PROTOCOLS = new Set(["openai", "anthropic", "google"]);
+
 function auth(req: NextRequest): NextResponse | null {
   if (!adminConfigured() || !isAdminRequest(req)) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -68,6 +70,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       }
       set("api_key", encryptKey(body.apiKey.trim()));
     }
+    if (PROTOCOLS.has(String(body.protocol))) set("protocol", String(body.protocol));
     const intOr = (v: unknown) => (v == null || String(v).trim() === "" ? null : Number(v));
     if (body.contextWindow !== undefined) set("context_window", intOr(body.contextWindow));
     if (body.maxOutput !== undefined) set("max_output", intOr(body.maxOutput));

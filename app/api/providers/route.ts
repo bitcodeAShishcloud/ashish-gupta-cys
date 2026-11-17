@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequest, adminConfigured } from "@/lib/admin-auth";
 import { rateLimit, clientIp, readJsonBody } from "@/lib/chat-http";
 import {
-  loadProviders,
+  loadProvidersAsync,
   getActiveProvider,
   providerDefaults,
   validateProviderUrl,
@@ -42,7 +42,7 @@ function unauthorized(res?: NextResponse) {
 // GET /api/providers — active + all configured providers (keys masked). Admin only.
 export async function GET(req: NextRequest) {
   if (!adminConfigured() || !isAdminRequest(req)) return unauthorized();
-  const reg = loadProviders();
+  const reg = await loadProvidersAsync();
   return NextResponse.json({
     activeId: reg.activeId,
     providers: reg.providers.map(publicShape),
@@ -60,9 +60,10 @@ export async function POST(req: NextRequest) {
 
   const body = await readJsonBody(req);
   const id = typeof body.id === "string" ? body.id.trim() : "";
+  const reg = await loadProvidersAsync();
   const target = id
-    ? loadProviders().providers.find((p) => p.id === id)
-    : getActiveProvider();
+    ? reg.providers.find((p) => p.id === id)
+    : getActiveProvider(reg);
   if (id && !target) {
     return NextResponse.json(
       { error: "provider_not_found", message: "No provider with that id is configured." },

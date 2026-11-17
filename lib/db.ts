@@ -139,6 +139,7 @@ export async function ensureSchema(): Promise<void> {
       base_url TEXT NOT NULL,
       api_key TEXT NOT NULL,
       model TEXT NOT NULL,
+      protocol TEXT NOT NULL DEFAULT 'openai',
       type TEXT NOT NULL DEFAULT 'chat',
       active INTEGER NOT NULL DEFAULT 0,
       context_window INTEGER,
@@ -150,6 +151,22 @@ export async function ensureSchema(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_msg_conv ON messages(conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_providers_type_active ON providers(type, active);
   `);
+  // CREATE TABLE IF NOT EXISTS never alters an existing table. Add new
+  // columns defensively; Turso reports "duplicate column name" which we
+  // treat as success so repeated boots (and older DBs) are safe.
+  for (const [table, column, decl] of [
+    ["providers", "protocol", "TEXT NOT NULL DEFAULT 'openai'"],
+    ["messages", "image_url", "TEXT"],
+    ["messages", "video_url", "TEXT"],
+    ["messages", "job_id", "TEXT"],
+    ["messages", "meta", "TEXT"],
+  ] as const) {
+    try {
+      await db.execute(`ALTER TABLE ${table} ADD COLUMN ${column} ${decl}`);
+    } catch {
+      /* column already exists */
+    }
+  }
   _schemaReady = true;
 }
 

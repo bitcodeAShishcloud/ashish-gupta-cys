@@ -13,6 +13,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 10;
 
 const TYPES = new Set(["chat", "image", "video"]);
+const PROTOCOLS = new Set(["openai", "anthropic", "google"]);
 
 function mask(key: string): string {
   if (!key) return "";
@@ -45,6 +46,7 @@ export async function GET(req: NextRequest) {
         baseUrl: String(g("base_url")),
         model: String(g("model")),
         type: String(g("type") ?? "chat"),
+        protocol: String(g("protocol") ?? "openai"),
         active: Number(g("active") ?? 0) === 1,
         contextWindow: g("context_window") == null ? undefined : Number(g("context_window")),
         maxOutput: g("max_output") == null ? undefined : Number(g("max_output")),
@@ -79,6 +81,7 @@ export async function POST(req: NextRequest) {
   const apiKey = String(body.apiKey ?? "").trim();
   const model = String(body.model ?? "").trim();
   const type = TYPES.has(String(body.type)) ? String(body.type) : "chat";
+  const protocol = PROTOCOLS.has(String(body.protocol)) ? String(body.protocol) : "openai";
 
   if (!baseUrl || !apiKey || !model) {
     return NextResponse.json({ error: "missing_fields", message: "baseUrl, apiKey and model are required." }, { status: 400 });
@@ -100,11 +103,11 @@ export async function POST(req: NextRequest) {
       await db.execute({ sql: "UPDATE providers SET active = 0 WHERE type = ?", args: [type] });
     }
     await db.execute({
-      sql: `INSERT INTO providers (id, name, base_url, api_key, model, type, active,
+      sql: `INSERT INTO providers (id, name, base_url, api_key, model, protocol, type, active,
               context_window, max_output, endpoint, auth_header, auth_prefix, response_field, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       args: [
-        id, name, baseUrl, encryptKey(apiKey), model, type, active,
+        id, name, baseUrl, encryptKey(apiKey), model, protocol, type, active,
         intOr(body.contextWindow), intOr(body.maxOutput),
         body.endpoint ? String(body.endpoint) : null,
         body.authHeader ? String(body.authHeader) : null,
@@ -113,7 +116,7 @@ export async function POST(req: NextRequest) {
         now(), now(),
       ],
     });
-    return NextResponse.json({ ok: true, id, type, active: active === 1 });
+    return NextResponse.json({ ok: true, id, type, protocol, active: active === 1 });
   } catch (err) {
     console.error("[admin/providers POST]", (err as Error).message?.slice(0, 120));
     return NextResponse.json({ error: "db_unavailable" }, { status: 503 });
